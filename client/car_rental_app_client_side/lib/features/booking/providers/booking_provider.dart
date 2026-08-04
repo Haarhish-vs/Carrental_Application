@@ -41,6 +41,11 @@ final servicesListProvider = FutureProvider<List<Service>>((ref) async {
   return repo.getServices();
 });
 
+final couponsListProvider = FutureProvider<List<Coupon>>((ref) async {
+  final repo = ref.watch(bookingRepositoryProvider);
+  return repo.getCoupons();
+});
+
 // Unified Booking State Provider
 final bookingFlowProvider = StateNotifierProvider<BookingFlowNotifier, BookingFlowState>((ref) {
   final repo = ref.watch(bookingRepositoryProvider);

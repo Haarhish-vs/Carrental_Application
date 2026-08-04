@@ -7,6 +7,7 @@ import '../services/booking_service.dart';
 abstract class BookingRepository {
   Future<List<Driver>> getDrivers();
   Future<List<Service>> getServices();
+  Future<List<Coupon>> getCoupons();
   Future<Coupon?> verifyCoupon(String code, double bookingValue);
   Future<String> createBooking(BookingFlowState state);
 }
@@ -24,6 +25,11 @@ class BookingRepositoryImpl implements BookingRepository {
   @override
   Future<List<Service>> getServices() {
     return _bookingService.fetchServices();
+  }
+
+  @override
+  Future<List<Coupon>> getCoupons() {
+    return _bookingService.fetchCoupons();
   }
 
   @override

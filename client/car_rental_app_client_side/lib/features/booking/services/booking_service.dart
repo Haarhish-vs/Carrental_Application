@@ -8,6 +8,7 @@ import '../models/booking_flow_state.dart';
 abstract class BookingService {
   Future<List<Driver>> fetchDrivers();
   Future<List<Service>> fetchServices();
+  Future<List<Coupon>> fetchCoupons();
   Future<Coupon?> validateCoupon(String code, double bookingValue);
   Future<Map<String, dynamic>> submitBooking(BookingFlowState state);
 }
@@ -31,6 +32,15 @@ class MockBookingServiceImpl implements BookingService {
     final response = await _apiClient.getMockAsset<List<dynamic>>(AppAssets.servicesJson);
     if (response.success && response.data != null) {
       return response.data!.map((item) => Service.fromJson(item as Map<String, dynamic>)).toList();
+    }
+    return [];
+  }
+
+  @override
+  Future<List<Coupon>> fetchCoupons() async {
+    final response = await _apiClient.getMockAsset<List<dynamic>>(AppAssets.couponsJson);
+    if (response.success && response.data != null) {
+      return response.data!.map((item) => Coupon.fromJson(item as Map<String, dynamic>)).toList();
     }
     return [];
   }
