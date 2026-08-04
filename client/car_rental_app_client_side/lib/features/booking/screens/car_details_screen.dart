@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gap/gap.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -51,11 +52,23 @@ class _CarDetailsScreenState extends ConsumerState<CarDetailsScreen> {
                   // 1. Cover Image with header details
                   Stack(
                     children: [
-                      Image.network(
-                        vehicle.imageUrl,
+                      CachedNetworkImage(
+                        imageUrl: vehicle.imageUrl,
                         height: 280,
                         width: double.infinity,
                         fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          height: 280,
+                          width: double.infinity,
+                          color: AppColors.slate100,
+                          child: const Center(child: CircularProgressIndicator()),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          height: 280,
+                          width: double.infinity,
+                          color: AppColors.slate100,
+                          child: const Icon(Icons.directions_car, size: 70, color: AppColors.slate400),
+                        ),
                       ),
                       // Carousel dots overlay
                       Positioned(

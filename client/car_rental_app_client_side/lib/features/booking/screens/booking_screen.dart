@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gap/gap.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -255,11 +256,23 @@ class _DashboardCarCard extends StatelessWidget {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                child: Image.network(
-                  vehicle.imageUrl,
+                child: CachedNetworkImage(
+                  imageUrl: vehicle.imageUrl,
                   height: 180,
                   width: double.infinity,
                   fit: BoxFit.cover,
+                  placeholder: (context, url) => Container(
+                    height: 180,
+                    width: double.infinity,
+                    color: AppColors.slate100,
+                    child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    height: 180,
+                    width: double.infinity,
+                    color: AppColors.slate100,
+                    child: const Icon(Icons.directions_car, size: 50, color: AppColors.slate400),
+                  ),
                 ),
               ),
               Positioned(
