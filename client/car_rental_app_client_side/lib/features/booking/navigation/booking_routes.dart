@@ -9,6 +9,7 @@ import '../models/booking_flow_state.dart';
 
 // Screens imports (to be implemented next)
 import '../screens/booking_screen.dart';
+import '../screens/car_details_screen.dart';
 import '../screens/driver_selection_screen.dart';
 import '../screens/additional_services_screen.dart';
 import '../screens/booking_summary_screen.dart';
@@ -25,6 +26,10 @@ class BookingRoutes {
       GoRoute(
         path: AppRoutes.booking,
         builder: (context, state) => const BookingScreen(),
+      ),
+      GoRoute(
+        path: '/booking/car-details',
+        builder: (context, state) => const CarDetailsScreen(),
       ),
       GoRoute(
         path: AppRoutes.driverSelection,
