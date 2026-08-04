@@ -51,20 +51,20 @@ class VehicleBookingCard extends StatelessWidget {
                   ),
                   child: CachedNetworkImage(
                     imageUrl: vehicle.imageUrl,
-                    height: 180,
+                    height: 150,
                     width: double.infinity,
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Shimmer.fromColors(
                       baseColor: AppColors.slate200,
                       highlightColor: AppColors.slate100,
                       child: Container(
-                        height: 180,
+                        height: 150,
                         width: double.infinity,
                         color: Colors.white,
                       ),
                     ),
                     errorWidget: (context, url, error) => Container(
-                      height: 180,
+                      height: 150,
                       width: double.infinity,
                       color: AppColors.slate100,
                       child: const Icon(Icons.directions_car, size: 50, color: AppColors.slate400),

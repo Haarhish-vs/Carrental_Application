@@ -161,7 +161,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           // 2. Horizontal Vehicle List
           SliverToBoxAdapter(
             child: SizedBox(
-              height: 310,
+              height: 330,
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 scrollDirection: Axis.horizontal,
