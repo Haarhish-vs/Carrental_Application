@@ -180,23 +180,24 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           ),
 
           Expanded(
-            child: ListView.builder(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               physics: const BouncingScrollPhysics(),
-              itemCount: _cars.length,
-              itemBuilder: (context, index) {
-                final car = _cars[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                  child: _DashboardCarCard(
-                    vehicle: car,
-                    onBookNow: () {
-                      ref.read(bookingFlowProvider.notifier).setVehicle(car);
-                      context.push('/booking/car-details');
-                    },
-                  ),
-                );
-              },
+              child: Column(
+                children: [
+                  for (final car in _cars)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: _DashboardCarCard(
+                        vehicle: car,
+                        onBookNow: () {
+                          ref.read(bookingFlowProvider.notifier).setVehicle(car);
+                          context.push('/booking/car-details');
+                        },
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
 
