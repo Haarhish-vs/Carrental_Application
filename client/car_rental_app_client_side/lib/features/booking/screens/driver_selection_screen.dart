@@ -8,7 +8,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../shared/widgets/layout/app_scaffold.dart';
-import '../../models/booking_step.dart';
+import '../models/booking_step.dart';
 import '../providers/booking_provider.dart';
 import '../widgets/cards/driver_card.dart';
 import '../widgets/cards/driver_card_skeleton.dart';

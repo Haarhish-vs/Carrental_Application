@@ -7,7 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/layout/app_scaffold.dart';
-import '../../models/coupon_model.dart';
+import '../models/coupon_model.dart';
 import '../providers/booking_provider.dart';
 import '../widgets/cards/coupon_card.dart';
 

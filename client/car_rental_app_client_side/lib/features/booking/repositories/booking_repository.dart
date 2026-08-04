@@ -34,7 +34,7 @@ class BookingRepositoryImpl implements BookingRepository {
 
   @override
   Future<Coupon?> verifyCoupon(String code, double bookingValue) {
-    return _bookingService.verifyCoupon(code, bookingValue);
+    return _bookingService.validateCoupon(code, bookingValue);
   }
 
   @override

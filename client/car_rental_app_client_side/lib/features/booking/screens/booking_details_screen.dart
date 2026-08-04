@@ -11,7 +11,7 @@ import '../../../../core/constants/app_routes.dart';
 import '../../../../core/design_system/radius.dart';
 import '../../../../core/design_system/elevation.dart';
 import '../../../../shared/widgets/layout/app_scaffold.dart';
-import '../../models/booking_flow_state.dart';
+import '../models/booking_flow_state.dart';
 import '../providers/booking_provider.dart';
 import '../widgets/timeline/booking_timeline.dart';
 import '../utils/booking_price_calculator.dart';

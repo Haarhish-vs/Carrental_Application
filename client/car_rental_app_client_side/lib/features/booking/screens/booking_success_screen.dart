@@ -12,7 +12,7 @@ import '../../../../core/constants/app_routes.dart';
 import '../../../../core/design_system/radius.dart';
 import '../../../../core/design_system/elevation.dart';
 import '../../../../shared/widgets/layout/app_scaffold.dart';
-import '../../models/booking_step.dart';
+import '../models/booking_step.dart';
 import '../providers/booking_provider.dart';
 
 class BookingSuccessScreen extends ConsumerStatefulWidget {
