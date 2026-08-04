@@ -11,9 +11,9 @@ import '../../../../core/constants/app_images.dart';
 import '../../../../core/design_system/radius.dart';
 import '../../../../core/design_system/elevation.dart';
 import '../../../../shared/widgets/layout/app_scaffold.dart';
-import '../../models/booking_step.dart';
-import '../../models/booking_flow_state.dart';
-import '../../models/vehicle_model.dart';
+import '../models/booking_step.dart';
+import '../models/booking_flow_state.dart';
+import '../models/vehicle_model.dart';
 import '../providers/booking_provider.dart';
 
 class BookingScreen extends ConsumerStatefulWidget {
