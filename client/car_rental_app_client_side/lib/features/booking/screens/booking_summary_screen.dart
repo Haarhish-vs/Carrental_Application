@@ -13,6 +13,7 @@ import '../../../../core/design_system/elevation.dart';
 import '../../../../shared/widgets/layout/app_scaffold.dart';
 import '../models/booking_step.dart';
 import '../models/booking_flow_state.dart';
+import '../models/service_model.dart';
 import '../providers/booking_provider.dart';
 import '../utils/booking_price_calculator.dart';
 import '../widgets/pickers/custom_date_picker.dart';
