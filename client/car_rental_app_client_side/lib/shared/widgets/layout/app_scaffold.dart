@@ -26,50 +26,57 @@ class AppScaffold extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final flowState = ref.watch(bookingFlowProvider);
 
-    return Stack(
-      children: [
-        Scaffold(
-          backgroundColor: AppColors.background,
-          appBar: appBar ??
-              (title != null
-                  ? AppBar(
-                      title: Text(title!),
-                      actions: actions,
-                    )
-                  : null),
-          bottomNavigationBar: bottomNavigationBar,
-          body: Column(
+    return ColoredBox(
+      color: AppColors.slate900,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 390),
+          child: Stack(
             children: [
-              if (showProgress)
-                BookingProgressIndicator(currentStep: flowState.currentStep),
-              Expanded(
-                child: SafeArea(
-                  top: false,
-                  bottom: false,
-                  child: body,
+              Scaffold(
+                backgroundColor: AppColors.background,
+                appBar: appBar ??
+                    (title != null
+                        ? AppBar(
+                            title: Text(title!),
+                            actions: actions,
+                          )
+                        : null),
+                bottomNavigationBar: bottomNavigationBar,
+                body: Column(
+                  children: [
+                    if (showProgress)
+                      BookingProgressIndicator(currentStep: flowState.currentStep),
+                    Expanded(
+                      child: SafeArea(
+                        top: false,
+                        bottom: false,
+                        child: body,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              if (flowState.isLoading)
+                Container(
+                  color: Colors.black.withOpacity(0.3),
+                  child: const Center(
+                    child: Card(
+                      elevation: 4,
+                      child: Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: CircularProgressIndicator(
+                          color: AppColors.accent,
+                          strokeWidth: 3,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
-        // Loading Overlay
-        if (flowState.isLoading)
-          Container(
-            color: Colors.black.withOpacity(0.3),
-            child: const Center(
-              child: Card(
-                elevation: 4,
-                child: Padding(
-                  padding: EdgeInsets.all(24.0),
-                  child: CircularProgressIndicator(
-                    color: AppColors.accent,
-                    strokeWidth: 3,
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
+      ),
     );
   }
 }

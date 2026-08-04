@@ -103,7 +103,7 @@ class _CarDetailsScreenState extends ConsumerState<CarDetailsScreen> {
                               Icon(Icons.threed_rotation_rounded, size: 14, color: AppColors.primary),
                               Gap(6),
                               Text(
-                                "360° View",
+                                "360 View",
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
@@ -138,7 +138,7 @@ class _CarDetailsScreenState extends ConsumerState<CarDetailsScreen> {
                             ),
                             const Gap(8),
                             Text(
-                              "•  120 reviews",
+                              "- 120 reviews",
                               style: AppTextStyles.bodyMedium.copyWith(color: AppColors.slate400),
                             ),
                           ],

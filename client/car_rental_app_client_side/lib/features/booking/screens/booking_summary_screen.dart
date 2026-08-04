@@ -163,7 +163,7 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                                 ),
                                 const Gap(4),
                                 Text(
-                                  "Electric • Automatic",
+                                  "Electric - Automatic",
                                   style: AppTextStyles.bodySmall.copyWith(color: AppColors.slate500),
                                 ),
                                 const Gap(4),
@@ -489,9 +489,9 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                           ],
                         ),
                         const Gap(AppSpacing.md),
-                        _FareRow(label: "Rental Price (\$120 × $days days)", value: baseCharge),
+                        _FareRow(label: "Rental Price (\$120 x $days days)", value: baseCharge),
                         if (hasDriver)
-                          _FareRow(label: "Driver Fee (\$50 × $days days)", value: driverFee),
+                          _FareRow(label: "Driver Fee (\$50 x $days days)", value: driverFee),
                         if (hasInsurance)
                           _FareRow(label: "Premium Insurance", value: insuranceFee),
                         if (additionalServicesFee > 0)

@@ -3,13 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gap/gap.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/constants/app_routes.dart';
 import '../../../../core/constants/app_images.dart';
-import '../../../../core/design_system/radius.dart';
-import '../../../../core/design_system/elevation.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/layout/app_scaffold.dart';
 import '../models/vehicle_model.dart';
 import '../providers/booking_provider.dart';
@@ -23,23 +19,32 @@ class BookingScreen extends ConsumerStatefulWidget {
 
 class _BookingScreenState extends ConsumerState<BookingScreen> {
   String _selectedCategory = "SUV";
-  final List<String> _categories = ["SUV", "Sedan", "Luxury", "Electric", "Sport"];
+
+  final List<_VehicleCategory> _categories = const [
+    _VehicleCategory("SUV", Icons.directions_car_filled_outlined),
+    _VehicleCategory("Sedan", Icons.airport_shuttle_outlined),
+    _VehicleCategory("Luxury", Icons.star_border_rounded),
+    _VehicleCategory("Electric", Icons.electric_car_outlined),
+    _VehicleCategory("Sport", Icons.speed_rounded),
+  ];
 
   final List<Vehicle> _cars = const [
     Vehicle(
       id: "veh_tesla_y",
       name: "Tesla Model Y",
-      imageUrl: "https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&q=80&w=800",
+      imageUrl:
+          "https://images.unsplash.com/photo-1619767886558-efdc259cde1a?auto=format&fit=crop&q=80&w=900",
       pricePerDay: 120.0,
-      specifications: ["EV", "5 Seats", "Auto", "AC", "GPS"],
+      specifications: ["EV", "5 Seats", "Auto"],
       rating: 4.9,
     ),
     Vehicle(
       id: "veh_bmw_x5",
       name: "BMW X5 2023",
-      imageUrl: "https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=800",
+      imageUrl:
+          "https://images.unsplash.com/photo-1556189250-72ba954cfc2b?auto=format&fit=crop&q=80&w=900",
       pricePerDay: 135.0,
-      specifications: ["Petrol", "Automatic", "5 Seats", "Climate Control", "GPS"],
+      specifications: ["Petrol", "5 Seats", "Auto"],
       rating: 4.8,
     ),
   ];
@@ -50,179 +55,224 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
       showProgress: false,
       body: Column(
         children: [
-          // 1. Header bar: Location, Notifications, Profile
-          Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.sm),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.location_on, color: AppColors.primary, size: 20),
-                    const Gap(6),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+          Expanded(
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(child: _DashboardHeader()),
+                SliverToBoxAdapter(child: _SearchBar()),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 76,
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _categories.length,
+                      separatorBuilder: (_, __) => const Gap(12),
+                      itemBuilder: (context, index) {
+                        final category = _categories[index];
+                        return _CategoryTile(
+                          category: category,
+                          isSelected: _selectedCategory == category.label,
+                          onTap: () => setState(() => _selectedCategory = category.label),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 12, 18, 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "Location",
-                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.slate400, fontSize: 10),
+                          "Featured Cars",
+                          style: AppTextStyles.subtitle1.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.slate900,
+                          ),
                         ),
-                        Row(
-                          children: [
-                            Text(
-                              "New York, NY",
-                              style: AppTextStyles.subtitle2.copyWith(fontWeight: FontWeight.bold, fontSize: 13),
-                            ),
-                            const Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: AppColors.slate600),
-                          ],
+                        TextButton(
+                          onPressed: () {},
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                          ),
+                          child: const Text(
+                            "See All",
+                            style: TextStyle(fontSize: 11, color: Color(0xFF2563EB)),
+                          ),
                         ),
                       ],
                     ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Icons.notifications_none_rounded, color: AppColors.slate700),
-                    ),
-                    const CircleAvatar(
-                      backgroundImage: NetworkImage(AppImages.profilePlaceholder),
-                      radius: 18,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // 2. Search Input bar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: "Search cars, brands, or mode...",
-                prefixIcon: const Icon(Icons.search, color: AppColors.slate400),
-                suffixIcon: const Padding(
-                  padding: EdgeInsets.only(right: 8.0),
-                  child: Icon(Icons.tune_rounded, color: AppColors.primary),
-                ),
-                filled: true,
-                fillColor: AppColors.slate100,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-          ),
-          
-          const Gap(AppSpacing.md),
-
-          // 3. Category Horizontal Row List
-          SizedBox(
-            height: 38,
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              scrollDirection: Axis.horizontal,
-              itemCount: _categories.length,
-              itemBuilder: (context, index) {
-                final category = _categories[index];
-                final isSelected = _selectedCategory == category;
-
-                return Padding(
-                  padding: const EdgeInsets.only(right: 10.0),
-                  child: ChoiceChip(
-                    label: Text(
-                      category,
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : AppColors.slate500,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                    selected: isSelected,
-                    onSelected: (val) {
-                      setState(() {
-                        _selectedCategory = category;
-                      });
-                    },
-                    selectedColor: AppColors.primary,
-                    backgroundColor: AppColors.slate100,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
                   ),
-                );
-              },
-            ),
-          ),
-
-          const Gap(AppSpacing.lg),
-
-          // 4. Featured Cars List Section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Featured Cars",
-                  style: AppTextStyles.subtitle1.copyWith(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
-                TextButton(
-                  onPressed: () {},
-                  child: const Text("See All", style: TextStyle(color: AppColors.primary)),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        if (index.isOdd) return const Gap(16);
+                        final car = _cars[index ~/ 2];
+                        return _DashboardCarCard(
+                          vehicle: car,
+                          onBookNow: () {
+                            ref.read(bookingFlowProvider.notifier).setVehicle(car);
+                            context.push('/booking/car-details');
+                          },
+                        );
+                      },
+                      childCount: (_cars.length * 2) - 1,
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
+          const _DashboardBottomNav(),
+        ],
+      ),
+    );
+  }
+}
 
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              physics: const BouncingScrollPhysics(),
+class _DashboardHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+        child: Row(
+          children: [
+            const Icon(Icons.location_on, color: Color(0xFF2563EB), size: 18),
+            const Gap(6),
+            Expanded(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  for (final car in _cars)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                      child: _DashboardCarCard(
-                        vehicle: car,
-                        onBookNow: () {
-                          ref.read(bookingFlowProvider.notifier).setVehicle(car);
-                          context.push('/booking/car-details');
-                        },
-                      ),
+                  Text(
+                    "Location",
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.slate400,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
                     ),
+                  ),
+                  Text(
+                    "New York, NY",
+                    style: AppTextStyles.subtitle2.copyWith(
+                      color: AppColors.slate900,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ],
               ),
             ),
-          ),
-
-          // 5. Customer Dashboard Bottom Navigation Bar
-          Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: AppColors.slate200, width: 1)),
+            IconButton(
+              onPressed: () {},
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.notifications_none_rounded, size: 19),
             ),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _NavBtn(icon: Icons.home, label: "Home", isActive: true),
-                    _NavBtn(icon: Icons.calendar_month, label: "Bookings", isActive: false),
-                    _NavBtn(icon: Icons.wallet_giftcard_rounded, label: "Wallet", isActive: false),
-                    _NavBtn(icon: Icons.person, label: "Profile", isActive: false),
-                  ],
-                ),
+            const CircleAvatar(
+              backgroundImage: NetworkImage(AppImages.profilePlaceholder),
+              radius: 14,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchBar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+      child: TextField(
+        decoration: InputDecoration(
+          hintText: "Search cars, brands, or model",
+          hintStyle: const TextStyle(fontSize: 11, color: AppColors.slate400),
+          prefixIcon: const Icon(Icons.search_rounded, size: 18, color: AppColors.slate400),
+          suffixIcon: Container(
+            width: 34,
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.tune_rounded, color: Color(0xFF2563EB), size: 17),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(vertical: 13),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryTile extends StatelessWidget {
+  final _VehicleCategory category;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _CategoryTile({
+    required this.category,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: SizedBox(
+        width: 56,
+        child: Column(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: 48,
+              height: 44,
+              decoration: BoxDecoration(
+                color: isSelected ? const Color(0xFFDBEAFE) : Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.slate900.withOpacity(0.05),
+                    blurRadius: 14,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Icon(
+                category.icon,
+                color: isSelected ? const Color(0xFF2563EB) : AppColors.slate500,
+                size: 20,
               ),
             ),
-          ),
-        ],
+            const Gap(7),
+            Text(
+              category.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 9,
+                color: isSelected ? AppColors.slate900 : AppColors.slate500,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -242,143 +292,111 @@ class _DashboardCarCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: AppRadius.lgBorderRadius,
-        border: Border.all(color: AppColors.slate200),
-        boxShadow: AppElevation.cardShadow,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.slate900.withOpacity(0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 14),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Vehicle Image and rating tag
           Stack(
             children: [
               ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
                 child: Image.network(
                   vehicle.imageUrl,
-                  height: 180,
+                  height: 158,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    height: 180,
-                    width: double.infinity,
-                    color: AppColors.slate100,
-                    child: const Icon(Icons.directions_car, size: 50, color: AppColors.slate400),
-                  ),
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      height: 180,
-                      width: double.infinity,
-                      color: AppColors.slate100,
-                      child: const Center(
-                        child: SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
+                  errorBuilder: (_, __, ___) => Container(
+                    height: 158,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFE2E8F0), Color(0xFFF8FAFC)],
                       ),
-                    );
-                  },
+                    ),
+                    child: const Icon(Icons.directions_car_rounded, size: 64, color: AppColors.slate400),
+                  ),
                 ),
               ),
               Positioned(
-                top: 12,
-                right: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.star, color: Color(0xFFFBBF24), size: 14),
-                      const Gap(4),
-                      Text(
-                        "${vehicle.rating}",
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppColors.primary),
-                      ),
-                    ],
-                  ),
-                ),
+                right: 10,
+                top: 10,
+                child: _RatingPill(rating: vehicle.rating),
               ),
             ],
           ),
-
           Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   vehicle.name,
-                  style: AppTextStyles.subtitle1.copyWith(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: AppTextStyles.subtitle1.copyWith(
+                    fontSize: 15,
+                    color: AppColors.slate900,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const Gap(8),
-
-                // Specs list badges
-                Row(
-                  children: vehicle.specifications.take(3).map((spec) {
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 6.0),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.slate100,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          spec,
-                          style: TextStyle(
-                            color: AppColors.slate500,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: vehicle.specifications
+                      .map((spec) => _SpecPill(label: spec))
+                      .toList(),
                 ),
-
-                const Gap(AppSpacing.md),
-
-                // Pricing and CTA
+                const Gap(16),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Price",
-                          style: TextStyle(color: AppColors.slate400, fontSize: 10),
-                        ),
-                        const Gap(2),
-                        Text.rich(
-                          TextSpan(
-                            text: "\$${vehicle.pricePerDay.toStringAsFixed(0)}",
-                            style: AppTextStyles.subtitle1.copyWith(fontWeight: FontWeight.bold, color: AppColors.primary),
-                            children: [
-                              TextSpan(
-                                text: "/day",
-                                style: TextStyle(color: AppColors.slate500, fontSize: 12, fontWeight: FontWeight.normal),
-                              ),
-                            ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Price",
+                            style: TextStyle(fontSize: 9, color: AppColors.slate400, fontWeight: FontWeight.w700),
                           ),
-                        ),
-                      ],
-                    ),
-                    ElevatedButton(
-                      onPressed: onBookNow,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          const Gap(2),
+                          Text.rich(
+                            TextSpan(
+                              text: "\$${vehicle.pricePerDay.toStringAsFixed(0)}",
+                              style: AppTextStyles.subtitle1.copyWith(
+                                color: const Color(0xFF2563EB),
+                                fontSize: 15,
+                                fontWeight: FontWeight.w900,
+                              ),
+                              children: const [
+                                TextSpan(
+                                  text: "/day",
+                                  style: TextStyle(color: AppColors.slate500, fontSize: 10, fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      child: const Text(
-                        "Book Now",
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                    SizedBox(
+                      height: 34,
+                      child: ElevatedButton(
+                        onPressed: onBookNow,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2563EB),
+                          minimumSize: const Size(88, 34),
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text(
+                          "Book Now",
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11),
+                        ),
                       ),
                     ),
                   ],
@@ -387,6 +405,83 @@ class _DashboardCarCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _RatingPill extends StatelessWidget {
+  final double rating;
+
+  const _RatingPill({required this.rating});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.94),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 13),
+          const Gap(3),
+          Text(
+            rating.toStringAsFixed(1),
+            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.slate900),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SpecPill extends StatelessWidget {
+  final String label;
+
+  const _SpecPill({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: AppColors.slate50,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 9, color: AppColors.slate500, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+}
+
+class _DashboardBottomNav extends StatelessWidget {
+  const _DashboardBottomNav();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: AppColors.slate200.withOpacity(0.8))),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 9, 18, 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              _NavBtn(icon: Icons.home_rounded, label: "Home", isActive: true),
+              _NavBtn(icon: Icons.calendar_month_rounded, label: "Bookings", isActive: false),
+              _NavBtn(icon: Icons.account_balance_wallet_rounded, label: "Wallet", isActive: false),
+              _NavBtn(icon: Icons.person_rounded, label: "Profile", isActive: false),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -405,24 +500,34 @@ class _NavBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          color: isActive ? AppColors.primary : AppColors.slate400,
-          size: 22,
-        ),
-        const Gap(4),
-        Text(
-          label,
-          style: TextStyle(
-            color: isActive ? AppColors.primary : AppColors.slate500,
-            fontSize: 10,
-            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+    return SizedBox(
+      width: 64,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: isActive ? const Color(0xFF2563EB) : AppColors.slate400,
+            size: 20,
           ),
-        ),
-      ],
+          const Gap(3),
+          Text(
+            label,
+            style: TextStyle(
+              color: isActive ? const Color(0xFF2563EB) : AppColors.slate500,
+              fontSize: 9,
+              fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
+}
+
+class _VehicleCategory {
+  final String label;
+  final IconData icon;
+
+  const _VehicleCategory(this.label, this.icon);
 }
