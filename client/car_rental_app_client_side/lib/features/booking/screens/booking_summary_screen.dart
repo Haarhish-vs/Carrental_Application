@@ -411,7 +411,7 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                               onChanged: (val) {
                                 if (val) {
                                   ref.read(bookingFlowProvider.notifier).toggleService(
-                                        const Service(
+                                        Service(
                                           id: "srv_ins",
                                           name: "Premium Insurance",
                                           description: "Zero deductible cover",
@@ -421,7 +421,7 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                                       );
                                 } else {
                                   ref.read(bookingFlowProvider.notifier).toggleService(
-                                        const Service(
+                                        Service(
                                           id: "srv_ins",
                                           name: "Premium Insurance",
                                           description: "Zero deductible cover",
