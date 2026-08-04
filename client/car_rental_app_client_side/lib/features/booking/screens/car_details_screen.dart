@@ -52,23 +52,28 @@ class _CarDetailsScreenState extends ConsumerState<CarDetailsScreen> {
                   // 1. Cover Image with header details
                   Stack(
                     children: [
-                      CachedNetworkImage(
-                        imageUrl: vehicle.imageUrl,
+                      Image.network(
+                        vehicle.imageUrl,
                         height: 280,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          height: 280,
-                          width: double.infinity,
-                          color: AppColors.slate100,
-                          child: const Center(child: CircularProgressIndicator()),
-                        ),
-                        errorWidget: (context, url, error) => Container(
+                        errorBuilder: (context, error, stackTrace) => Container(
                           height: 280,
                           width: double.infinity,
                           color: AppColors.slate100,
                           child: const Icon(Icons.directions_car, size: 70, color: AppColors.slate400),
                         ),
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            height: 280,
+                            width: double.infinity,
+                            color: AppColors.slate100,
+                            child: const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        },
                       ),
                       // Carousel dots overlay
                       Positioned(

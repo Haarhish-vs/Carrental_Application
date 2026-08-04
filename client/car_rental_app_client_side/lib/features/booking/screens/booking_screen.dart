@@ -256,23 +256,32 @@ class _DashboardCarCard extends StatelessWidget {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                child: CachedNetworkImage(
-                  imageUrl: vehicle.imageUrl,
+                child: Image.network(
+                  vehicle.imageUrl,
                   height: 180,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    height: 180,
-                    width: double.infinity,
-                    color: AppColors.slate100,
-                    child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                  ),
-                  errorWidget: (context, url, error) => Container(
+                  errorBuilder: (context, error, stackTrace) => Container(
                     height: 180,
                     width: double.infinity,
                     color: AppColors.slate100,
                     child: const Icon(Icons.directions_car, size: 50, color: AppColors.slate400),
                   ),
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      height: 180,
+                      width: double.infinity,
+                      color: AppColors.slate100,
+                      child: const Center(
+                        child: SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
               Positioned(
