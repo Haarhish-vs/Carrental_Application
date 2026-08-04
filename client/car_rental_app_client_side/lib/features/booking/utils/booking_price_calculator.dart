@@ -9,8 +9,9 @@ class BookingPriceCalculator {
   }
 
   static double calculateDriverFee(BookingFlowState state) {
-    if (state.rentalType == RentalType.selfDrive || state.driver == null) return 0.0;
-    return state.driver!.pricePerDay * state.rentalDurationDays;
+    if (state.rentalType == RentalType.selfDrive) return 0.0;
+    final driverPrice = state.driver?.pricePerDay ?? 50.0;
+    return driverPrice * state.rentalDurationDays;
   }
 
   static double calculateInsurance(BookingFlowState state) {

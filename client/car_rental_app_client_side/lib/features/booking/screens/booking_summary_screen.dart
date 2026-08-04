@@ -11,8 +11,8 @@ import '../../../../core/constants/app_routes.dart';
 import '../../../../core/design_system/radius.dart';
 import '../../../../core/design_system/elevation.dart';
 import '../../../../shared/widgets/layout/app_scaffold.dart';
-import '../../models/booking_step.dart';
-import '../../models/booking_flow_state.dart';
+import '../models/booking_step.dart';
+import '../models/booking_flow_state.dart';
 import '../providers/booking_provider.dart';
 import '../utils/booking_price_calculator.dart';
 import '../widgets/pickers/custom_date_picker.dart';
@@ -40,78 +40,46 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
     return DateFormat('MMM d, h:mm a').format(dateTime);
   }
 
-  void _showDatePickerSheet(bool isPickup) {
-    showModalBottomSheet(
+  void _showDatePickerSheet(bool isPickup) async {
+    final flow = ref.read(bookingFlowProvider);
+    final initialDate = isPickup 
+        ? (flow.pickupDateTime ?? DateTime.now())
+        : (flow.returnDateTime ?? DateTime.now().add(const Duration(days: 3)));
+
+    final DateTime? picked = await showDatePicker(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.6,
-          maxChildSize: 0.8,
-          minChildSize: 0.5,
-          expand: false,
-          builder: (context, scrollController) {
-            return SingleChildScrollView(
-              controller: scrollController,
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(color: AppColors.slate300, borderRadius: BorderRadius.circular(2)),
-                    ),
-                  ),
-                  const Gap(AppSpacing.md),
-                  Text(
-                    isPickup ? "Select Pick-up Date" : "Select Return Date",
-                    style: AppTextStyles.h3.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const Gap(AppSpacing.md),
-                  CustomDatePicker(
-                    initialDate: isPickup 
-                        ? (ref.read(bookingFlowProvider).pickupDateTime ?? DateTime.now())
-                        : (ref.read(bookingFlowProvider).returnDateTime ?? DateTime.now().add(const Duration(days: 3))),
-                    onDateSelected: (selectedDate) {
-                      final flow = ref.read(bookingFlowProvider);
-                      if (isPickup) {
-                        ref.read(bookingFlowProvider.notifier).setDateTimes(
-                          pickup: selectedDate,
-                          returnDT: flow.returnDateTime,
-                        );
-                      } else {
-                        ref.read(bookingFlowProvider.notifier).setDateTimes(
-                          pickup: flow.pickupDateTime,
-                          returnDT: selectedDate,
-                        );
-                      }
-                      Navigator.pop(context);
-                    },
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+      initialDate: initialDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 30)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
     );
+
+    if (picked != null && mounted) {
+      if (isPickup) {
+        ref.read(bookingFlowProvider.notifier).setDateTimes(
+          pickup: picked,
+          returnDT: flow.returnDateTime,
+        );
+      } else {
+        ref.read(bookingFlowProvider.notifier).setDateTimes(
+          pickup: flow.pickupDateTime,
+          returnDT: picked,
+        );
+      }
+    }
   }
 
-  void _showLocationSheet() {
-    showModalBottomSheet(
+  void _showLocationSheet() async {
+    final selectedLoc = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => const LocationSearchSheet(isPickup: true),
+      builder: (context) => const LocationSearchSheet(title: "Select Hub Location"),
     );
+    if (selectedLoc != null && mounted) {
+      ref.read(bookingFlowProvider.notifier).setLocations(
+        pickup: selectedLoc,
+        returnLoc: ref.read(bookingFlowProvider).returnLocation ?? selectedLoc,
+      );
+    }
   }
 
   @override
@@ -119,7 +87,7 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
     final flowState = ref.watch(bookingFlowProvider);
     final vehicle = flowState.vehicle;
 
-    final baseCharge = BookingPriceCalculator.calculateBaseCharge(flowState);
+    final baseCharge = BookingPriceCalculator.calculateBaseRentalCharge(flowState);
     final driverFee = BookingPriceCalculator.calculateDriverFee(flowState);
     final insuranceFee = BookingPriceCalculator.calculateInsurance(flowState);
     final tax = BookingPriceCalculator.calculateTax(flowState);
@@ -397,7 +365,7 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                                   children: [
                                     Text("Driver Required", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                     Gap(2),
-                                    Text("+$50/day", style: TextStyle(color: AppColors.slate400, fontSize: 11)),
+                                    const Text(r"+$50/day", style: TextStyle(color: AppColors.slate400, fontSize: 11)),
                                   ],
                                 ),
                               ],
@@ -447,7 +415,8 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                                           id: "srv_ins",
                                           name: "Premium Insurance",
                                           description: "Zero deductible cover",
-                                          pricePerDay: 15.0,
+                                          price: 15.0,
+                                          isReoccurring: true,
                                         ),
                                       );
                                 } else {
@@ -456,7 +425,8 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                                           id: "srv_ins",
                                           name: "Premium Insurance",
                                           description: "Zero deductible cover",
-                                          pricePerDay: 15.0,
+                                          price: 15.0,
+                                          isReoccurring: true,
                                         ),
                                       );
                                 }
