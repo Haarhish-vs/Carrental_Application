@@ -60,7 +60,17 @@ class BookingFlowNotifier extends StateNotifier<BookingFlowState> {
   BookingFlowNotifier(this._repository, this._analytics) : super(const BookingFlowState());
 
   void setVehicle(Vehicle vehicle) {
-    state = state.copyWith(vehicle: () => vehicle);
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    final pickupDefault = DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 10);
+    final returnDefault = pickupDefault.add(const Duration(days: 3, hours: 8));
+
+    state = state.copyWith(
+      vehicle: () => vehicle,
+      pickupLocation: () => state.pickupLocation ?? "SFO International Airport",
+      returnLocation: () => state.returnLocation ?? "SFO International Airport",
+      pickupDateTime: () => state.pickupDateTime ?? pickupDefault,
+      returnDateTime: () => state.returnDateTime ?? returnDefault,
+    );
     _analytics.logEvent("vehicle_selected", parameters: {"vehicle_id": vehicle.id, "price": vehicle.pricePerDay});
   }
 

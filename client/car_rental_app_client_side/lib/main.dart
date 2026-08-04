@@ -22,6 +22,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'Premium Car Rental',
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );

@@ -16,8 +16,6 @@ import '../models/booking_flow_state.dart';
 import '../models/service_model.dart';
 import '../providers/booking_provider.dart';
 import '../utils/booking_price_calculator.dart';
-import '../widgets/pickers/custom_date_picker.dart';
-import '../widgets/pickers/custom_time_picker.dart';
 import '../widgets/bottom_sheets/location_search_sheet.dart';
 
 class BookingSummaryScreen extends ConsumerStatefulWidget {
@@ -43,7 +41,7 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
 
   void _showDatePickerSheet(bool isPickup) async {
     final flow = ref.read(bookingFlowProvider);
-    final initialDate = isPickup 
+    final initialDate = isPickup
         ? (flow.pickupDateTime ?? DateTime.now())
         : (flow.returnDateTime ?? DateTime.now().add(const Duration(days: 3)));
 
@@ -55,15 +53,29 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
     );
 
     if (picked != null && mounted) {
+      final pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(initialDate),
+      );
+      if (pickedTime == null || !mounted) return;
+
+      final selectedDateTime = DateTime(
+        picked.year,
+        picked.month,
+        picked.day,
+        pickedTime.hour,
+        pickedTime.minute,
+      );
+
       if (isPickup) {
         ref.read(bookingFlowProvider.notifier).setDateTimes(
-          pickup: picked,
+          pickup: selectedDateTime,
           returnDT: flow.returnDateTime,
         );
       } else {
         ref.read(bookingFlowProvider.notifier).setDateTimes(
           pickup: flow.pickupDateTime,
-          returnDT: picked,
+          returnDT: selectedDateTime,
         );
       }
     }
@@ -91,6 +103,8 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
     final baseCharge = BookingPriceCalculator.calculateBaseRentalCharge(flowState);
     final driverFee = BookingPriceCalculator.calculateDriverFee(flowState);
     final insuranceFee = BookingPriceCalculator.calculateInsurance(flowState);
+    final additionalServicesFee = BookingPriceCalculator.calculateAdditionalServices(flowState);
+    final discount = BookingPriceCalculator.calculateDiscount(flowState);
     final tax = BookingPriceCalculator.calculateTax(flowState);
     final deposit = BookingPriceCalculator.calculateSecurityDeposit(flowState);
     final totalAmount = BookingPriceCalculator.calculateGrandTotal(flowState);
@@ -100,7 +114,7 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
         : 3;
 
     final hasDriver = flowState.rentalType == RentalType.withDriver;
-    final hasInsurance = flowState.selectedServices.any((s) => s.id == "srv_ins");
+    final hasInsurance = flowState.selectedServices.any((s) => s.id == "srv_insurance");
 
     return AppScaffold(
       title: "Complete Booking",
@@ -378,6 +392,9 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                                 ref.read(bookingFlowProvider.notifier).setRentalType(
                                       val ? RentalType.withDriver : RentalType.selfDrive,
                                     );
+                                if (val) {
+                                  context.push(AppRoutes.driverSelection);
+                                }
                               },
                             ),
                           ],
@@ -413,7 +430,7 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                                 if (val) {
                                   ref.read(bookingFlowProvider.notifier).toggleService(
                                         Service(
-                                          id: "srv_ins",
+                                          id: "srv_insurance",
                                           name: "Premium Insurance",
                                           description: "Zero deductible cover",
                                           price: 15.0,
@@ -423,7 +440,7 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                                 } else {
                                   ref.read(bookingFlowProvider.notifier).toggleService(
                                         Service(
-                                          id: "srv_ins",
+                                          id: "srv_insurance",
                                           name: "Premium Insurance",
                                           description: "Zero deductible cover",
                                           price: 15.0,
@@ -434,6 +451,14 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                               },
                             ),
                           ],
+                        ),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton.icon(
+                            onPressed: () => context.push(AppRoutes.additionalServices),
+                            icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
+                            label: const Text("View all add-ons"),
+                          ),
                         ),
                       ],
                     ),
@@ -469,9 +494,30 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                           _FareRow(label: "Driver Fee (\$50 × $days days)", value: driverFee),
                         if (hasInsurance)
                           _FareRow(label: "Premium Insurance", value: insuranceFee),
+                        if (additionalServicesFee > 0)
+                          _FareRow(label: "Additional Services", value: additionalServicesFee),
+                        if (discount > 0)
+                          _FareRow(label: "Discount", value: -discount, valueColor: AppColors.accent),
                         const _FareRow(label: "Platform Fee", value: 15.0),
                         _FareRow(label: "Security Deposit", value: deposit, isRefundable: true),
                         _FareRow(label: "GST (18%)", value: tax),
+                        const Divider(),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.local_offer_outlined, color: AppColors.cta),
+                          title: Text(
+                            flowState.coupon?.code ?? "Apply coupon",
+                            style: AppTextStyles.subtitle2.copyWith(color: AppColors.slate800),
+                          ),
+                          subtitle: Text(
+                            flowState.coupon == null
+                                ? "Browse available promo codes"
+                                : "Coupon applied successfully",
+                            style: AppTextStyles.bodySmall.copyWith(color: AppColors.slate500),
+                          ),
+                          trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.slate400),
+                          onTap: () => context.push(AppRoutes.coupon),
+                        ),
                       ],
                     ),
                   ),
@@ -596,11 +642,13 @@ class _FareRow extends StatelessWidget {
   final String label;
   final double value;
   final bool isRefundable;
+  final Color? valueColor;
 
   const _FareRow({
     required this.label,
     required this.value,
     this.isRefundable = false,
+    this.valueColor,
   });
 
   @override
@@ -623,8 +671,8 @@ class _FareRow extends StatelessWidget {
             ],
           ),
           Text(
-            "\$${value.toStringAsFixed(2)}",
-            style: AppTextStyles.subtitle2.copyWith(color: AppColors.slate800, fontSize: 12),
+            value < 0 ? "-\$${value.abs().toStringAsFixed(2)}" : "\$${value.toStringAsFixed(2)}",
+            style: AppTextStyles.subtitle2.copyWith(color: valueColor ?? AppColors.slate800, fontSize: 12),
           ),
         ],
       ),
