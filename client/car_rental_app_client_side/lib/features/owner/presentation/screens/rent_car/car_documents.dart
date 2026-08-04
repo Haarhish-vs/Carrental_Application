@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../data/services/car_api_service.dart';
 import 'rent_car_shared.dart';
 
 class CarDocumentsScreen extends StatefulWidget {
@@ -13,6 +14,7 @@ class CarDocumentsScreen extends StatefulWidget {
 
 class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
 	final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+	final CarApiService _apiService = CarApiService();
 
 	late final TextEditingController _registrationCertificateController;
 	late final TextEditingController _insurancePolicyController;
@@ -53,42 +55,111 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
 			return;
 		}
 
-		final summary = <String, String>{
-			'Brand': widget.draft.brand,
-			'Model': widget.draft.model,
-			'Year': widget.draft.manufacturingYear,
-			'Daily price': widget.draft.dailyPrice,
-			'Documents': 'Ready for review',
-		};
-
-		await showDialog<void>(
+		// Show loading spinner dialog
+		showDialog<void>(
 			context: context,
-			builder: (context) {
-				return AlertDialog(
-					title: const Text('Car Submitted'),
-					content: Column(
-						mainAxisSize: MainAxisSize.min,
-						crossAxisAlignment: CrossAxisAlignment.start,
-						children: [
-							const Text('Your rent-out request has been prepared for review.'),
-							const SizedBox(height: 16),
-							...summary.entries.map(
-								(entry) => Padding(
-									padding: const EdgeInsets.only(bottom: 8),
-									child: Text('${entry.key}: ${entry.value}'),
-								),
-							),
-						],
-					),
-					actions: [
-						FilledButton(
-							onPressed: () => Navigator.of(context).pop(),
-							child: const Text('Close'),
-						),
-					],
-				);
-			},
+			barrierDismissible: false,
+			builder: (context) => const Center(
+				child: CircularProgressIndicator(),
+			),
 		);
+
+		try {
+			// 1. Create Car Draft
+			final carId = await _apiService.createCarDraft(widget.draft);
+
+			// 2. Save pickup location
+			await _apiService.saveLocation(carId, widget.draft);
+
+			// 3. Save pricing details
+			await _apiService.savePricing(carId, widget.draft);
+
+			// 4. Save availability
+			await _apiService.saveAvailability(carId, widget.draft);
+
+			// 5. Upload images
+			await _apiService.uploadImages(carId, widget.draft);
+
+			// 6. Upload documents
+			await _apiService.uploadDocuments(
+				carId: carId,
+				rcNumber: _registrationCertificateController.text.trim(),
+				insuranceNumber: _insurancePolicyController.text.trim(),
+				ownerIdRef: _ownerIdController.text.trim(),
+				permitRef: _permitController.text.trim(),
+			);
+
+			// 7. Finalize submission
+			await _apiService.submitCar(carId);
+
+			// Dismiss loading spinner
+			if (mounted) Navigator.of(context).pop();
+
+			// Show success dialog
+			if (mounted) {
+				final summary = <String, String>{
+					'Brand': widget.draft.brand,
+					'Model': widget.draft.model,
+					'Year': widget.draft.manufacturingYear,
+					'Daily price': widget.draft.dailyPrice,
+					'Status': 'PENDING_VERIFICATION',
+				};
+
+				await showDialog<void>(
+					context: context,
+					builder: (context) {
+						return AlertDialog(
+							title: const Text('Car Registration Submitted'),
+							content: Column(
+								mainAxisSize: MainAxisSize.min,
+								crossAxisAlignment: CrossAxisAlignment.start,
+								children: [
+									const Text('Your vehicle draft has been created and submitted successfully to the backend for verification.'),
+									const SizedBox(height: 16),
+									...summary.entries.map(
+										(entry) => Padding(
+											padding: const EdgeInsets.only(bottom: 8),
+											child: Text('${entry.key}: ${entry.value}'),
+										),
+									),
+								],
+							),
+							actions: [
+								FilledButton(
+									onPressed: () {
+										Navigator.of(context).pop(); // Close success dialog
+										Navigator.of(context).popUntil((route) => route.isFirst);
+									},
+									child: const Text('Go to Home'),
+								),
+							],
+						);
+					},
+				);
+			}
+		} catch (e) {
+			// Dismiss loading spinner
+			if (mounted) Navigator.of(context).pop();
+
+			// Show error dialog
+			if (mounted) {
+				await showDialog<void>(
+					context: context,
+					builder: (context) {
+						return AlertDialog(
+							title: const Text('Submission Failed'),
+							content: Text(e.toString().replaceAll('Exception: ', '')),
+							actions: [
+								FilledButton(
+									onPressed: () => Navigator.of(context).pop(),
+									child: const Text('Try Again'),
+								),
+							],
+						);
+					},
+				);
+			}
+		}
 	}
 
 	@override

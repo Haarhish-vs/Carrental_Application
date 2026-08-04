@@ -1,0 +1,607 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Car Rental - Car Management API",
+    "description": "Production-ready backend API for Car Registration and Management",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000/api/v1",
+      "description": "Local development server"
+    }
+  ],
+  "paths": {
+    "/cars": {
+      "post": {
+        "summary": "Create a new car in draft state",
+        "description": "Register a new car with basic details. Initializes the car with DRAFT status.",
+        "parameters": [
+          {
+            "name": "x-owner-id",
+            "in": "header",
+            "required": false,
+            "description": "UUID of the car owner (falls back to a default static UUID if not provided)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CarInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Car draft created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get list of all cars",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["DRAFT", "PENDING_VERIFICATION", "APPROVED", "REJECTED", "AVAILABLE", "BOOKED", "MAINTENANCE"]
+            }
+          },
+          {
+            "name": "brand",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of cars",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Cars retrieved successfully" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Car"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cars/{id}": {
+      "get": {
+        "summary": "Get car details by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Car details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarSuccessResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Car not found"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update car basic details",
+        "description": "Allows updating brand, model, mileage, etc. Approved cars cannot change their registration number.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CarUpdateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Car updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarSuccessResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete draft car",
+        "description": "Only cars in DRAFT status can be deleted. This cascades and deletes all related locations, pricing, images, documents, and availability records.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Car deleted successfully"
+          },
+          "400": {
+            "description": "Cannot delete non-DRAFT car"
+          }
+        }
+      }
+    },
+    "/cars/{id}/images": {
+      "post": {
+        "summary": "Upload multiple images",
+        "description": "Upload up to 10 images. Supported fields: front, back, left, right, interior, dashboard.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "front": { "type": "string", "format": "binary" },
+                  "back": { "type": "string", "format": "binary" },
+                  "left": { "type": "string", "format": "binary" },
+                  "right": { "type": "string", "format": "binary" },
+                  "interior": { "type": "string", "format": "binary" },
+                  "dashboard": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Images uploaded successfully"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all images of a car",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of images"
+          }
+        }
+      }
+    },
+    "/cars/{id}/images/{imageId}": {
+      "delete": {
+        "summary": "Delete a specific image",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "imageId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image deleted successfully"
+          }
+        }
+      }
+    },
+    "/cars/{id}/location": {
+      "post": {
+        "summary": "Save pickup location details",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Location saved successfully" }
+        }
+      },
+      "put": {
+        "summary": "Update pickup location details",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Location updated successfully" }
+        }
+      },
+      "get": {
+        "summary": "Get pickup location details",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Location details" }
+        }
+      }
+    },
+    "/cars/{id}/pricing": {
+      "post": {
+        "summary": "Save pricing details",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PricingInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Pricing details saved" }
+        }
+      },
+      "get": {
+        "summary": "Get pricing details",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Pricing details" }
+        }
+      }
+    },
+    "/cars/{id}/availability": {
+      "post": {
+        "summary": "Save availability details",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvailabilityInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Availability saved" }
+        }
+      },
+      "get": {
+        "summary": "Get availability details",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Availability details" }
+        }
+      }
+    },
+    "/cars/{id}/documents": {
+      "post": {
+        "summary": "Upload car documents",
+        "description": "Upload files for Registration Certificate (rc), Insurance (insurance), Fitness (fitness), and Pollution (puc).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rc": { "type": "string", "format": "binary" },
+                  "insurance": { "type": "string", "format": "binary" },
+                  "fitness": { "type": "string", "format": "binary" },
+                  "puc": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Documents uploaded successfully" }
+        }
+      },
+      "get": {
+        "summary": "Get document URLs",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Document URLs" }
+        }
+      }
+    },
+    "/cars/{id}/submit": {
+      "post": {
+        "summary": "Submit car for verification",
+        "description": "Updates status to PENDING_VERIFICATION. Validates that location, pricing, images, and RC document are present.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Car submitted successfully" },
+          "400": { "description": "Incomplete details or invalid status" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CarInput": {
+        "type": "object",
+        "required": ["brand", "model", "year", "fuelType", "transmission", "mileage", "engineCapacity", "registrationNumber"],
+        "properties": {
+          "brand": { "type": "string", "example": "Toyota" },
+          "model": { "type": "string", "example": "Corolla" },
+          "variant": { "type": "string", "example": "Altis" },
+          "year": { "type": "integer", "example": 2024 },
+          "fuelType": { "type": "string", "example": "Petrol" },
+          "transmission": { "type": "string", "example": "Automatic" },
+          "mileage": { "type": "number", "example": 15.5 },
+          "engineCapacity": { "type": "integer", "example": 1800 },
+          "registrationNumber": { "type": "string", "example": "KA-01-ME-1234" }
+        }
+      },
+      "CarUpdateInput": {
+        "type": "object",
+        "properties": {
+          "brand": { "type": "string" },
+          "model": { "type": "string" },
+          "variant": { "type": "string" },
+          "year": { "type": "integer" },
+          "fuelType": { "type": "string" },
+          "transmission": { "type": "string" },
+          "mileage": { "type": "number" },
+          "engineCapacity": { "type": "integer" },
+          "registrationNumber": { "type": "string" }
+        }
+      },
+      "LocationInput": {
+        "type": "object",
+        "required": ["pickupAddress", "city", "state", "pincode", "latitude", "longitude"],
+        "properties": {
+          "pickupAddress": { "type": "string", "example": "123 Indiranagar, Main Road" },
+          "city": { "type": "string", "example": "Bengaluru" },
+          "state": { "type": "string", "example": "Karnataka" },
+          "pincode": { "type": "string", "example": "560038" },
+          "latitude": { "type": "number", "example": 12.9716 },
+          "longitude": { "type": "number", "example": 77.5946 }
+        }
+      },
+      "PricingInput": {
+        "type": "object",
+        "required": ["pricePerDay", "securityDeposit", "minimumRentalDuration"],
+        "properties": {
+          "pricePerDay": { "type": "number", "example": 50 },
+          "securityDeposit": { "type": "number", "example": 200 },
+          "minimumRentalDuration": { "type": "integer", "example": 2 },
+          "instantBooking": { "type": "boolean", "example": true }
+        }
+      },
+      "AvailabilityInput": {
+        "type": "object",
+        "properties": {
+          "availableDates": {
+            "type": "array",
+            "items": { "type": "string", "format": "date" },
+            "example": ["2026-08-10", "2026-08-11"]
+          },
+          "blockedDates": {
+            "type": "array",
+            "items": { "type": "string", "format": "date" },
+            "example": ["2026-08-15"]
+          }
+        }
+      },
+      "Car": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "ownerId": { "type": "string", "format": "uuid" },
+          "brand": { "type": "string" },
+          "model": { "type": "string" },
+          "variant": { "type": "string" },
+          "year": { "type": "integer" },
+          "fuelType": { "type": "string" },
+          "transmission": { "type": "string" },
+          "mileage": { "type": "number" },
+          "engineCapacity": { "type": "integer" },
+          "registrationNumber": { "type": "string" },
+          "status": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CarSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "Operation successful" },
+          "data": { "$ref": "#/components/schemas/Car" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "message": { "type": "string", "example": "Validation failed" },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": { "type": "string", "example": "year" },
+                "message": { "type": "string", "example": "Year must not exceed the current year" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
