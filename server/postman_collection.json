@@ -1,0 +1,343 @@
+{
+  "info": {
+    "_postman_id": "8b51d02e-c765-4f4e-9ff1-d68a9b7cfdf6",
+    "name": "Car Rental - Car Management Module",
+    "description": "Postman Collection for registering and managing cars (drafts, images, locations, pricing, documents, availability, and submission).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "1. Create Car Draft",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const response = pm.response.json();",
+              "if (response.success && response.data && response.data.id) {",
+              "    pm.environment.set(\"carId\", response.data.id);",
+              "    console.log(\"Saved carId environment variable: \" + response.data.id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-owner-id",
+            "value": "11111111-1111-1111-1111-111111111111",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"brand\": \"Toyota\",\n  \"model\": \"Corolla\",\n  \"variant\": \"Altis 1.8G\",\n  \"year\": 2024,\n  \"fuelType\": \"Petrol\",\n  \"transmission\": \"Automatic\",\n  \"mileage\": 15.5,\n  \"engineCapacity\": 1800,\n  \"registrationNumber\": \"KA-01-ME-{{$randomInt}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cars",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "cars"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "2. Get All Cars",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cars",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "cars"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "3. Get Car Details",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cars/{{carId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "cars", "{{carId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "4. Update Car Details",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"variant\": \"Altis 1.8G Executive\",\n  \"mileage\": 16.2\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cars/{{carId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "cars", "{{carId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "5. Upload Car Images",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const response = pm.response.json();",
+              "if (response.success && response.data && response.data.length > 0) {",
+              "    pm.environment.set(\"imageId\", response.data[0].id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "front",
+              "type": "file",
+              "src": []
+            },
+            {
+              "key": "back",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cars/{{carId}}/images",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "cars", "{{carId}}", "images"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "6. Get Car Images",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cars/{{carId}}/images",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "cars", "{{carId}}", "images"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "7. Save Pickup Location",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pickupAddress\": \"123 Indiranagar, Main Road\",\n  \"city\": \"Bengaluru\",\n  \"state\": \"Karnataka\",\n  \"pincode\": \"560038\",\n  \"latitude\": 12.9716,\n  \"longitude\": 77.5946\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cars/{{carId}}/location",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "cars", "{{carId}}", "location"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "8. Save Pricing Details",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pricePerDay\": 50,\n  \"securityDeposit\": 200,\n  \"minimumRentalDuration\": 2,\n  \"instantBooking\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cars/{{carId}}/pricing",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "cars", "{{carId}}", "pricing"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "9. Save Availability Dates",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"availableDates\": [\"2026-08-10\", \"2026-08-11\", \"2026-08-12\"],\n  \"blockedDates\": [\"2026-08-15\"]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cars/{{carId}}/availability",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "cars", "{{carId}}", "availability"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "10. Upload Car Documents",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "rc",
+              "type": "file",
+              "src": []
+            },
+            {
+              "key": "insurance",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cars/{{carId}}/documents",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "cars", "{{carId}}", "documents"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "11. Submit Car For Verification",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cars/{{carId}}/submit",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "cars", "{{carId}}", "submit"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "12. Delete Specific Image",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cars/{{carId}}/images/{{imageId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "cars", "{{carId}}", "images", "{{imageId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "13. Delete Draft Car",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cars/{{carId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "cars", "{{carId}}"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "carId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "imageId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
