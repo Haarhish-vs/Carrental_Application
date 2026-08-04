@@ -1,0 +1,51 @@
+[
+  {
+    "id": "srv_insurance",
+    "name": "Premium Collision Protection",
+    "description": "Zero deductible. Complete coverage for all exterior parts, engine, glass, and tires.",
+    "price": 15.0,
+    "isReoccurring": true
+  },
+  {
+    "id": "srv_extra_driver",
+    "name": "Additional Driver Setup",
+    "description": "Add one extra driver to share the wheel. Full coverage applies to both.",
+    "price": 10.0,
+    "isReoccurring": false
+  },
+  {
+    "id": "srv_child_seat",
+    "name": "Premium Child Seat",
+    "description": "Cleaned and sanitized booster seat suitable for children from 9-36 kg.",
+    "price": 8.0,
+    "isReoccurring": true
+  },
+  {
+    "id": "srv_wifi",
+    "name": "4G LTE Mobile Wi-Fi Hotspot",
+    "description": "Unlimited data. Connect up to 5 devices simultaneously on high-speed internet.",
+    "price": 5.0,
+    "isReoccurring": true
+  },
+  {
+    "id": "srv_fastag",
+    "name": "FastTag Toll Prepaid Pass",
+    "description": "Skip toll booth lines with prepaid digital toll pass loaded with $20 credit.",
+    "price": 25.0,
+    "isReoccurring": false
+  },
+  {
+    "id": "srv_dash_cam",
+    "name": "Ultra HD Front Dash Camera",
+    "description": "Wide-angle front dash cam records high-resolution footage for trip protection.",
+    "price": 6.0,
+    "isReoccurring": true
+  },
+  {
+    "id": "srv_roadside",
+    "name": "24/7 Roadside Assistance Plus",
+    "description": "Immediate flat tire replacement, fuel delivery, battery jumpstart, and towing.",
+    "price": 4.0,
+    "isReoccurring": true
+  }
+]
