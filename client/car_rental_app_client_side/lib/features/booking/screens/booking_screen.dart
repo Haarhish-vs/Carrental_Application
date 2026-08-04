@@ -2,26 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gap/gap.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/design_system/radius.dart';
-import '../../../../core/design_system/elevation.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/constants/app_images.dart';
-import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/design_system/radius.dart';
+import '../../../../core/design_system/elevation.dart';
 import '../../../../shared/widgets/layout/app_scaffold.dart';
-import '../models/booking_step.dart';
-import '../models/booking_flow_state.dart';
-import '../models/vehicle_model.dart';
+import '../../models/booking_step.dart';
+import '../../models/booking_flow_state.dart';
+import '../../models/vehicle_model.dart';
 import '../providers/booking_provider.dart';
-import '../widgets/cards/vehicle_booking_card.dart';
-import '../widgets/inputs/location_selector.dart';
-import '../widgets/pickers/custom_date_picker.dart';
-import '../widgets/pickers/custom_time_picker.dart';
-import '../widgets/bottom_sheets/location_search_sheet.dart';
 
 class BookingScreen extends ConsumerStatefulWidget {
   const BookingScreen({super.key});
@@ -31,344 +24,314 @@ class BookingScreen extends ConsumerStatefulWidget {
 }
 
 class _BookingScreenState extends ConsumerState<BookingScreen> {
-  final List<Vehicle> _vehicles = [
-    const Vehicle(
-      id: "veh_tesla",
-      name: "Tesla Model S Plaid",
-      imageUrl: AppImages.mockCarTesla,
-      pricePerDay: 149.0,
-      specifications: ["Electric", "1020 HP", "5 Seats", "Auto"],
-      rating: 4.95,
-    ),
-    const Vehicle(
-      id: "veh_audi",
-      name: "Audi R8 Coupe",
-      imageUrl: AppImages.mockCarAudi,
-      pricePerDay: 199.0,
-      specifications: ["Petrol", "562 HP", "2 Seats", "Auto"],
-      rating: 4.88,
-    ),
-    const Vehicle(
-      id: "veh_porsche",
-      name: "Porsche 911 Carrera",
-      imageUrl: AppImages.mockCarPorsche,
-      pricePerDay: 179.0,
-      specifications: ["Petrol", "379 HP", "4 Seats", "PDK"],
-      rating: 4.92,
-    ),
-  ];
+  // We represent the BMW X5 2023 shown in the screenshot
+  final Vehicle _carDetails = const Vehicle(
+    id: "veh_bmw_x5",
+    name: "BMW X5 2023",
+    imageUrl: "https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=800",
+    pricePerDay: 120.0,
+    specifications: ["Petrol", "Automatic", "5 Seats", "Climate Control", "Built-in GPS"],
+    rating: 4.9,
+  );
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final flow = ref.read(bookingFlowProvider);
-      if (flow.vehicle == null) {
-        ref.read(bookingFlowProvider.notifier).setVehicle(_vehicles[0]);
-      }
+      ref.read(bookingFlowProvider.notifier).setVehicle(_carDetails);
       ref.read(bookingFlowProvider.notifier).setStep(BookingStep.vehicle);
+      
+      // Default mock locations and schedules to make checkout seamless
+      final now = DateTime.now();
+      ref.read(bookingFlowProvider.notifier).setLocations(
+        pickup: "SFO International Airport, Terminal 2",
+        returnLoc: "SFO International Airport, Terminal 2",
+      );
+      ref.read(bookingFlowProvider.notifier).setDateTimes(
+        pickup: DateTime(now.year, now.month, now.day + 1, 10, 0),
+        returnDT: DateTime(now.year, now.month, now.day + 4, 10, 0),
+      );
     });
-  }
-
-  void _openLocationSearch(BuildContext context, bool isPickup) {
-    showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => LocationSearchSheet(
-        title: isPickup ? "Choose Pickup Location" : "Choose Return Location",
-      ),
-    ).then((selected) {
-      if (selected != null) {
-        if (isPickup) {
-          ref.read(bookingFlowProvider.notifier).setLocations(pickup: selected);
-        } else {
-          ref.read(bookingFlowProvider.notifier).setLocations(returnLoc: selected);
-        }
-      }
-    });
-  }
-
-  void _validateAndNavigate() {
-    final state = ref.read(bookingFlowProvider);
-
-    if (state.pickupLocation == null || state.pickupLocation!.isEmpty) {
-      _showError("Please select a pickup location");
-      return;
-    }
-    if (state.returnLocation == null || state.returnLocation!.isEmpty) {
-      _showError("Please select a return location");
-      return;
-    }
-    if (state.pickupDateTime == null) {
-      _showError("Please choose a pickup date and time");
-      return;
-    }
-    if (state.returnDateTime == null) {
-      _showError("Please choose a return date and time");
-      return;
-    }
-    if (state.returnDateTime!.isBefore(state.pickupDateTime!)) {
-      _showError("Return date/time cannot be before pickup date/time");
-      return;
-    }
-
-    // Progression
-    if (state.rentalType == RentalType.withDriver) {
-      context.push(AppRoutes.driverSelection);
-    } else {
-      context.push(AppRoutes.additionalServices);
-    }
-  }
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: AppColors.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(AppSpacing.md),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(bookingFlowProvider);
-    final size = MediaQuery.of(context).size;
-    final isTablet = size.width >= AppSizes.tabletBreakpoint;
-
     return AppScaffold(
-      title: "Booking Checkout",
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // 1. Vehicle Selection Title
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xs),
-              child: Text(
-                "Select Luxury Ride",
-                style: AppTextStyles.h3.copyWith(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-
-          // 2. Horizontal Vehicle List
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 330,
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                itemCount: _vehicles.length,
-                itemBuilder: (context, index) {
-                  final vehicle = _vehicles[index];
-                  final isSelected = state.vehicle?.id == vehicle.id;
-                  return Container(
-                    width: isTablet ? 380 : 310,
-                    margin: const EdgeInsets.only(right: AppSpacing.md, bottom: AppSpacing.sm),
-                    child: VehicleBookingCard(
-                      vehicle: vehicle,
-                      isSelected: isSelected,
-                      onTap: () => ref.read(bookingFlowProvider.notifier).setVehicle(vehicle),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-
-          // 3. Rental Form & Schedule Fields
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      showProgress: false, // Enforce pure presentation on details page
+      body: Stack(
+        children: [
+          // Scrollable details contents
+          Positioned.fill(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.only(bottom: 100), // padding for floating footer
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Gap(AppSpacing.sm),
-                  Text(
-                    "Rental Specifications",
-                    style: AppTextStyles.h3.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const Gap(AppSpacing.md),
-
-                  // Rental Style Selector (Self Drive vs Driver)
-                  Row(
+                  // 1. Cover Image with header details
+                  Stack(
                     children: [
-                      Expanded(
-                        child: _RentalTypeTab(
-                          label: "Self Drive",
-                          icon: Icons.vpn_key_outlined,
-                          isSelected: state.rentalType == RentalType.selfDrive,
-                          onTap: () => ref.read(bookingFlowProvider.notifier).setRentalType(RentalType.selfDrive),
+                      Image.network(
+                        _carDetails.imageUrl,
+                        height: 280,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                      // Carousel dots overlay
+                      Positioned(
+                        bottom: AppSpacing.md,
+                        left: 0,
+                        right: 0,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
+                            const Gap(4),
+                            Container(width: 6, height: 6, decoration: BoxDecoration(color: Colors.white.withOpacity(0.5), shape: BoxShape.circle)),
+                            const Gap(4),
+                            Container(width: 6, height: 6, decoration: BoxDecoration(color: Colors.white.withOpacity(0.5), shape: BoxShape.circle)),
+                          ],
                         ),
                       ),
-                      const Gap(AppSpacing.md),
-                      Expanded(
-                        child: _RentalTypeTab(
-                          label: "With Driver",
-                          icon: Icons.person_pin_outlined,
-                          isSelected: state.rentalType == RentalType.withDriver,
-                          onTap: () => ref.read(bookingFlowProvider.notifier).setRentalType(RentalType.withDriver),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Gap(AppSpacing.lg),
-
-                  // Location Input Fields
-                  LocationSelector(
-                    label: "PICK-UP HUB",
-                    placeholder: "Select pick-up airport or station",
-                    selectedLocation: state.pickupLocation,
-                    onTap: () => _openLocationSearch(context, true),
-                  ),
-                  const Gap(AppSpacing.md),
-                  LocationSelector(
-                    label: "RETURN HUB",
-                    placeholder: "Select return airport or station",
-                    selectedLocation: state.returnLocation,
-                    onTap: () => _openLocationSearch(context, false),
-                  ),
-                  const Gap(AppSpacing.lg),
-
-                  // DateTime Picker Grid
-                  Row(
-                    children: [
-                      Expanded(
-                        child: CustomDatePicker(
-                          label: "PICK-UP DATE",
-                          placeholder: "Select Date",
-                          selectedDate: state.pickupDateTime,
-                          onDateSelected: (date) {
-                            final time = state.pickupDateTime != null
-                                ? TimeOfDay.fromDateTime(state.pickupDateTime!)
-                                : const TimeOfDay(hour: 10, minute: 0);
-                            ref.read(bookingFlowProvider.notifier).setDateTimes(
-                                  pickup: DateTime(date.year, date.month, date.day, time.hour, time.minute),
-                                );
-                          },
-                        ),
-                      ),
-                      const Gap(AppSpacing.md),
-                      Expanded(
-                        child: CustomTimePicker(
-                          label: "PICK-UP TIME",
-                          placeholder: "Select Time",
-                          selectedTime: state.pickupDateTime != null
-                              ? TimeOfDay.fromDateTime(state.pickupDateTime!)
-                              : null,
-                          onTimeSelected: (time) {
-                            final date = state.pickupDateTime ?? DateTime.now();
-                            ref.read(bookingFlowProvider.notifier).setDateTimes(
-                                  pickup: DateTime(date.year, date.month, date.day, time.hour, time.minute),
-                                );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Gap(AppSpacing.md),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: CustomDatePicker(
-                          label: "RETURN DATE",
-                          placeholder: "Select Date",
-                          selectedDate: state.returnDateTime,
-                          firstDate: state.pickupDateTime ?? DateTime.now(),
-                          onDateSelected: (date) {
-                            final time = state.returnDateTime != null
-                                ? TimeOfDay.fromDateTime(state.returnDateTime!)
-                                : const TimeOfDay(hour: 10, minute: 0);
-                            ref.read(bookingFlowProvider.notifier).setDateTimes(
-                                  returnDT: DateTime(date.year, date.month, date.day, time.hour, time.minute),
-                                );
-                          },
-                        ),
-                      ),
-                      const Gap(AppSpacing.md),
-                      Expanded(
-                        child: CustomTimePicker(
-                          label: "RETURN TIME",
-                          placeholder: "Select Time",
-                          selectedTime: state.returnDateTime != null
-                              ? TimeOfDay.fromDateTime(state.returnDateTime!)
-                              : null,
-                          onTimeSelected: (time) {
-                            final date = state.returnDateTime ?? DateTime.now().add(const Duration(days: 1));
-                            ref.read(bookingFlowProvider.notifier).setDateTimes(
-                                  returnDT: DateTime(date.year, date.month, date.day, time.hour, time.minute),
-                                );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  // Dynamic Duration tag
-                  if (state.pickupDateTime != null && state.returnDateTime != null) ...[
-                    const Gap(AppSpacing.lg),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: AppColors.accent.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.accent.withOpacity(0.2)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
+                      // 360 View overlay button
+                      Positioned(
+                        bottom: AppSpacing.md,
+                        left: AppSpacing.md,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Row(
                             children: [
-                              const Icon(Icons.timer_outlined, color: AppColors.accent, size: 20),
-                              const Gap(10),
+                              Icon(Icons.threed_rotation_rounded, size: 14, color: AppColors.primary),
+                              Gap(6),
                               Text(
-                                "Total Rental Duration",
-                                style: AppTextStyles.subtitle2.copyWith(color: AppColors.slate800),
+                                "360° View",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primary,
+                                ),
                               ),
                             ],
                           ),
-                          Text(
-                            "${state.rentalDurationDays} ${state.rentalDurationDays == 1 ? 'Day' : 'Days'}",
-                            style: AppTextStyles.h3.copyWith(fontSize: 16, color: AppColors.accent),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
-
-                  const Gap(AppSpacing.xxl),
+                    ],
+                  ),
                   
-                  // Navigation Bottom CTA button
-                  ElevatedButton(
-                    onPressed: _validateAndNavigate,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      minimumSize: const Size(double.infinity, 56),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  // 2. Title & Rating details
+                  Padding(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          state.rentalType == RentalType.withDriver
-                              ? "Select Driver"
-                              : "Choose Accessories",
+                          _carDetails.name,
+                          style: AppTextStyles.h2.copyWith(fontSize: 26, fontWeight: FontWeight.bold),
                         ),
-                        const Gap(8),
-                        const Icon(Icons.arrow_forward, size: 18),
+                        const Gap(6),
+                        Row(
+                          children: [
+                            const Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 16),
+                            const Gap(4),
+                            Text(
+                              "${_carDetails.rating}",
+                              style: AppTextStyles.subtitle2.copyWith(fontSize: 14),
+                            ),
+                            const Gap(8),
+                            Text(
+                              "•  120 reviews",
+                              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.slate400),
+                            ),
+                          ],
+                        ),
+                        const Gap(AppSpacing.lg),
+
+                        // Host Section
+                        Container(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          decoration: BoxDecoration(
+                            color: AppColors.slate50,
+                            borderRadius: AppRadius.mdBorderRadius,
+                            border: Border.all(color: AppColors.slate200),
+                          ),
+                          child: Row(
+                            children: [
+                              const CircleAvatar(
+                                backgroundImage: NetworkImage(AppImages.profilePlaceholder),
+                                radius: 20,
+                              ),
+                              const Gap(AppSpacing.md),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Hosted by Michael",
+                                      style: AppTextStyles.subtitle2.copyWith(color: AppColors.slate900),
+                                    ),
+                                    const Gap(2),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.check_circle_rounded, color: AppColors.accent, size: 12),
+                                        const Gap(4),
+                                        Text(
+                                          "Verified Owner",
+                                          style: AppTextStyles.bodySmall.copyWith(
+                                            color: AppColors.accent,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Gap(AppSpacing.lg),
+
+                        // 3. Specifications Grid
+                        Text(
+                          "Specifications",
+                          style: AppTextStyles.subtitle1.copyWith(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        const Gap(AppSpacing.md),
+                        GridView.count(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisCount: 2,
+                          childAspectRatio: 2.2,
+                          crossAxisSpacing: AppSpacing.md,
+                          mainAxisSpacing: AppSpacing.md,
+                          children: const [
+                            _SpecCard(label: "Fuel Type", value: "Petrol", icon: Icons.local_gas_station_outlined),
+                            _SpecCard(label: "Transmission", value: "Automatic", icon: Icons.settings_input_component_outlined),
+                            _SpecCard(label: "Seats", value: "5 Seats", icon: Icons.airline_seat_recline_normal_rounded),
+                            _SpecCard(label: "AC", value: "Climate Control", icon: Icons.ac_unit_rounded),
+                          ],
+                        ),
+                        const Gap(AppSpacing.md),
+                        const _SpecCard(
+                          label: "Navigation",
+                          value: "Built-in GPS",
+                          icon: Icons.map_outlined,
+                          isFullWidth: true,
+                        ),
+                        const Gap(AppSpacing.lg),
+
+                        // 4. Included Amenities
+                        Text(
+                          "Included in your booking",
+                          style: AppTextStyles.subtitle1.copyWith(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        const Gap(AppSpacing.md),
+                        const _AmenityRow(icon: Icons.speed_rounded, text: "Unlimited KM"),
+                        const Gap(AppSpacing.sm),
+                        const _AmenityRow(icon: Icons.health_and_safety_outlined, text: "24/7 Roadside Assistance"),
                       ],
                     ),
                   ),
-                  const Gap(AppSpacing.xl),
                 ],
+              ),
+            ),
+          ),
+
+          // Header action icons floating overlay
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            left: AppSpacing.md,
+            right: AppSpacing.md,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _HeaderIconBtn(
+                  icon: Icons.arrow_back,
+                  onPressed: () => context.pop(),
+                ),
+                Row(
+                  children: [
+                    _HeaderIconBtn(
+                      icon: Icons.favorite_border_rounded,
+                      onPressed: () {},
+                    ),
+                    const Gap(10),
+                    _HeaderIconBtn(
+                      icon: Icons.share_outlined,
+                      onPressed: () {},
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // 5. Sticky Bottom Action Bar
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(top: BorderSide(color: AppColors.slate200, width: 1)),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "TOTAL PRICE",
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: AppColors.slate400,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const Gap(2),
+                        Text.rich(
+                          TextSpan(
+                            text: "\$${_carDetails.pricePerDay.toStringAsFixed(0)}",
+                            style: AppTextStyles.h2.copyWith(fontSize: 22, color: AppColors.primary),
+                            children: [
+                              TextSpan(
+                                text: " / day",
+                                style: AppTextStyles.bodySmall.copyWith(color: AppColors.slate500, fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Navigate to Checkout details
+                        context.push(AppRoutes.bookingSummary);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        minimumSize: const Size(180, 52),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: Text(
+                        "Book Now",
+                        style: AppTextStyles.buttonLarge.copyWith(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -378,52 +341,109 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   }
 }
 
-class _RentalTypeTab extends StatelessWidget {
+class _SpecCard extends StatelessWidget {
   final String label;
+  final String value;
   final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
+  final bool isFullWidth;
 
-  const _RentalTypeTab({
+  const _SpecCard({
     required this.label,
+    required this.value,
     required this.icon,
-    required this.isSelected,
-    required this.onTap,
+    this.isFullWidth = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.white,
-          borderRadius: AppRadius.mdBorderRadius,
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.slate200,
-            width: 1.5,
+    return Container(
+      width: isFullWidth ? double.infinity : null,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: AppRadius.mdBorderRadius,
+        border: Border.all(color: AppColors.slate200),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.slate500, size: 22),
+          const Gap(12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(fontSize: 10, color: AppColors.slate400, fontWeight: FontWeight.bold),
+                ),
+                const Gap(2),
+                Text(
+                  value,
+                  style: AppTextStyles.subtitle2.copyWith(color: AppColors.slate800, fontSize: 12),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
-          boxShadow: isSelected ? AppElevation.selectShadow : null,
+        ],
+      ),
+    );
+  }
+}
+
+class _AmenityRow extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _AmenityRow({
+    required this.icon,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: AppColors.accent.withOpacity(0.08),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: AppColors.accent, size: 16),
         ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? Colors.white : AppColors.slate600,
-              size: 24,
-            ),
-            const Gap(6),
-            Text(
-              label,
-              style: AppTextStyles.subtitle2.copyWith(
-                color: isSelected ? Colors.white : AppColors.slate800,
-                fontSize: 13,
-              ),
-            ),
-          ],
+        const Gap(12),
+        Text(
+          text,
+          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.slate600, fontSize: 13),
         ),
+      ],
+    );
+  }
+}
+
+class _HeaderIconBtn extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _HeaderIconBtn({
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        shape: BoxShape.circle,
+        boxShadow: AppElevation.cardShadow,
+      ),
+      child: IconButton(
+        onPressed: onPressed,
+        icon: Icon(icon, color: AppColors.slate900, size: 20),
       ),
     );
   }

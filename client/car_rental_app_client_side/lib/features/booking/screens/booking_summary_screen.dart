@@ -11,10 +11,13 @@ import '../../../../core/constants/app_routes.dart';
 import '../../../../core/design_system/radius.dart';
 import '../../../../core/design_system/elevation.dart';
 import '../../../../shared/widgets/layout/app_scaffold.dart';
-import '../models/booking_step.dart';
-import '../models/booking_flow_state.dart';
+import '../../models/booking_step.dart';
+import '../../models/booking_flow_state.dart';
 import '../providers/booking_provider.dart';
-import '../widgets/cards/price_card.dart';
+import '../utils/booking_price_calculator.dart';
+import '../widgets/pickers/custom_date_picker.dart';
+import '../widgets/pickers/custom_time_picker.dart';
+import '../widgets/bottom_sheets/location_search_sheet.dart';
 
 class BookingSummaryScreen extends ConsumerStatefulWidget {
   const BookingSummaryScreen({super.key});
@@ -34,7 +37,81 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
 
   String _formatDateTime(DateTime? dateTime) {
     if (dateTime == null) return '';
-    return DateFormat('EEE, MMM d, h:mm a').format(dateTime);
+    return DateFormat('MMM d, h:mm a').format(dateTime);
+  }
+
+  void _showDatePickerSheet(bool isPickup) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          maxChildSize: 0.8,
+          minChildSize: 0.5,
+          expand: false,
+          builder: (context, scrollController) {
+            return SingleChildScrollView(
+              controller: scrollController,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(color: AppColors.slate300, borderRadius: BorderRadius.circular(2)),
+                    ),
+                  ),
+                  const Gap(AppSpacing.md),
+                  Text(
+                    isPickup ? "Select Pick-up Date" : "Select Return Date",
+                    style: AppTextStyles.h3.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const Gap(AppSpacing.md),
+                  CustomDatePicker(
+                    initialDate: isPickup 
+                        ? (ref.read(bookingFlowProvider).pickupDateTime ?? DateTime.now())
+                        : (ref.read(bookingFlowProvider).returnDateTime ?? DateTime.now().add(const Duration(days: 3))),
+                    onDateSelected: (selectedDate) {
+                      final flow = ref.read(bookingFlowProvider);
+                      if (isPickup) {
+                        ref.read(bookingFlowProvider.notifier).setDateTimes(
+                          pickup: selectedDate,
+                          returnDT: flow.returnDateTime,
+                        );
+                      } else {
+                        ref.read(bookingFlowProvider.notifier).setDateTimes(
+                          pickup: flow.pickupDateTime,
+                          returnDT: selectedDate,
+                        );
+                      }
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showLocationSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => const LocationSearchSheet(isPickup: true),
+    );
   }
 
   @override
@@ -42,8 +119,22 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
     final flowState = ref.watch(bookingFlowProvider);
     final vehicle = flowState.vehicle;
 
+    final baseCharge = BookingPriceCalculator.calculateBaseCharge(flowState);
+    final driverFee = BookingPriceCalculator.calculateDriverFee(flowState);
+    final insuranceFee = BookingPriceCalculator.calculateInsurance(flowState);
+    final tax = BookingPriceCalculator.calculateTax(flowState);
+    final deposit = BookingPriceCalculator.calculateSecurityDeposit(flowState);
+    final totalAmount = BookingPriceCalculator.calculateGrandTotal(flowState);
+
+    final days = flowState.pickupDateTime != null && flowState.returnDateTime != null
+        ? flowState.returnDateTime!.difference(flowState.pickupDateTime!).inDays
+        : 3;
+
+    final hasDriver = flowState.rentalType == RentalType.withDriver;
+    final hasInsurance = flowState.selectedServices.any((s) => s.id == "srv_ins");
+
     return AppScaffold(
-      title: "Booking Summary",
+      title: "Complete Booking",
       body: Column(
         children: [
           Expanded(
@@ -53,13 +144,7 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "Review Details",
-                    style: AppTextStyles.h3.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const Gap(AppSpacing.md),
-
-                  // 1. Selected Vehicle card summary
+                  // 1. Vehicle Card
                   if (vehicle != null)
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.md),
@@ -72,7 +157,7 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                       child: Row(
                         children: [
                           ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(12),
                             child: Image.network(
                               vehicle.imageUrl,
                               width: 80,
@@ -87,18 +172,36 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                               children: [
                                 Text(
                                   vehicle.name,
-                                  style: AppTextStyles.subtitle1.copyWith(fontSize: 16),
+                                  style: AppTextStyles.subtitle1.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.slate900,
+                                    fontSize: 16,
+                                  ),
                                 ),
                                 const Gap(4),
                                 Text(
-                                  flowState.rentalType == RentalType.withDriver
-                                      ? "With Chauffeur"
-                                      : "Self Drive",
-                                  style: TextStyle(
-                                    color: AppColors.slate500,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  "Electric • Automatic",
+                                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.slate500),
+                                ),
+                                const Gap(4),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 14),
+                                    const Gap(2),
+                                    Text(
+                                      "${vehicle.rating}",
+                                      style: TextStyle(
+                                        color: AppColors.slate800,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    const Gap(4),
+                                    Text(
+                                      "(128 trips)",
+                                      style: TextStyle(color: AppColors.slate400, fontSize: 11),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -106,10 +209,10 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                         ],
                       ),
                     ),
-                  
-                  const Gap(AppSpacing.lg),
 
-                  // 2. Journey Details
+                  const Gap(AppSpacing.md),
+
+                  // 2. Date & Time Selection
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
@@ -121,96 +224,346 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _JourneyItem(
-                          icon: Icons.circle,
-                          iconColor: AppColors.accent,
-                          label: "PICK-UP HUB & DATE",
-                          location: flowState.pickupLocation ?? '',
-                          dateTime: _formatDateTime(flowState.pickupDateTime),
+                        Row(
+                          children: [
+                            const Icon(Icons.calendar_month_outlined, color: AppColors.primary, size: 20),
+                            const Gap(8),
+                            Text(
+                              "Date & Time",
+                              style: AppTextStyles.subtitle1.copyWith(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                          ],
                         ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 22.0),
-                          child: Container(
-                            width: 1.5,
-                            height: 24,
-                            color: AppColors.slate200,
-                          ),
-                        ),
-                        _JourneyItem(
-                          icon: Icons.circle,
-                          iconColor: AppColors.primary,
-                          label: "RETURN HUB & DATE",
-                          location: flowState.returnLocation ?? '',
-                          dateTime: _formatDateTime(flowState.returnDateTime),
+                        const Gap(AppSpacing.md),
+                        Row(
+                          children: [
+                            // Timeline visual line
+                            Column(
+                              children: [
+                                const Icon(Icons.circle, color: AppColors.accent, size: 10),
+                                Container(width: 2, height: 35, color: AppColors.slate200),
+                                const Icon(Icons.circle, color: AppColors.primary, size: 10),
+                              ],
+                            ),
+                            const Gap(16),
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  _DateTimeRow(
+                                    label: "PICKUP",
+                                    value: _formatDateTime(flowState.pickupDateTime),
+                                    onEdit: () => _showDatePickerSheet(true),
+                                  ),
+                                  const Gap(10),
+                                  _DateTimeRow(
+                                    label: "RETURN",
+                                    value: _formatDateTime(flowState.returnDateTime),
+                                    onEdit: () => _showDatePickerSheet(false),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
 
-                  const Gap(AppSpacing.lg),
+                  const Gap(AppSpacing.md),
 
-                  // 3. Coupon Application Bar
-                  _CouponBar(
-                    couponCode: flowState.coupon?.code,
-                    couponDesc: flowState.coupon?.description,
-                    onApplyPressed: () => context.push(AppRoutes.coupon),
-                    onRemovePressed: () => ref.read(bookingFlowProvider.notifier).removeCoupon(),
+                  // 3. Location selection with Map Preview
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: AppRadius.lgBorderRadius,
+                      border: Border.all(color: AppColors.slate200),
+                      boxShadow: AppElevation.cardShadow,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.location_on_outlined, color: AppColors.primary, size: 20),
+                            const Gap(8),
+                            Text(
+                              "Location",
+                              style: AppTextStyles.subtitle1.copyWith(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                          ],
+                        ),
+                        const Gap(AppSpacing.md),
+
+                        // Map Stylized Preview Card
+                        GestureDetector(
+                          onTap: _showLocationSheet,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Stack(
+                              children: [
+                                // Styled map abstract background
+                                Image.network(
+                                  "https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=800",
+                                  height: 110,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
+                                // Tint overlay
+                                Container(
+                                  height: 110,
+                                  color: Colors.black.withOpacity(0.05),
+                                ),
+                                // Location Address Pin details
+                                Positioned(
+                                  bottom: 12,
+                                  left: 12,
+                                  right: 12,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(10),
+                                      boxShadow: AppElevation.selectShadow,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.my_location_rounded, color: AppColors.accent, size: 16),
+                                        const Gap(8),
+                                        Expanded(
+                                          child: Text(
+                                            flowState.pickupLocation ?? "SFO International Airport",
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.slate800,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
 
-                  const Gap(AppSpacing.lg),
+                  const Gap(AppSpacing.md),
 
-                  // 4. Expandable Fare breakdown card
-                  PriceCard(state: flowState),
+                  // 4. Add-ons card
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: AppRadius.lgBorderRadius,
+                      border: Border.all(color: AppColors.slate200),
+                      boxShadow: AppElevation.cardShadow,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.layers_outlined, color: AppColors.primary, size: 20),
+                            const Gap(8),
+                            Text(
+                              "Add-ons",
+                              style: AppTextStyles.subtitle1.copyWith(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                          ],
+                        ),
+                        const Gap(AppSpacing.md),
+
+                        // Driver addon toggle
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: AppColors.slate100,
+                                  radius: 18,
+                                  child: Icon(Icons.people_alt_outlined, color: AppColors.slate600, size: 16),
+                                ),
+                                Gap(12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text("Driver Required", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                    Gap(2),
+                                    Text("+$50/day", style: TextStyle(color: AppColors.slate400, fontSize: 11)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Switch(
+                              value: hasDriver,
+                              activeColor: AppColors.accent,
+                              onChanged: (val) {
+                                ref.read(bookingFlowProvider.notifier).setRentalType(
+                                      val ? RentalType.withDriver : RentalType.selfDrive,
+                                    );
+                              },
+                            ),
+                          ],
+                        ),
+                        const Divider(height: 24),
+
+                        // Premium Insurance toggle
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: AppColors.slate100,
+                                  radius: 18,
+                                  child: Icon(Icons.shield_outlined, color: AppColors.slate600, size: 16),
+                                ),
+                                Gap(12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text("Premium Insurance", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                    Gap(2),
+                                    Text("Zero deductible, full coverage", style: TextStyle(color: AppColors.slate400, fontSize: 11)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Switch(
+                              value: hasInsurance,
+                              activeColor: AppColors.accent,
+                              onChanged: (val) {
+                                if (val) {
+                                  ref.read(bookingFlowProvider.notifier).toggleService(
+                                        const Service(
+                                          id: "srv_ins",
+                                          name: "Premium Insurance",
+                                          description: "Zero deductible cover",
+                                          pricePerDay: 15.0,
+                                        ),
+                                      );
+                                } else {
+                                  ref.read(bookingFlowProvider.notifier).toggleService(
+                                        const Service(
+                                          id: "srv_ins",
+                                          name: "Premium Insurance",
+                                          description: "Zero deductible cover",
+                                          pricePerDay: 15.0,
+                                        ),
+                                      );
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const Gap(AppSpacing.md),
+
+                  // 5. Payment Summary Breakdown
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: AppRadius.lgBorderRadius,
+                      border: Border.all(color: AppColors.slate200),
+                      boxShadow: AppElevation.cardShadow,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.payments_outlined, color: AppColors.primary, size: 20),
+                            const Gap(8),
+                            Text(
+                              "Payment Summary",
+                              style: AppTextStyles.subtitle1.copyWith(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                          ],
+                        ),
+                        const Gap(AppSpacing.md),
+                        _FareRow(label: "Rental Price (\$120 × $days days)", value: baseCharge),
+                        if (hasDriver)
+                          _FareRow(label: "Driver Fee (\$50 × $days days)", value: driverFee),
+                        if (hasInsurance)
+                          _FareRow(label: "Premium Insurance", value: insuranceFee),
+                        const _FareRow(label: "Platform Fee", value: 15.0),
+                        _FareRow(label: "Security Deposit", value: deposit, isRefundable: true),
+                        _FareRow(label: "GST (18%)", value: tax),
+                      ],
+                    ),
+                  ),
                   const Gap(AppSpacing.xl),
                 ],
               ),
             ),
           ),
 
-          // Bottom Navigation Buttons
-          Padding(
+          // 6. Floating Checkout Footer
+          Container(
             padding: const EdgeInsets.all(AppSpacing.md),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 1,
-                  child: OutlinedButton(
-                    onPressed: () {
-                      ref.read(bookingFlowProvider.notifier).prevStep();
-                      context.pop();
-                    },
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.arrow_back, size: 18),
-                        Gap(4),
-                        Text("Back"),
-                      ],
-                    ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(top: BorderSide(color: AppColors.slate200, width: 1)),
+              boxShadow: AppElevation.selectShadow,
+            ),
+            child: SafeArea(
+              top: false,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "TOTAL",
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: AppColors.slate400,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const Gap(2),
+                      Text(
+                        "\$${totalAmount.toStringAsFixed(2)}",
+                        style: AppTextStyles.h2.copyWith(fontSize: 22, color: AppColors.primary),
+                      ),
+                    ],
                   ),
-                ),
-                const Gap(AppSpacing.md),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton(
+                  ElevatedButton(
                     onPressed: () {
-                      ref.read(bookingFlowProvider.notifier).nextStep();
+                      // Navigate to payment selection options
                       context.push(AppRoutes.paymentMethod);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
+                      minimumSize: const Size(180, 52),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text("Proceed to Pay"),
-                        Gap(6),
-                        Icon(Icons.arrow_forward, size: 18),
+                        Text("Pay Now", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        Gap(8),
+                        Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 16),
                       ],
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -219,168 +572,89 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
   }
 }
 
-class _JourneyItem extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
+class _DateTimeRow extends StatelessWidget {
   final String label;
-  final String location;
-  final String dateTime;
+  final String value;
+  final VoidCallback onEdit;
 
-  const _JourneyItem({
-    required this.icon,
-    required this.iconColor,
+  const _DateTimeRow({
     required this.label,
-    required this.location,
-    required this.dateTime,
+    required this.value,
+    required this.onEdit,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 4.0, left: 2.0),
-          child: Icon(icon, color: iconColor, size: 10),
-        ),
-        const Gap(14),
-        Expanded(
-          child: Column(
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: AppColors.slate50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.slate200),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  color: AppColors.slate400,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.8,
-                ),
+                style: TextStyle(fontSize: 9, color: AppColors.slate400, fontWeight: FontWeight.bold),
               ),
-              const Gap(2),
+              const Gap(4),
               Text(
-                location,
-                style: AppTextStyles.subtitle2.copyWith(color: AppColors.slate900),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const Gap(1),
-              Text(
-                dateTime,
-                style: AppTextStyles.bodySmall.copyWith(color: AppColors.slate500, fontSize: 12),
+                value,
+                style: AppTextStyles.subtitle2.copyWith(color: AppColors.slate800, fontSize: 13),
               ),
             ],
           ),
-        ),
-      ],
+          IconButton(
+            onPressed: onEdit,
+            icon: const Icon(Icons.edit_outlined, color: AppColors.slate500, size: 16),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _CouponBar extends StatelessWidget {
-  final String? couponCode;
-  final String? couponDesc;
-  final VoidCallback onApplyPressed;
-  final VoidCallback onRemovePressed;
+class _FareRow extends StatelessWidget {
+  final String label;
+  final double value;
+  final bool isRefundable;
 
-  const _CouponBar({
-    this.couponCode,
-    this.couponDesc,
-    required this.onApplyPressed,
-    required this.onRemovePressed,
+  const _FareRow({
+    required this.label,
+    required this.value,
+    this.isRefundable = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final hasCoupon = couponCode != null;
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: AppRadius.lgBorderRadius,
-        border: Border.all(
-          color: hasCoupon ? AppColors.accent.withOpacity(0.4) : AppColors.slate200,
-        ),
-        boxShadow: AppElevation.cardShadow,
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(
-            Icons.local_offer_outlined,
-            color: hasCoupon ? AppColors.accent : AppColors.slate400,
-            size: 22,
+          Row(
+            children: [
+              Text(
+                label,
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.slate500, fontSize: 12),
+              ),
+              if (isRefundable) ...[
+                const Gap(4),
+                const Icon(Icons.help_outline_rounded, color: AppColors.slate400, size: 12),
+              ],
+            ],
           ),
-          const Gap(AppSpacing.md),
-          Expanded(
-            child: hasCoupon
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.accent.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              couponCode!,
-                              style: const TextStyle(
-                                color: AppColors.accent,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                          const Gap(6),
-                          const Text(
-                            "Applied",
-                            style: TextStyle(
-                              color: AppColors.accent,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Gap(4),
-                      Text(
-                        couponDesc ?? '',
-                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.slate500, fontSize: 11),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  )
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Promo Codes",
-                        style: AppTextStyles.subtitle2.copyWith(color: AppColors.slate800, fontSize: 13),
-                      ),
-                      const Gap(2),
-                      Text(
-                        "Apply coupon to redeem savings",
-                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.slate400, fontSize: 11),
-                      ),
-                    ],
-                  ),
+          Text(
+            "\$${value.toStringAsFixed(2)}",
+            style: AppTextStyles.subtitle2.copyWith(color: AppColors.slate800, fontSize: 12),
           ),
-          hasCoupon
-              ? TextButton(
-                  onPressed: onRemovePressed,
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                  ),
-                  child: const Text("Remove"),
-                )
-              : TextButton(
-                  onPressed: onApplyPressed,
-                  child: const Text("Apply"),
-                ),
         ],
       ),
     );
