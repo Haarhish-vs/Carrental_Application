@@ -5,6 +5,23 @@ const app = require('../src/app');
 const { supabase } = require('../src/config/supabase');
 const env = require('../src/config/env');
 
+// Mock Cloudinary SDK
+jest.mock('cloudinary', () => ({
+  v2: {
+    config: jest.fn(),
+    uploader: {
+      upload_stream: jest.fn((options, callback) => {
+        const stream = {
+          end: jest.fn((buffer) => {
+            callback(null, { secure_url: 'https://res.cloudinary.com/doymxkmea/image/upload/v12345/vehicles/mock_test_car.jpg' });
+          })
+        };
+        return stream;
+      })
+    }
+  }
+}));
+
 // Mock Supabase Client
 jest.mock('../src/config/supabase', () => {
   const mockSingle = jest.fn();
@@ -96,7 +113,7 @@ describe('Vehicles Module Tests (Listing & Browsing)', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(Array.isArray(res.body.data)).toBe(true);
-      expect(res.body.data[0]).toContain('/uploads/');
+      expect(res.body.data[0]).toContain('cloudinary.com');
     });
   });
 

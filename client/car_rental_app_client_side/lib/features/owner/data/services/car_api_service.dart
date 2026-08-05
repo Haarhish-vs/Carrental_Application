@@ -117,19 +117,25 @@ class CarApiService {
         message: 'Upload failed: Invalid response format',
       );
     } on DioException catch (e) {
-      // Fallback: If 404 or connection error occurs, convert files into Base64 Data URLs so images store cleanly in DB
-      if (e.response?.statusCode == 404 || e.type == DioExceptionType.connectionError) {
-        debugPrint('⚠️ Upload endpoint unreachable (${e.response?.statusCode}). Falling back to Base64 data encoding...');
-        final base64Urls = <String>[];
-        for (final file in files) {
-          final bytes = await file.readAsBytes();
-          final base64Str = base64Encode(bytes);
-          base64Urls.add('data:image/jpeg;base64,$base64Str');
-        }
-        onProgress(1.0);
-        return base64Urls;
-      }
       throw _handleDioError(e);
+    }
+  }
+
+  /// Fetch active & available vehicles for browsing on the Home Screen
+  Future<List<Map<String, dynamic>>> getVehicles() async {
+    try {
+      final response = await _dio.get('/api/vehicles');
+      if (response.statusCode == 200 && response.data != null) {
+        final success = response.data['success'] as bool? ?? false;
+        if (success && response.data['data'] != null) {
+          final list = response.data['data'] as List<dynamic>;
+          return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        }
+      }
+      return [];
+    } on DioException catch (e) {
+      debugPrint('Error fetching vehicles: ${e.message}');
+      return [];
     }
   }
 

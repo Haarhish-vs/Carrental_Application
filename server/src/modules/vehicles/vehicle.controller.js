@@ -141,6 +141,14 @@ const verifyDocumentAdmin = async (req, res, next) => {
   }
 };
 
+const cloudinary = require('cloudinary').v2;
+
+cloudinary.config({
+  cloud_name: env.CLOUDINARY_CLOUD_NAME,
+  api_key: env.CLOUDINARY_API_KEY,
+  api_secret: env.CLOUDINARY_API_SECRET
+});
+
 const uploadMedia = async (req, res, next) => {
   try {
     if (!req.files || req.files.length === 0) {
@@ -150,15 +158,24 @@ const uploadMedia = async (req, res, next) => {
       });
     }
 
-    const urls = req.files.map(file => {
-      const host = req.get('host');
-      const protocol = req.protocol;
-      return `${protocol}://${host}/uploads/${file.filename}`;
+    const uploadPromises = req.files.map(file => {
+      return new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          { folder: 'vehicles', resource_type: 'auto' },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result.secure_url);
+          }
+        );
+        uploadStream.end(file.buffer);
+      });
     });
+
+    const urls = await Promise.all(uploadPromises);
 
     return res.status(200).json({
       success: true,
-      message: 'Files uploaded successfully',
+      message: 'Files uploaded to Cloudinary successfully',
       data: urls
     });
   } catch (error) {
