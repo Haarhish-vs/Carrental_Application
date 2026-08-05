@@ -14,9 +14,7 @@ Route<T> buildRentCarSlideRoute<T>(Widget page) {
       final offsetAnimation = Tween<Offset>(
         begin: const Offset(0.14, 0),
         end: Offset.zero,
-      ).animate(
-        CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-      );
+      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
 
       return SlideTransition(
         position: offsetAnimation,
@@ -174,16 +172,16 @@ class RentCarScreenScaffold extends StatelessWidget {
               Text(
                 title,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: const Color(0xFF103B66),
-                      fontWeight: FontWeight.w700,
-                    ),
+                  color: const Color(0xFF103B66),
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 subtitle,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: const Color(0xFF57718A),
-                    ),
+                  color: const Color(0xFF57718A),
+                ),
               ),
               const SizedBox(height: 20),
               child,
@@ -263,9 +261,9 @@ class _StepHeader extends StatelessWidget {
                 Text(
                   '$currentStep/${rentCarStepTitles.length}',
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: const Color(0xFF103B66),
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: const Color(0xFF103B66),
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
@@ -273,7 +271,9 @@ class _StepHeader extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: List<Widget>.generate(rentCarStepTitles.length, (index) {
+              children: List<Widget>.generate(rentCarStepTitles.length, (
+                index,
+              ) {
                 final isActive = index + 1 == currentStep;
                 final isDone = index + 1 < currentStep;
 
@@ -287,8 +287,8 @@ class _StepHeader extends StatelessWidget {
                     color: isActive
                         ? colorScheme.primary
                         : isDone
-                            ? const Color(0xFFE6F0FF)
-                            : const Color(0xFFF5F8FC),
+                        ? const Color(0xFFE6F0FF)
+                        : const Color(0xFFF5F8FC),
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(
                       color: isActive
@@ -299,11 +299,9 @@ class _StepHeader extends StatelessWidget {
                   child: Text(
                     rentCarStepTitles[index],
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: isActive
-                              ? Colors.white
-                              : const Color(0xFF103B66),
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: isActive ? Colors.white : const Color(0xFF103B66),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 );
               }),
@@ -345,9 +343,9 @@ class RentCarSectionCard extends StatelessWidget {
             Text(
               title,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: const Color(0xFF103B66),
-                    fontWeight: FontWeight.w700,
-                  ),
+                color: const Color(0xFF103B66),
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 16),
             child,
@@ -413,16 +411,16 @@ class RentCarToggleTile extends StatelessWidget {
                   Text(
                     title,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: const Color(0xFF103B66),
-                          fontWeight: FontWeight.w700,
-                        ),
+                      color: const Color(0xFF103B66),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF62778F),
-                        ),
+                      color: const Color(0xFF62778F),
+                    ),
                   ),
                 ],
               ),
@@ -462,7 +460,10 @@ InputDecoration rentCarInputDecoration(
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(18),
-      borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.4),
+      borderSide: BorderSide(
+        color: Theme.of(context).colorScheme.primary,
+        width: 1.4,
+      ),
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(18),

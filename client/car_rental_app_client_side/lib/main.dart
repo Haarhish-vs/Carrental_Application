@@ -36,9 +36,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Car Rental Home'),
-      ),
+      appBar: AppBar(title: const Text('Car Rental Home')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -72,7 +70,8 @@ class HomePage extends StatelessWidget {
                     Text(
                       'Rent Out Your Car',
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
                             color: const Color(0xFF103B66),
                             fontWeight: FontWeight.w700,
                           ),
@@ -82,8 +81,8 @@ class HomePage extends StatelessWidget {
                       'Start the owner onboarding flow with a clean multi-step car listing wizard.',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: const Color(0xFF57718A),
-                          ),
+                        color: const Color(0xFF57718A),
+                      ),
                     ),
                     const SizedBox(height: 24),
                     FilledButton.icon(
