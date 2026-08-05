@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'features/auth/presentation/screens/auth_screen.dart';
+import 'features/auth/services/auth_service.dart';
 import 'features/owner/data/services/car_api_service.dart';
 import 'features/owner/presentation/screens/rent_car/car_spefication.dart';
 
@@ -53,6 +55,85 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  Future<void> _ensureAuthenticated(
+    BuildContext context,
+    VoidCallback onAuthenticated,
+  ) async {
+    if (AuthService.isAuthenticated) {
+      onAuthenticated();
+      return;
+    }
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF2FF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.lock_outline_rounded,
+                  color: Color(0xFF1E5AA8),
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text('Authentication Required'),
+            ],
+          ),
+          content: const Text(
+            'Please register or log in to continue.',
+            style: TextStyle(fontSize: 15),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                Navigator.of(context).pop(true);
+              },
+              style: FilledButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Login / Register'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == true && mounted) {
+      final authSuccess = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(builder: (_) => const AuthScreen()),
+      );
+
+      if (authSuccess == true && mounted) {
+        setState(() {}); // Refresh UI state after login
+        onAuthenticated();
+      }
+    }
+  }
+
+  void _logout() {
+    AuthService.logout();
+    setState(() {});
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Logged out successfully')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -67,6 +148,54 @@ class _HomePageState extends State<HomePage> {
             onPressed: _refreshVehicles,
             tooltip: 'Refresh Listings',
           ),
+          if (AuthService.isAuthenticated)
+            PopupMenuButton<String>(
+              onSelected: (val) {
+                if (val == 'logout') _logout();
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  enabled: false,
+                  child: Text(
+                    AuthService.currentUser?['full_name'] ??
+                        AuthService.currentUser?['phone_number'] ??
+                        'Authenticated User',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const PopupMenuDivider(),
+                const PopupMenuItem(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout, color: Colors.red, size: 20),
+                      SizedBox(width: 8),
+                      Text('Log Out', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                ),
+              ],
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: CircleAvatar(
+                  backgroundColor: Color(0xFF1E5AA8),
+                  child: Icon(Icons.person, color: Colors.white, size: 20),
+                ),
+              ),
+            )
+          else
+            TextButton.icon(
+              onPressed: () async {
+                final authSuccess = await Navigator.of(context).push<bool>(
+                  MaterialPageRoute(builder: (_) => const AuthScreen()),
+                );
+                if (authSuccess == true && mounted) {
+                  setState(() {});
+                }
+              },
+              icon: const Icon(Icons.login_rounded),
+              label: const Text('Login'),
+            ),
         ],
       ),
       body: SingleChildScrollView(
@@ -128,13 +257,15 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(width: 8),
                     FilledButton(
-                      onPressed: () async {
-                        await Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const CarSpecificationScreen(),
-                          ),
-                        );
-                        _refreshVehicles();
+                      onPressed: () {
+                        _ensureAuthenticated(context, () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const CarSpecificationScreen(),
+                            ),
+                          );
+                          _refreshVehicles();
+                        });
                       },
                       style: FilledButton.styleFrom(
                         shape: RoundedRectangleBorder(
@@ -346,11 +477,13 @@ class _HomePageState extends State<HomePage> {
                                 const SizedBox(height: 14),
                                 FilledButton(
                                   onPressed: () {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Booking request initiated for $brand $model!'),
-                                      ),
-                                    );
+                                    _ensureAuthenticated(context, () {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Booking request initiated for $brand $model!'),
+                                        ),
+                                      );
+                                    });
                                   },
                                   style: FilledButton.styleFrom(
                                     minimumSize: const Size(double.infinity, 44),
