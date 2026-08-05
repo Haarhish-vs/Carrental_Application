@@ -139,6 +139,39 @@ describe('Vehicles Module Tests (Listing & Browsing)', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data.status).toBe('under_review');
     });
+
+    it('should accept large JSON body with Base64 images without PayloadTooLargeError', async () => {
+      builder.single
+        .mockResolvedValueOnce({
+          data: { id: ownerId, phone_number: '+12345', full_name: 'Owner Name' },
+          error: null
+        })
+        .mockResolvedValueOnce({
+          data: { id: 'large-car-id', brand: 'Audi', model: 'Q7', owner_id: ownerId, status: 'under_review', is_available: true },
+          error: null
+        });
+
+      // Generate a ~2MB dummy Base64 payload string
+      const largeBase64 = 'data:image/jpeg;base64,' + 'A'.repeat(2 * 1024 * 1024);
+
+      const res = await request(app)
+        .post('/api/vehicles')
+        .set('Authorization', `Bearer ${testToken}`)
+        .send({
+          brand: 'Audi',
+          model: 'Q7',
+          fuelType: 'Diesel',
+          transmission: 'Automatic',
+          seatingCapacity: 7,
+          rc_number: 'RC LARGE',
+          dailyPrice: 250,
+          city: 'Chicago',
+          images: [largeBase64]
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+    });
   });
 
   describe('PATCH /api/vehicles/:id (Activation & RC Restriction)', () => {
