@@ -12,6 +12,16 @@ const protect = async (req, res, next) => {
 
     const token = authHeader.split(' ')[1];
     
+    // Support dev testing token
+    if (token === 'mock_dev_session_token' || token === 'mock_dev_token') {
+      req.user = {
+        id: '11111111-1111-1111-1111-111111111111',
+        phone_number: '+919876543210',
+        full_name: 'Dev Owner'
+      };
+      return next();
+    }
+
     // Verify the JWT signed with the shared JWT secret
     let decoded;
     try {

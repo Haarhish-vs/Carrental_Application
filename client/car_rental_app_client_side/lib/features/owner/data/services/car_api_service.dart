@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:car_rental_app_client_side/features/auth/services/auth_service.dart';
+
 class CarApiService {
   CarApiService({Dio? dio}) : _dio = dio ?? Dio() {
     _initDio();
@@ -30,7 +32,7 @@ class CarApiService {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          final authToken = token ?? 'mock_dev_session_token';
+          final authToken = token ?? AuthService.currentToken ?? 'mock_dev_session_token';
           if (authToken.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $authToken';
           }
