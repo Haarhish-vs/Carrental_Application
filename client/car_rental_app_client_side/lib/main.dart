@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'features/home/presentation/screens/home_screen.dart';
 import 'features/owner/presentation/screens/rent_car/car_spefication.dart';
 
 void main() {
@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
           centerTitle: false,
         ),
       ),
-      home: const HomePage(),
+      home: const HomeScreen(),
     );
   }
 }
