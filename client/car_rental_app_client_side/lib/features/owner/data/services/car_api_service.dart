@@ -2,15 +2,19 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import '../../presentation/screens/rent_car/rent_car_shared.dart';
 
 class CarApiService {
   // Base URL resolution supporting Android emulator, Web, iOS, etc.
   String get baseUrl {
+    // When testing on a physical Android device, use your host machine's Wi-Fi IP address (currently 192.168.31.121).
+    // If using an Android Emulator, you can use '10.0.2.2' or '192.168.31.121'.
+    const String hostIp = '192.168.31.121';
     if (kIsWeb) return 'http://localhost:5000/api/v1';
     try {
       if (Platform.isAndroid) {
-        return 'http://10.0.2.2:5000/api/v1';
+        return 'http://$hostIp:5000/api/v1';
       }
     } catch (_) {}
     return 'http://localhost:5000/api/v1';
@@ -142,7 +146,7 @@ class CarApiService {
       final key = photoKeys[i];
       final path = draft.selectedPhotos.length > i ? draft.selectedPhotos[i] : '';
       
-      if (path.isNotEmpty && await File(path).exists()) {
+      if (!kIsWeb && path.isNotEmpty && await File(path).exists()) {
         request.files.add(await http.MultipartFile.fromPath(key, path));
       } else {
         // Fallback: Send valid transparent PNG bytes
@@ -150,6 +154,7 @@ class CarApiService {
           key,
           _dummyPngBytes,
           filename: '${key}_placeholder.png',
+          contentType: MediaType('image', 'png'),
         ));
       }
     }
@@ -188,13 +193,14 @@ class CarApiService {
       final key = entry.key;
       final val = entry.value;
       
-      if (val.isNotEmpty && await File(val).exists()) {
+      if (!kIsWeb && val.isNotEmpty && await File(val).exists()) {
         request.files.add(await http.MultipartFile.fromPath(key, val));
       } else {
         request.files.add(http.MultipartFile.fromBytes(
           key,
           _dummyPngBytes,
           filename: '${key}_placeholder.png',
+          contentType: MediaType('image', 'png'),
         ));
       }
     }

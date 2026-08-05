@@ -4,6 +4,7 @@ const PORT = process.env.PORT || 5000;
 
 const server = app.listen(PORT, () => {
   console.log(`[Server] Running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  console.log(process.env.SUPABASE_URL);
 });
 
 // Handle Unhandled Promise Rejections
