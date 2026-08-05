@@ -99,7 +99,7 @@ class CouponCard extends StatelessWidget {
                       ),
                       const Gap(2),
                       Text(
-                        "Min. Booking: \$${coupon.minBookingValue.toStringAsFixed(0)}",
+                        "Min. Booking: ₹${coupon.minBookingValue.toStringAsFixed(0)}",
                         style: AppTextStyles.bodySmall.copyWith(
                           fontSize: 11,
                           color: AppColors.slate400,

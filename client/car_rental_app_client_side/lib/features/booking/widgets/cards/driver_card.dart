@@ -154,7 +154,7 @@ class DriverCard extends StatelessWidget {
                     children: [
                       Text.rich(
                         TextSpan(
-                          text: "\$${driver.pricePerDay.toStringAsFixed(0)}",
+                          text: "₹${driver.pricePerDay.toStringAsFixed(0)}",
                           style: AppTextStyles.h3.copyWith(fontSize: 16, color: AppColors.primary),
                           children: [
                             TextSpan(

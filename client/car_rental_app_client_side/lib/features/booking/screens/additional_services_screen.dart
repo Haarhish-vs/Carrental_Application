@@ -69,7 +69,7 @@ class _AdditionalServicesScreenState extends ConsumerState<AdditionalServicesScr
                     ),
                     const Gap(2),
                     Text(
-                      "\$${subtotal.toStringAsFixed(2)}",
+                      "₹${subtotal.toStringAsFixed(2)}",
                       style: AppTextStyles.h2.copyWith(color: Colors.white, fontSize: 22),
                     ),
                   ],

@@ -380,7 +380,7 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                                   children: [
                                     Text("Driver Required", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                     Gap(2),
-                                    const Text(r"+$50/day", style: TextStyle(color: AppColors.slate400, fontSize: 11)),
+                                    Text(r"+₹50/day", style: TextStyle(color: AppColors.slate400, fontSize: 11)),
                                   ],
                                 ),
                               ],
@@ -489,9 +489,9 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                           ],
                         ),
                         const Gap(AppSpacing.md),
-                        _FareRow(label: "Rental Price (\$120 x $days days)", value: baseCharge),
+                        _FareRow(label: "Rental Price (₹120 x $days days)", value: baseCharge),
                         if (hasDriver)
-                          _FareRow(label: "Driver Fee (\$50 x $days days)", value: driverFee),
+                          _FareRow(label: "Driver Fee (₹50 x $days days)", value: driverFee),
                         if (hasInsurance)
                           _FareRow(label: "Premium Insurance", value: insuranceFee),
                         if (additionalServicesFee > 0)
@@ -555,7 +555,7 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                       ),
                       const Gap(2),
                       Text(
-                        "\$${totalAmount.toStringAsFixed(2)}",
+                        "₹${totalAmount.toStringAsFixed(2)}",
                         style: AppTextStyles.h2.copyWith(fontSize: 22, color: AppColors.primary),
                       ),
                     ],
@@ -672,7 +672,7 @@ class _FareRow extends StatelessWidget {
             ],
           ),
           Text(
-            value < 0 ? "-\$${value.abs().toStringAsFixed(2)}" : "\$${value.toStringAsFixed(2)}",
+            value < 0 ? "-₹${value.abs().toStringAsFixed(2)}" : "₹${value.toStringAsFixed(2)}",
             style: AppTextStyles.subtitle2.copyWith(color: valueColor ?? AppColors.slate800, fontSize: 12),
           ),
         ],

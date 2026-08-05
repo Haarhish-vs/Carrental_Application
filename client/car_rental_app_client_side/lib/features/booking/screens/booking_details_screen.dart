@@ -364,7 +364,7 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
                 children: [
                   Text("Total Paid Amount", style: AppTextStyles.subtitle2),
                   Text(
-                    "\$${totalAmount.toStringAsFixed(2)}",
+                    "₹${totalAmount.toStringAsFixed(2)}",
                     style: AppTextStyles.h3.copyWith(color: AppColors.accent),
                   ),
                 ],

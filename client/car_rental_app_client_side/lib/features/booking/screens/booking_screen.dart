@@ -366,7 +366,7 @@ class _DashboardCarCard extends StatelessWidget {
                           const Gap(2),
                           Text.rich(
                             TextSpan(
-                              text: "\$${vehicle.pricePerDay.toStringAsFixed(0)}",
+                              text: "₹${vehicle.pricePerDay.toStringAsFixed(0)}",
                               style: AppTextStyles.subtitle1.copyWith(
                                 color: const Color(0xFF2563EB),
                                 fontSize: 15,

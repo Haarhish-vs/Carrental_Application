@@ -298,7 +298,7 @@ class _CarDetailsScreenState extends ConsumerState<CarDetailsScreen> {
                         const Gap(2),
                         Text.rich(
                           TextSpan(
-                            text: "\$${vehicle.pricePerDay.toStringAsFixed(0)}",
+                            text: "₹${vehicle.pricePerDay.toStringAsFixed(0)}",
                             style: AppTextStyles.h2.copyWith(fontSize: 22, color: AppColors.primary),
                             children: [
                               TextSpan(

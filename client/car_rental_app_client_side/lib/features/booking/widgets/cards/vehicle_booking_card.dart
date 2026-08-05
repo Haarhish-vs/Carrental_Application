@@ -115,7 +115,7 @@ class VehicleBookingCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '\$${vehicle.pricePerDay.toStringAsFixed(0)}',
+                        '₹${vehicle.pricePerDay.toStringAsFixed(0)}',
                         style: AppTextStyles.h2.copyWith(
                           fontSize: 20,
                           color: AppColors.accent,

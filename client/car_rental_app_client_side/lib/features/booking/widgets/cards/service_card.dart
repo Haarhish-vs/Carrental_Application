@@ -84,7 +84,7 @@ class ServiceCard extends StatelessWidget {
                       ),
                       const Gap(8),
                       Text(
-                        '\$${service.price.toStringAsFixed(0)}',
+                        '₹${service.price.toStringAsFixed(0)}',
                         style: AppTextStyles.h3.copyWith(
                           fontSize: 16,
                           color: AppColors.primary,

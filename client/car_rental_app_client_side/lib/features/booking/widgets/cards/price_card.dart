@@ -164,14 +164,14 @@ class _PriceCardState extends State<PriceCard> {
                     if (deposit > 0) ...[
                       const Gap(2),
                       Text(
-                        "Includes \$${deposit.toStringAsFixed(0)} refundable deposit",
+                        "Includes ₹${deposit.toStringAsFixed(0)} refundable deposit",
                         style: AppTextStyles.bodySmall.copyWith(color: AppColors.slate500, fontSize: 11),
                       ),
                     ],
                   ],
                 ),
                 Text(
-                  "\$${grandTotal.toStringAsFixed(2)}",
+                  "₹${grandTotal.toStringAsFixed(2)}",
                   style: AppTextStyles.h2.copyWith(
                     color: AppColors.accent,
                     fontSize: 20,
@@ -212,8 +212,8 @@ class _PriceRow extends StatelessWidget {
     }
 
     final formattedValue = value.isNegative 
-        ? "-\$${value.abs().toStringAsFixed(2)}" 
-        : "\$${value.toStringAsFixed(2)}";
+        ? "-₹${value.abs().toStringAsFixed(2)}" 
+        : "₹${value.toStringAsFixed(2)}";
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,

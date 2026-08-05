@@ -151,7 +151,7 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
                         ),
                         const Gap(2),
                         Text(
-                          "\$${totalAmount.toStringAsFixed(2)}",
+                          "₹${totalAmount.toStringAsFixed(2)}",
                           style: AppTextStyles.h2.copyWith(color: AppColors.accent, fontSize: 22),
                         ),
                       ],
