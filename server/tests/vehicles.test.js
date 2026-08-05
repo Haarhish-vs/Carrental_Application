@@ -5,6 +5,23 @@ const app = require('../src/app');
 const { supabase } = require('../src/config/supabase');
 const env = require('../src/config/env');
 
+// Mock Cloudinary SDK
+jest.mock('cloudinary', () => ({
+  v2: {
+    config: jest.fn(),
+    uploader: {
+      upload_stream: jest.fn((options, callback) => {
+        const stream = {
+          end: jest.fn((buffer) => {
+            callback(null, { secure_url: 'https://res.cloudinary.com/doymxkmea/image/upload/v12345/vehicles/mock_test_car.jpg' });
+          })
+        };
+        return stream;
+      })
+    }
+  }
+}));
+
 // Mock Supabase Client
 jest.mock('../src/config/supabase', () => {
   const mockSingle = jest.fn();
@@ -74,6 +91,30 @@ describe('Vehicles Module Tests (Listing & Browsing)', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data[0].brand).toBe('Tesla');
     });
+    it('should return 401 if uploading media without auth token', async () => {
+      const res = await request(app)
+        .post('/api/vehicles/upload');
+
+      expect(res.status).toBe(401);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should upload files successfully when authorized', async () => {
+      builder.single.mockResolvedValueOnce({
+        data: { id: ownerId, phone_number: '+12345', full_name: 'Owner Name' },
+        error: null
+      });
+
+      const res = await request(app)
+        .post('/api/vehicles/upload')
+        .set('Authorization', `Bearer ${testToken}`)
+        .attach('files', Buffer.from('dummy image content'), 'test_car.jpg');
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(res.body.data[0]).toContain('cloudinary.com');
+    });
   });
 
   describe('POST /api/vehicles (Protected)', () => {
@@ -114,6 +155,39 @@ describe('Vehicles Module Tests (Listing & Browsing)', () => {
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
       expect(res.body.data.status).toBe('under_review');
+    });
+
+    it('should accept large JSON body with Base64 images without PayloadTooLargeError', async () => {
+      builder.single
+        .mockResolvedValueOnce({
+          data: { id: ownerId, phone_number: '+12345', full_name: 'Owner Name' },
+          error: null
+        })
+        .mockResolvedValueOnce({
+          data: { id: 'large-car-id', brand: 'Audi', model: 'Q7', owner_id: ownerId, status: 'under_review', is_available: true },
+          error: null
+        });
+
+      // Generate a ~2MB dummy Base64 payload string
+      const largeBase64 = 'data:image/jpeg;base64,' + 'A'.repeat(2 * 1024 * 1024);
+
+      const res = await request(app)
+        .post('/api/vehicles')
+        .set('Authorization', `Bearer ${testToken}`)
+        .send({
+          brand: 'Audi',
+          model: 'Q7',
+          fuelType: 'Diesel',
+          transmission: 'Automatic',
+          seatingCapacity: 7,
+          rc_number: 'RC LARGE',
+          dailyPrice: 250,
+          city: 'Chicago',
+          images: [largeBase64]
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
     });
   });
 

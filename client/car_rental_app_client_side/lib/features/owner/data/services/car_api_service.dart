@@ -1,223 +1,224 @@
 import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:http/http.dart' as http;
-import '../../presentation/screens/rent_car/rent_car_shared.dart';
+import 'package:flutter/foundation.dart';
+import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
+
+import 'package:car_rental_app_client_side/features/auth/services/auth_service.dart';
 
 class CarApiService {
-  // Base URL resolution supporting Android emulator, Web, iOS, etc.
-  String get baseUrl {
-    if (kIsWeb) return 'http://localhost:5000/api/v1';
-    try {
-      if (Platform.isAndroid) {
-        return 'http://10.0.2.2:5000/api/v1';
-      }
-    } catch (_) {}
-    return 'http://localhost:5000/api/v1';
+  CarApiService({Dio? dio}) : _dio = dio ?? Dio() {
+    _initDio();
   }
 
-  // A tiny 1x1 transparent PNG file to use as a fallback placeholder
-  static const List<int> _dummyPngBytes = [
-    137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 
-    0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 0, 0, 0, 31, 21, 196, 137, 
-    0, 0, 0, 11, 73, 68, 65, 84, 120, 156, 99, 96, 0, 0, 0, 
-    2, 0, 1, 73, 175, 168, 5, 0, 0, 0, 0, 73, 69, 78, 68, 
-    174, 66, 96, 130
-  ];
+  final Dio _dio;
+  
+  // Base URL for the Rent-A-Car backend
+  static String baseUrl = 'https://carrental-application-1.onrender.com';
+  
+  // Static token storage that can be set from elsewhere in the app (e.g., login)
+  static String? token;
 
-  // Headers config
-  Map<String, String> get _headers => {
-        'Content-Type': 'application/json',
-        'x-owner-id': '11111111-1111-1111-1111-111111111111',
-      };
-
-  /// Step 1: Create car draft in the backend
-  Future<String> createCarDraft(RentCarDraft draft) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/cars'),
-      headers: _headers,
-      body: jsonEncode({
-        'brand': draft.brand,
-        'model': draft.model,
-        'variant': draft.variant.isEmpty ? 'Standard' : draft.variant,
-        'year': int.tryParse(draft.manufacturingYear) ?? DateTime.now().year,
-        'fuelType': draft.fuelType.isEmpty ? 'Petrol' : draft.fuelType,
-        'transmission': draft.transmission.isEmpty ? 'Automatic' : draft.transmission,
-        'mileage': double.tryParse(draft.mileage) ?? 15.0,
-        'engineCapacity': int.tryParse(draft.engineCapacity) ?? 1500,
-        'registrationNumber': draft.registrationNumber,
-      }),
-    );
-
-    final responseData = jsonDecode(response.body);
-    if (response.statusCode == 201 && responseData['success'] == true) {
-      return responseData['data']['id'].toString();
-    } else {
-      final msg = responseData['message'] ?? 'Failed to create car draft';
-      throw Exception(msg);
-    }
-  }
-
-  /// Step 2: Save pickup location details
-  Future<void> saveLocation(String carId, RentCarDraft draft) async {
-    // Map single location string to address, city, state, pincode
-    final locStr = draft.pickupLocation;
-    final parts = locStr.split(',');
-    final address = parts.isNotEmpty ? parts[0].trim() : locStr;
-    final city = parts.length > 1 ? parts[1].trim() : 'Bengaluru';
-    final state = parts.length > 2 ? parts[2].trim() : 'Karnataka';
-    final pincode = parts.length > 3 ? parts[3].trim() : '560038';
-
-    final response = await http.post(
-      Uri.parse('$baseUrl/cars/$carId/location'),
-      headers: _headers,
-      body: jsonEncode({
-        'pickupAddress': address.isEmpty ? 'Main pickup hub' : address,
-        'city': city.isEmpty ? 'Bengaluru' : city,
-        'state': state.isEmpty ? 'Karnataka' : state,
-        'pincode': pincode.isEmpty ? '560038' : pincode,
-        'latitude': 12.9716, // Default coordinates if not set
-        'longitude': 77.5946,
-      }),
-    );
-
-    if (response.statusCode != 200) {
-      final responseData = jsonDecode(response.body);
-      throw Exception(responseData['message'] ?? 'Failed to save location');
-    }
-  }
-
-  /// Step 3: Save pricing details
-  Future<void> savePricing(String carId, RentCarDraft draft) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/cars/$carId/pricing'),
-      headers: _headers,
-      body: jsonEncode({
-        'pricePerDay': double.tryParse(draft.dailyPrice) ?? 50.0,
-        'securityDeposit': double.tryParse(draft.securityDeposit) ?? 200.0,
-        'minimumRentalDuration': int.tryParse(draft.minimumRentalDays) ?? 1,
-        'instantBooking': true,
-      }),
-    );
-
-    if (response.statusCode != 200) {
-      final responseData = jsonDecode(response.body);
-      throw Exception(responseData['message'] ?? 'Failed to save pricing');
-    }
-  }
-
-  /// Step 4: Save availability details
-  Future<void> saveAvailability(String carId, RentCarDraft draft) async {
-    final availableDates = <String>[];
-    if (draft.availabilityFrom.isNotEmpty) availableDates.add(draft.availabilityFrom);
-    if (draft.availabilityTo.isNotEmpty) availableDates.add(draft.availabilityTo);
-
-    final response = await http.post(
-      Uri.parse('$baseUrl/cars/$carId/availability'),
-      headers: _headers,
-      body: jsonEncode({
-        'availableDates': availableDates,
-        'blockedDates': [],
-      }),
-    );
-
-    if (response.statusCode != 200) {
-      final responseData = jsonDecode(response.body);
-      throw Exception(responseData['message'] ?? 'Failed to save availability');
-    }
-  }
-
-  /// Step 5: Upload car images
-  Future<void> uploadImages(String carId, RentCarDraft draft) async {
-    final uri = Uri.parse('$baseUrl/cars/$carId/images');
-    final request = http.MultipartRequest('POST', uri);
-    
-    // Set headers
-    request.headers['x-owner-id'] = '11111111-1111-1111-1111-111111111111';
-
-    // Map photo fields. The backend accepts multiple file fields dynamically (any).
-    // Let's use front, back, interior, dashboard keys.
-    final photoKeys = ['front', 'back', 'interior', 'dashboard'];
-    for (int i = 0; i < photoKeys.length; i++) {
-      final key = photoKeys[i];
-      final path = draft.selectedPhotos.length > i ? draft.selectedPhotos[i] : '';
-      
-      if (path.isNotEmpty && await File(path).exists()) {
-        request.files.add(await http.MultipartFile.fromPath(key, path));
-      } else {
-        // Fallback: Send valid transparent PNG bytes
-        request.files.add(http.MultipartFile.fromBytes(
-          key,
-          _dummyPngBytes,
-          filename: '${key}_placeholder.png',
-        ));
-      }
-    }
-
-    final streamedResponse = await request.send();
-    final response = await http.Response.fromStream(streamedResponse);
-
-    if (response.statusCode != 201) {
-      final responseData = jsonDecode(response.body);
-      throw Exception(responseData['message'] ?? 'Failed to upload images');
-    }
-  }
-
-  /// Step 6: Upload registration and insurance documents
-  Future<void> uploadDocuments({
-    required String carId,
-    required String rcNumber,
-    required String insuranceNumber,
-    required String ownerIdRef,
-    required String permitRef,
-  }) async {
-    final uri = Uri.parse('$baseUrl/cars/$carId/documents');
-    final request = http.MultipartRequest('POST', uri);
-    
-    request.headers['x-owner-id'] = '11111111-1111-1111-1111-111111111111';
-
-    // Helper to upload document files. Fallback to valid PNG placeholder
-    final docFields = {
-      'rc': rcNumber,
-      'insurance': insuranceNumber,
-      'fitness': permitRef,
-      'puc': ownerIdRef,
+  void _initDio() {
+    _dio.options.baseUrl = baseUrl;
+    _dio.options.connectTimeout = const Duration(seconds: 60);
+    _dio.options.receiveTimeout = const Duration(seconds: 60);
+    _dio.options.sendTimeout = const Duration(seconds: 60);
+    _dio.options.headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
     };
 
-    for (final entry in docFields.entries) {
-      final key = entry.key;
-      final val = entry.value;
+    // Authentication, Logging, and Retry Interceptor
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final authToken = token ?? AuthService.currentToken ?? 'mock_dev_session_token';
+          if (authToken.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $authToken';
+          }
+          debugPrint('🌐 [API Request] ${options.method} ${options.baseUrl}${options.path}');
+          return handler.next(options);
+        },
+        onResponse: (response, handler) {
+          debugPrint('✅ [API Response] ${response.statusCode} | ${response.requestOptions.path}');
+          return handler.next(response);
+        },
+        onError: (DioException error, handler) async {
+          debugPrint('❌ [API Error] Status: ${error.response?.statusCode} | Path: ${error.requestOptions.path} | Error: ${error.message}');
+          // Implement simple retry functionality for network connection timeouts
+          if (error.type == DioExceptionType.connectionTimeout ||
+              error.type == DioExceptionType.sendTimeout ||
+              error.type == DioExceptionType.receiveTimeout) {
+            
+            final requestOptions = error.requestOptions;
+            // Retry only once to prevent infinite loops
+            if (requestOptions.extra['isRetry'] != true) {
+              requestOptions.extra['isRetry'] = true;
+              try {
+                final response = await _dio.request(
+                  requestOptions.path,
+                  data: requestOptions.data,
+                  queryParameters: requestOptions.queryParameters,
+                  options: Options(
+                    method: requestOptions.method,
+                    headers: requestOptions.headers,
+                    extra: requestOptions.extra,
+                  ),
+                );
+                return handler.resolve(response);
+              } catch (e) {
+                return handler.next(error);
+              }
+            }
+          }
+          return handler.next(error);
+        },
+      ),
+    );
+  }
+
+  /// Upload multiple files using multipart/form-data with progress tracking
+  Future<List<String>> uploadFiles(
+    List<XFile> files,
+    ValueChanged<double> onProgress,
+  ) async {
+    try {
+      final formData = FormData();
       
-      if (val.isNotEmpty && await File(val).exists()) {
-        request.files.add(await http.MultipartFile.fromPath(key, val));
-      } else {
-        request.files.add(http.MultipartFile.fromBytes(
-          key,
-          _dummyPngBytes,
-          filename: '${key}_placeholder.png',
-        ));
+      for (final file in files) {
+        final bytes = await file.readAsBytes();
+        final multipartFile = MultipartFile.fromBytes(
+          bytes,
+          filename: file.name.isNotEmpty ? file.name : 'upload_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        );
+        formData.files.add(MapEntry('files', multipartFile));
       }
-    }
 
-    final streamedResponse = await request.send();
-    final response = await http.Response.fromStream(streamedResponse);
+      final response = await _dio.post(
+        '/api/vehicles/upload',
+        data: formData,
+        onSendProgress: (sent, total) {
+          if (total > 0) {
+            onProgress(sent / total);
+          }
+        },
+      );
 
-    if (response.statusCode != 200) {
-      final responseData = jsonDecode(response.body);
-      throw Exception(responseData['message'] ?? 'Failed to upload documents');
+      if (response.statusCode == 200 && response.data != null) {
+        final success = response.data['success'] as bool? ?? false;
+        if (success) {
+          final data = response.data['data'] as List<dynamic>?;
+          if (data != null) {
+            return data.map((url) => url.toString()).toList();
+          }
+        }
+      }
+      
+      throw DioException(
+        requestOptions: RequestOptions(path: '/api/vehicles/upload'),
+        message: 'Upload failed: Invalid response format',
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
     }
   }
 
-  /// Step 7: Finalize submission for verification
-  Future<void> submitCar(String carId) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/cars/$carId/submit'),
-      headers: _headers,
-    );
-
-    if (response.statusCode != 200) {
-      final responseData = jsonDecode(response.body);
-      throw Exception(responseData['message'] ?? 'Failed to submit car for verification');
+  /// Fetch active & available vehicles for browsing on the Home Screen
+  Future<List<Map<String, dynamic>>> getVehicles() async {
+    try {
+      final response = await _dio.get('/api/vehicles');
+      if (response.statusCode == 200 && response.data != null) {
+        final success = response.data['success'] as bool? ?? false;
+        if (success && response.data['data'] != null) {
+          final list = response.data['data'] as List<dynamic>;
+          return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        }
+      }
+      return [];
+    } on DioException catch (e) {
+      debugPrint('Error fetching vehicles: ${e.message}');
+      return [];
     }
+  }
+
+  /// Create a new vehicle listing
+  Future<Map<String, dynamic>> createVehicle(Map<String, dynamic> vehicleData) async {
+    try {
+      final response = await _dio.post(
+        '/api/vehicles',
+        data: vehicleData,
+      );
+
+      if (response.statusCode == 201 && response.data != null) {
+        final success = response.data['success'] as bool? ?? false;
+        if (success && response.data['data'] != null) {
+          return response.data['data'] as Map<String, dynamic>;
+        }
+      }
+
+      throw DioException(
+        requestOptions: RequestOptions(path: '/api/vehicles'),
+        message: 'Failed to create vehicle listing',
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// Associate a verified document reference with the listed vehicle
+  Future<Map<String, dynamic>> uploadVehicleDocument({
+    required String vehicleId,
+    required String documentType,
+    required String documentUrl,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/api/vehicles/$vehicleId/documents',
+        data: {
+          'documentType': documentType,
+          'documentUrl': documentUrl,
+        },
+      );
+
+      if (response.statusCode == 201 && response.data != null) {
+        final success = response.data['success'] as bool? ?? false;
+        if (success && response.data['data'] != null) {
+          return response.data['data'] as Map<String, dynamic>;
+        }
+      }
+
+      throw DioException(
+        requestOptions: RequestOptions(path: '/api/vehicles/$vehicleId/documents'),
+        message: 'Failed to submit document details',
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Exception _handleDioError(DioException error) {
+    String message = 'An unexpected error occurred';
+    if (error.response != null) {
+      final responseData = error.response?.data;
+      if (responseData is Map && responseData['message'] != null) {
+        message = responseData['message'].toString();
+      } else {
+        message = 'Server returned error status ${error.response?.statusCode}';
+      }
+    } else {
+      switch (error.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.receiveTimeout:
+          message = 'Network connection timed out';
+          break;
+        case DioExceptionType.connectionError:
+          message = 'Cannot connect to the server. Please check your network connection.';
+          break;
+        default:
+          message = error.message ?? message;
+      }
+    }
+    return Exception(message);
   }
 }

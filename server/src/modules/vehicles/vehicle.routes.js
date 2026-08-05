@@ -7,17 +7,18 @@ const { protect } = require('../../shared/middlewares/auth.middleware');
 // Public endpoints (no token check, but controller checks optionally for detail view)
 router.get('/', vehicleController.getVehicles);
 
-// Owner list (authenticated) - MUST be defined before /:id route to prevent collision
+const upload = require('../../shared/middlewares/upload.middleware');
+
+// Static / collection endpoints - MUST be defined before /:id parameter routes to prevent routing collisions
 router.get('/my-listings', protect, vehicleController.getMyListings);
-
-// Specific vehicle detail
-router.get('/:id', vehicleController.getVehicleById);
-
-// Owner/listing management
+router.post('/upload', protect, upload.array('files'), vehicleController.uploadMedia);
 router.post('/', protect, vehicleController.createVehicle);
+
+// Specific vehicle detail & sub-resource endpoints (parameterized by :id)
+router.get('/:id', vehicleController.getVehicleById);
 router.post('/:id/documents', protect, vehicleController.uploadDocument);
-router.patch('/:id', protect, vehicleController.updateVehicle);
 router.patch('/:id/availability', protect, vehicleController.toggleAvailability);
+router.patch('/:id', protect, vehicleController.updateVehicle);
 router.delete('/:id', protect, vehicleController.deleteVehicle);
 
 // Admin simulator route (used by verification service tests/mock flow)

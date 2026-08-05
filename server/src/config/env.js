@@ -33,5 +33,8 @@ module.exports = {
   SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY, // Default to service role if not provided
   JWT_SECRET: process.env.JWT_SECRET,
   SMS_PROVIDER_API_KEY: process.env.SMS_PROVIDER_API_KEY || 'mock-sms-key',
+  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME || 'doymxkmea',
+  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY || '223194751911512',
+  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET || 'O-eufCz3z1iEWdakuVrrdEViY94',
   NODE_ENV: process.env.NODE_ENV || 'development'
 };

@@ -126,7 +126,6 @@ const deleteVehicle = async (req, res, next) => {
   }
 };
 
-// Admin Simulation Endpoint
 const verifyDocumentAdmin = async (req, res, next) => {
   try {
     const { id } = req.params; // vehicleId
@@ -142,6 +141,48 @@ const verifyDocumentAdmin = async (req, res, next) => {
   }
 };
 
+const cloudinary = require('cloudinary').v2;
+
+cloudinary.config({
+  cloud_name: env.CLOUDINARY_CLOUD_NAME,
+  api_key: env.CLOUDINARY_API_KEY,
+  api_secret: env.CLOUDINARY_API_SECRET
+});
+
+const uploadMedia = async (req, res, next) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No files uploaded'
+      });
+    }
+
+    const uploadPromises = req.files.map(file => {
+      return new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          { folder: 'vehicles', resource_type: 'auto' },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result.secure_url);
+          }
+        );
+        uploadStream.end(file.buffer);
+      });
+    });
+
+    const urls = await Promise.all(uploadPromises);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Files uploaded to Cloudinary successfully',
+      data: urls
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getVehicles,
   getVehicleById,
@@ -151,5 +192,6 @@ module.exports = {
   toggleAvailability,
   getMyListings,
   deleteVehicle,
-  verifyDocumentAdmin
+  verifyDocumentAdmin,
+  uploadMedia
 };

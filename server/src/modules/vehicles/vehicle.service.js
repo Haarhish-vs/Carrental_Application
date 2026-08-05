@@ -72,6 +72,12 @@ class VehicleService {
     if (mapped.manufacturing_year !== undefined) mapped.manufacturing_year = parseInt(mapped.manufacturing_year);
     if (mapped.odometer_reading !== undefined) mapped.odometer_reading = parseFloat(mapped.odometer_reading);
 
+    // Clean empty string timestamps & arrays
+    if (mapped.availability_from === '' || mapped.availability_from === null) mapped.availability_from = null;
+    if (mapped.availability_to === '' || mapped.availability_to === null) mapped.availability_to = null;
+    if (mapped.images && !Array.isArray(mapped.images)) mapped.images = [mapped.images];
+    if (!mapped.images) mapped.images = [];
+
     // Fallbacks
     if (!mapped.rc_number && mapped.registration_number) {
       mapped.rc_number = mapped.registration_number;

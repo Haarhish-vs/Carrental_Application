@@ -9,8 +9,11 @@ const errorHandler = require('./shared/middlewares/error.middleware');
 const app = express();
 
 // Middlewares
+const path = require('path');
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 // Premium Interactive Root Dashboard Page (API Docs & Status)
 app.get('/', (req, res) => {
@@ -322,6 +325,13 @@ app.get('/', (req, res) => {
     </html>
   `);
 });
+
+// Top-level explicit vehicle upload endpoint
+const uploadMiddleware = require('./shared/middlewares/upload.middleware');
+const { protect: protectAuth } = require('./shared/middlewares/auth.middleware');
+const vehicleCtrl = require('./modules/vehicles/vehicle.controller');
+
+app.post('/api/vehicles/upload', protectAuth, uploadMiddleware.array('files'), vehicleCtrl.uploadMedia);
 
 // Endpoint Routes
 app.use('/api/auth', authRoutes);
