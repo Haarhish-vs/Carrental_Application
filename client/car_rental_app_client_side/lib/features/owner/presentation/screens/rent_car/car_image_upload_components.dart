@@ -613,10 +613,11 @@ class _ImageTileCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(item.slot.icon, size: 18, color: const Color(0xFF1E5AA8)),
                       const SizedBox(width: 6),
-                      Expanded(
+                      Flexible(
                         child: Text(
                           item.slot.label,
                           style: Theme.of(context).textTheme.titleSmall?.copyWith(

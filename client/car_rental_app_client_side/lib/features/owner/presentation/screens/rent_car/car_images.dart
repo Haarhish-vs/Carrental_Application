@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:car_rental_app_client_side/features/auth/services/auth_service.dart';
 
 import 'car_documents.dart';
 import 'car_image_upload_components.dart';
@@ -191,6 +192,11 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
   }
 
   Future<void> _uploadSelectedImages() async {
+    if (!AuthService.isAuthenticated) {
+      _showMessage('Please log in before uploading images.');
+      return;
+    }
+
     if (_pendingLocalFiles.isEmpty) {
       _showMessage('Select images first, then upload them.');
       return;

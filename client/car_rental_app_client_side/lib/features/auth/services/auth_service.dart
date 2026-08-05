@@ -78,6 +78,7 @@ class AuthService {
         currentToken = token;
         currentUser = user;
         CarApiService.token = token;
+        debugPrint('✅ Auth verified, token length: ${token.length}');
 
         return {
           'token': token,
@@ -87,20 +88,6 @@ class AuthService {
       }
       throw Exception('Invalid OTP verification response');
     } on DioException catch (e) {
-      if (otp == '123456') {
-        currentToken = 'mock_dev_session_token';
-        currentUser = {
-          'id': '11111111-1111-1111-1111-111111111111',
-          'phone_number': phoneNumber,
-          'full_name': 'Authenticated Owner'
-        };
-        CarApiService.token = currentToken;
-        return {
-          'token': currentToken,
-          'user': currentUser,
-          'isNewUser': false,
-        };
-      }
       throw _handleError(e);
     }
   }

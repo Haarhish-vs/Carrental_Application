@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
@@ -24,7 +23,6 @@ class CarApiService {
     _dio.options.receiveTimeout = const Duration(seconds: 60);
     _dio.options.sendTimeout = const Duration(seconds: 60);
     _dio.options.headers = {
-      'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
 
@@ -32,11 +30,13 @@ class CarApiService {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          final authToken = token ?? AuthService.currentToken ?? 'mock_dev_session_token';
-          if (authToken.isNotEmpty) {
+          final authToken = token ?? AuthService.currentToken;
+          if (authToken != null && authToken.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $authToken';
           }
-          debugPrint('🌐 [API Request] ${options.method} ${options.baseUrl}${options.path}');
+          debugPrint(
+            '🌐 [API Request] ${options.method} ${options.baseUrl}${options.path} | auth=${options.headers['Authorization'] != null}',
+          );
           return handler.next(options);
         },
         onResponse: (response, handler) {
@@ -94,9 +94,26 @@ class CarApiService {
         formData.files.add(MapEntry('files', multipartFile));
       }
 
+      final authToken = token ?? AuthService.currentToken;
+      if (authToken == null || authToken.isEmpty) {
+        throw DioException(
+          requestOptions: RequestOptions(path: '/api/vehicles/upload'),
+          message: 'Not authenticated. Please log in before uploading files.',
+          type: DioExceptionType.cancel,
+        );
+      }
+
+      debugPrint('🔐 Upload auth token length: ${authToken.length}');
+
       final response = await _dio.post(
         '/api/vehicles/upload',
         data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+          headers: {
+            'Authorization': 'Bearer $authToken',
+          },
+        ),
         onSendProgress: (sent, total) {
           if (total > 0) {
             onProgress(sent / total);

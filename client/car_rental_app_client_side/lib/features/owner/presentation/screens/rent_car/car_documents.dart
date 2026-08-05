@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:car_rental_app_client_side/features/owner/data/models/vehicle_model.dart';
 import 'package:car_rental_app_client_side/features/owner/data/services/car_api_service.dart';
@@ -84,7 +85,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Choose camera or gallery to upload your Registration Certificate document scan.',
+                  'Choose camera, gallery, or file to upload your Registration Certificate document scan or PDF.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: const Color(0xFF57718A),
                       ),
@@ -107,14 +108,35 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
                   onPressed: () async {
-                    final picked = await _picker.pickImage(
-                      source: ImageSource.gallery,
-                      imageQuality: 85,
+                    final result = await FilePicker.platform.pickFiles(
+                      type: FileType.custom,
+                      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+                      withData: true,
                     );
-                    if (context.mounted) Navigator.of(context).pop(picked);
+                    if (result != null && result.files.isNotEmpty) {
+                      final pickedFile = result.files.first;
+                      XFile? xfile;
+
+                      if (pickedFile.path != null) {
+                        xfile = XFile(pickedFile.path!);
+                      } else if (pickedFile.bytes != null) {
+                        xfile = XFile.fromData(
+                          pickedFile.bytes!,
+                          name: pickedFile.name,
+                          mimeType: pickedFile.extension == 'pdf'
+                              ? 'application/pdf'
+                              : 'image/${pickedFile.extension ?? 'jpeg'}',
+                        );
+                      }
+
+                      if (context.mounted) Navigator.of(context).pop(xfile);
+                      return;
+                    }
+
+                    if (context.mounted) Navigator.of(context).pop(null);
                   },
                   icon: const Icon(Icons.description_outlined),
-                  label: const Text('Choose Document from Gallery'),
+                  label: const Text('Choose Document from Files'),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),

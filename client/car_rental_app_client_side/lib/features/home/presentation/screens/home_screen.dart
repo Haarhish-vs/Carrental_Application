@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/dummy_data.dart';
+import '../../../auth/presentation/screens/auth_screen.dart';
+import '../../../auth/services/auth_service.dart';
+import '../../../owner/presentation/screens/rent_car/car_spefication.dart';
 import '../widgets/custom_home_app_bar.dart';
 import '../widgets/hero_search_card.dart';
 import '../widgets/category_list.dart';
@@ -30,6 +33,26 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _pickupTime;
   String? _returnDate;
   String? _returnTime;
+
+  Future<void> _goHost() async {
+    if (AuthService.isAuthenticated) {
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const CarSpecificationScreen()),
+      );
+      return;
+    }
+
+    final authSuccess = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const AuthScreen()),
+    );
+
+    if (authSuccess == true && mounted) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const CarSpecificationScreen()),
+      );
+    }
+  }
 
   Future<void> _pickDate({required bool isPickup}) async {
     final picked = await showDatePicker(
@@ -174,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 26),
 
               BecomeHostBanner(
-                onHostTap: () {},
+                onHostTap: _goHost,
               ),
 
               const SizedBox(height: 26),
@@ -199,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onHomeTap: () => setState(() => _navIndex = 0),
         onTripsTap: () => setState(() => _navIndex = 1),
         onSupportTap: () => setState(() => _navIndex = 2),
-        onHostTap: () => setState(() => _navIndex = 3),
+        onHostTap: _goHost,
       ),
     );
   }
