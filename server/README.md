@@ -1,163 +1,91 @@
-# Car Rental Application - Car Management Backend Module
+# Rent-A-Car P2P Mobile App Backend API
 
-This repository hosts a production-ready, scalable, and modular Node.js/Express.js backend for the **Car Management** module of a Car Rental application, integrated with **Supabase (PostgreSQL)**.
+This is the complete Express-based REST API for a peer-to-peer car rental mobile app, integrated with **Supabase (PostgreSQL + Auth)** using `@supabase/supabase-js`.
 
----
-
-## Features Implemented
-- **Car Draft Setup**: Save vehicle progress at any step and submit for verification later.
-- **MVC Architecture**: Explicitly structured directories into Controllers, Services, Repositories, Validators, and Config.
-- **Supabase Integration**: Direct database connection utilizing the `@supabase/supabase-js` client SDK.
-- **Robust Storage**: Upload car images and registration documents (RC, Insurance, Fitness, PUC) to Supabase Storage, with fallback to local disk storage.
-- **Input Validation**: Step-by-step validation rules built with `express-validator` to guarantee data integrity.
-- **Centralized Error Handling**: Uniform API responses for successes and failures.
-- **Developer Tools**: OpenAPI (Swagger) specifications and a Postman Collection.
+## Tech Stack & Architecture
+- **Runtime**: Node.js (Express)
+- **Database**: Supabase PostgreSQL + Auth
+- **ORM & Data Client**: Supabase JS SDK (`@supabase/supabase-js`)
+- **Task Scheduling**: `node-cron`
+- **Testing**: Jest + `supertest`
 
 ---
 
-## Directory Structure
-```text
-server/
-├── migrations/
-│   └── schema.sql          # DB initialization and table schema scripts
-├── src/
-│   ├── config/
-│   │   └── supabase.js     # Supabase client setup
-│   ├── middleware/
-│   │   ├── errorHandler.js # Global error response formatter
-│   │   └── multer.js       # File upload configurations
-│   ├── modules/
-│   │   └── cars/
-│   │       ├── controllers/
-│   │       ├── services/
-│   │       ├── repositories/
-│   │       ├── routes/
-│   │       └── validators/
-│   ├── utils/
-│   │   ├── errors.js       # Common application errors (BadRequest, NotFound, etc.)
-│   │   └── response.js     # Unified success/error response helpers
-│   ├── app.js              # Express application configuration
-│   └── server.js           # Main application entry point
-├── .env.example
-├── package.json
-├── swagger.json            # Swagger/OpenAPI 3.0 API specifications
-└── postman_collection.json # Importable Postman collection
+## Environment Variables Setup
+
+Create a `.env` file in the `/server` directory:
+
+```env
+PORT=3000
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key-bypasses-rls
+JWT_SECRET=your-supabase-jwt-secret-from-dashboard-settings
+SMS_PROVIDER_API_KEY=mock-sms-key
 ```
 
+> [!IMPORTANT]
+> - **SUPABASE_SERVICE_ROLE_KEY**: Make sure you use the `service_role` key and NOT the `anon` key, as the server needs administrative privileges to perform custom rate-limited OTP updates, document verification, and manage the database.
+> - **JWT_SECRET**: Use the exact Supabase JWT secret found under your Supabase Project Settings -> API -> JWT Secret. This allows the backend to issue tokens that Supabase services automatically trust.
+
 ---
 
-## Installation & Setup
+## Supabase Database Migrations
 
-### Prerequisites
-- Node.js (v16+)
-- npm
+Copy and execute the SQL scripts located in `src/database/migrations` inside your Supabase **SQL Editor** in the following order:
+
+1. **`001_create_profiles_table.sql`**: Sets up the public `users` table linked 1-to-1 with `auth.users`, and the custom `otp_verifications` table.
+2. **`002_create_vehicles_table.sql`**: Creates the `vehicles` table incorporating the custom rental parameters matching front-end states (like variant, odometer reading, mileage, color, etc.).
+3. **`003_create_bookings_table.sql`**: Enables the PostgreSQL `btree_gist` extension and establishes the `bookings` table with an `EXCLUDE` constraint preventing double-bookings.
+4. **`004_create_vehicle_documents_table.sql`**: Configures the document table tracker.
+
+---
+
+## Installation & Running
 
 ### 1. Install Dependencies
-Navigate into the server directory and run:
 ```bash
-cd server
 npm install
 ```
 
-### 2. Configure Environment Variables
-Copy `.env.example` to `.env` and adjust the variables:
+### 2. Start the Server
+The background cron job to expire stale unpaid pending bookings starts automatically in the background alongside the Express server.
 ```bash
-cp .env.example .env
-```
-Inside `.env`:
-- `PORT`: Server port (default: 5000)
-- `SUPABASE_URL` & `SUPABASE_KEY`: Find these in your Supabase Project Settings -> API.
-- `USE_LOCAL_STORAGE`: Set to `true` to save file uploads locally (recommended for testing without Supabase Storage buckets configured) or `false` to upload to Supabase Storage buckets (`car-images` and `car-documents`).
+# Run in development mode (nodemon auto-reload)
+npm run dev
 
-### 3. Initialize Database in Supabase
-1. Log in to your [Supabase Dashboard](https://supabase.com).
-2. Go to the **SQL Editor** of your project.
-3. Open the file `server/migrations/schema.sql`.
-4. Copy its contents, paste them into the SQL Editor, and click **Run**.
-5. *(Optional)* If using Supabase Storage (i.e. `USE_LOCAL_STORAGE=false`), navigate to the **Storage** dashboard on Supabase and create two buckets named:
-   - `car-images` (make it public)
-   - `car-documents`
-
-### 4. Run the Server
-- **Development mode (with auto-reload)**:
-  ```bash
-  npm run dev
-  ```
-- **Production mode**:
-  ```bash
-  npm start
-  ```
-
-The server will be running on [http://localhost:5000](http://localhost:5000). You can check health at [http://localhost:5000/health](http://localhost:5000/health).
-
----
-
-## API Endpoints Reference
-
-### Car Registration Flow
-| Endpoint | Method | Description |
-| :--- | :---: | :--- |
-| `/api/v1/cars` | `POST` | Create a new car in `DRAFT` status |
-| `/api/v1/cars` | `GET` | Retrieve list of all cars (optional filters like `status`, `brand`) |
-| `/api/v1/cars/:id` | `GET` | Get detailed nested view of a specific car |
-| `/api/v1/cars/:id` | `PUT` | Update basic car details |
-| `/api/v1/cars/:id` | `DELETE` | Delete a car (only permitted in `DRAFT` state) |
-| `/api/v1/cars/:id/submit` | `POST` | Transition car status to `PENDING_VERIFICATION` |
-
-### Step-by-Step Data Uploads
-| Endpoint | Method | Description |
-| :--- | :---: | :--- |
-| `/api/v1/cars/:id/location` | `POST` / `PUT` | Save or update car pickup location |
-| `/api/v1/cars/:id/location` | `GET` | Retrieve pickup location details |
-| `/api/v1/cars/:id/pricing` | `POST` / `PUT` | Save or update pricing schema |
-| `/api/v1/cars/:id/pricing` | `GET` | Retrieve pricing schema |
-| `/api/v1/cars/:id/availability` | `POST` / `PUT` | Save or update available/blocked dates |
-| `/api/v1/cars/:id/availability` | `GET` | Retrieve availability details |
-| `/api/v1/cars/:id/images` | `POST` | Upload multiple images (front, back, left, right, interior, dashboard) |
-| `/api/v1/cars/:id/images` | `GET` | List all uploaded images of a car |
-| `/api/v1/cars/:id/images/:imageId` | `DELETE` | Delete a specific image |
-| `/api/v1/cars/:id/documents` | `POST` | Upload PDF/Image files for RC, Insurance, Fitness, and PUC |
-| `/api/v1/cars/:id/documents` | `GET` | Get document URLs |
-
----
-
-## Response Formats
-
-### Success Response (HTTP 200/201)
-```json
-{
-  "success": true,
-  "message": "Car details updated successfully",
-  "data": {
-    "id": "e81d7a8d-...",
-    "brand": "Toyota",
-    "status": "DRAFT"
-  }
-}
+# Run in production mode
+npm start
 ```
 
-### Validation/Client Error Response (HTTP 400/404)
-```json
-{
-  "success": false,
-  "message": "Validation failed",
-  "errors": [
-    {
-      "field": "year",
-      "message": "Year must not exceed the current year"
-    }
-  ]
-}
-```
-
----
-
-## Git Branching Guidelines
-To start working on a new feature or code change:
+### 3. Run Automated Jest Tests
+The test suite utilizes mocks for the database connection and SMS services to ensure fast, deterministic tests without making network requests.
 ```bash
-# Create and switch to a new branch
-git checkout -b feature/car-management
-
-# Push branch to origin
-git push -u origin feature/car-management
+npm run test
 ```
+
+---
+
+## API Modules
+
+### Module 1: Authentication (Mobile OTP)
+- **POST `/api/auth/send-otp`**: Generates a 6-digit verification code, bcrypt-hashes it, enforces rate limits (max 3 requests per 15 minutes per number), and logs it to SMS console.
+- **POST `/api/auth/verify-otp`**: Compares bcrypt hash, checks expiry, locks after 5 attempts. Creates a new user profile or logs in existing user, returning a Supabase-compatible JWT token.
+- **POST `/api/auth/complete-profile`**: Set user full name after first signup (Protected).
+- **GET `/api/auth/me`**: Fetches the profile of the logged-in user (Protected).
+
+### Module 2: Vehicles (Listing & Browsing)
+- **GET `/api/vehicles`**: Browses active & available listings with filters (city, price range, fuel, transmission, seats). (Public, No Auth).
+- **GET `/api/vehicles/:id`**: Gets car detail. Returns owner phone number only if current user is owner or has a confirmed/active booking for the vehicle. (Public, No Auth).
+- **POST `/api/vehicles`**: Creates a new listing in `under_review` status (Protected).
+- **POST `/api/vehicles/:id/documents`**: Uploads registration book document (Protected, Owner).
+- **PATCH `/api/vehicles/:id/availability`**: Toggles car visibility for future searches (Protected, Owner).
+- **PATCH `/api/admin/vehicles/:id/verify-document`**: Simulated admin verification. Verifying `rc_book` transitions the car status to `active`. (Admin).
+
+### Module 3: Bookings
+- **POST `/api/bookings`**: Creates a booking request. Validates car status, checks dates, checks renter ≠ owner, and handles PG exclusion 23P01 code returning a clean `409` conflict error (Protected).
+- **GET `/api/bookings/my-bookings`**: Renter's reservations (Protected).
+- **GET `/api/bookings/my-vehicle-bookings`**: Owner's incoming bookings (Protected).
+- **PATCH `/api/bookings/:id/confirm`**: Owner confirms pending request (Protected).
+- **PATCH `/api/bookings/:id/start`**: Transitions booking from confirmed to active (Protected).
+- **PATCH `/api/bookings/:id/complete`**: Owner completes active trip (Protected).
+- **PATCH `/api/bookings/:id/cancel`**: Cancels booking. Computes refunds and fee tiers (>48 hrs: 0% fee, 24-48 hrs: 50% fee, <24 hrs: 100% fee; deposit always fully refunded). Owner cancellation adds penalty count and refunds 100% (Protected).

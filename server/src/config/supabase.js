@@ -1,16 +1,24 @@
+// supabase.js
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
+const env = require('./env');
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+// supabaseAdmin client has service_role privileges (bypasses RLS)
+const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false
+  }
+});
 
-if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('your-supabase-project')) {
-  console.warn('WARNING: Supabase URL or Key is missing or using placeholder. Ensure SUPABASE_URL and SUPABASE_KEY are set in your environment.');
-}
+// supabaseAnon client uses standard anon key
+const supabaseAnon = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false
+  }
+});
 
-const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseKey || 'placeholder-key'
-);
-
-module.exports = supabase;
+module.exports = {
+  supabase,
+  supabaseAnon
+};

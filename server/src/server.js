@@ -1,22 +1,22 @@
+// server.js
 const app = require('./app');
+const env = require('./config/env');
+const expirePendingBookingsCron = require('./modules/bookings/jobs/expire-pending-bookings.cron');
 
-const PORT = process.env.PORT || 5000;
+// Start background cron jobs
+expirePendingBookingsCron.startCron();
 
-const server = app.listen(PORT, () => {
-  console.log(`[Server] Running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-  console.log(process.env.SUPABASE_URL);
+const server = app.listen(env.PORT, () => {
+  console.log(`===================================================`);
+  console.log(`🚀 Rent-A-Car Server running in ${env.NODE_ENV} mode`);
+  console.log(`📡 Listening at: http://localhost:${env.PORT}`);
+  console.log(`===================================================`);
 });
 
-// Handle Unhandled Promise Rejections
-process.on('unhandledRejection', (err) => {
-  console.error('[UNHANDLED REJECTION] 💥 Shutting down server safely...', err);
+// Graceful shutdown handling
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
   server.close(() => {
-    process.exit(1);
+    console.log('HTTP server closed');
   });
-});
-
-// Handle Uncaught Exceptions
-process.on('uncaughtException', (err) => {
-  console.error('[UNCAUGHT EXCEPTION] 💥 Shutting down server immediately...', err);
-  process.exit(1);
 });
