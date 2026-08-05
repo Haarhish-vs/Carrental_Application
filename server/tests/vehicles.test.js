@@ -74,6 +74,30 @@ describe('Vehicles Module Tests (Listing & Browsing)', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data[0].brand).toBe('Tesla');
     });
+    it('should return 401 if uploading media without auth token', async () => {
+      const res = await request(app)
+        .post('/api/vehicles/upload');
+
+      expect(res.status).toBe(401);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should upload files successfully when authorized', async () => {
+      builder.single.mockResolvedValueOnce({
+        data: { id: ownerId, phone_number: '+12345', full_name: 'Owner Name' },
+        error: null
+      });
+
+      const res = await request(app)
+        .post('/api/vehicles/upload')
+        .set('Authorization', `Bearer ${testToken}`)
+        .attach('files', Buffer.from('dummy image content'), 'test_car.jpg');
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(res.body.data[0]).toContain('/uploads/');
+    });
   });
 
   describe('POST /api/vehicles (Protected)', () => {

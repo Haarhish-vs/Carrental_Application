@@ -9,8 +9,10 @@ const errorHandler = require('./shared/middlewares/error.middleware');
 const app = express();
 
 // Middlewares
+const path = require('path');
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 // Premium Interactive Root Dashboard Page (API Docs & Status)
 app.get('/', (req, res) => {

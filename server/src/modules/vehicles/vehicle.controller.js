@@ -126,7 +126,6 @@ const deleteVehicle = async (req, res, next) => {
   }
 };
 
-// Admin Simulation Endpoint
 const verifyDocumentAdmin = async (req, res, next) => {
   try {
     const { id } = req.params; // vehicleId
@@ -142,6 +141,31 @@ const verifyDocumentAdmin = async (req, res, next) => {
   }
 };
 
+const uploadMedia = async (req, res, next) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No files uploaded'
+      });
+    }
+
+    const urls = req.files.map(file => {
+      const host = req.get('host');
+      const protocol = req.protocol;
+      return `${protocol}://${host}/uploads/${file.filename}`;
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Files uploaded successfully',
+      data: urls
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getVehicles,
   getVehicleById,
@@ -151,5 +175,6 @@ module.exports = {
   toggleAvailability,
   getMyListings,
   deleteVehicle,
-  verifyDocumentAdmin
+  verifyDocumentAdmin,
+  uploadMedia
 };
