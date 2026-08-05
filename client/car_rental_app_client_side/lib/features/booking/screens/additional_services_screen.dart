@@ -162,6 +162,10 @@ class _AdditionalServicesScreenState extends ConsumerState<AdditionalServicesScr
                       const Gap(AppSpacing.md),
                       ElevatedButton(
                         onPressed: () => ref.refresh(servicesListProvider),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                        ),
                         child: const Text("Retry"),
                       ),
                     ],
@@ -183,6 +187,10 @@ class _AdditionalServicesScreenState extends ConsumerState<AdditionalServicesScr
                       ref.read(bookingFlowProvider.notifier).prevStep();
                       context.pop();
                     },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.slate300, width: 1.5),
+                    ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -203,6 +211,7 @@ class _AdditionalServicesScreenState extends ConsumerState<AdditionalServicesScr
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,

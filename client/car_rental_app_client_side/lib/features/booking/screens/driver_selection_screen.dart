@@ -152,6 +152,8 @@ class _DriverSelectionScreenState extends ConsumerState<DriverSelectionScreen> {
                       ElevatedButton(
                         onPressed: () => ref.refresh(driversListProvider),
                         style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
                           minimumSize: const Size(120, 44),
                         ),
                         child: const Text("Retry"),
@@ -176,6 +178,8 @@ class _DriverSelectionScreenState extends ConsumerState<DriverSelectionScreen> {
                       context.pop();
                     },
                     style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.slate300, width: 1.5),
                       minimumSize: const Size(double.infinity, 56),
                     ),
                     child: const Row(
@@ -195,6 +199,7 @@ class _DriverSelectionScreenState extends ConsumerState<DriverSelectionScreen> {
                     onPressed: _validateAndNavigate,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
                       minimumSize: const Size(double.infinity, 56),
                     ),
                     child: const Row(
