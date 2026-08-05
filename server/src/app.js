@@ -325,6 +325,13 @@ app.get('/', (req, res) => {
   `);
 });
 
+// Top-level explicit vehicle upload endpoint
+const uploadMiddleware = require('./shared/middlewares/upload.middleware');
+const { protect: protectAuth } = require('./shared/middlewares/auth.middleware');
+const vehicleCtrl = require('./modules/vehicles/vehicle.controller');
+
+app.post('/api/vehicles/upload', protectAuth, uploadMiddleware.array('files'), vehicleCtrl.uploadMedia);
+
 // Endpoint Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/vehicles', vehicleRoutes);
