@@ -379,6 +379,7 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
                 onPressed: _showSupportDialog,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -411,6 +412,10 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
                   ref.read(bookingFlowProvider.notifier).reset();
                   context.go(AppRoutes.booking);
                 },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                ),
                 child: const Text("Book New Ride"),
               ),
             ],

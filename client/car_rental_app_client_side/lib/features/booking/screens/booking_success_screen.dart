@@ -169,6 +169,7 @@ class _BookingSuccessScreenState extends ConsumerState<BookingSuccessScreen> {
                 onPressed: _isDownloading ? null : _downloadInvoice,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
                   minimumSize: const Size(double.infinity, 54),
                 ),
                 child: _isDownloading
@@ -192,6 +193,8 @@ class _BookingSuccessScreenState extends ConsumerState<BookingSuccessScreen> {
                   context.push('${AppRoutes.bookingDetails}/$bookingId');
                 },
                 style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.slate300, width: 1.5),
                   minimumSize: const Size(double.infinity, 54),
                 ),
                 child: Row(

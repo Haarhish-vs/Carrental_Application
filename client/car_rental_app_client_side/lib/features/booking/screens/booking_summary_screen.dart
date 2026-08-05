@@ -567,6 +567,7 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
                       minimumSize: const Size(180, 52),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),

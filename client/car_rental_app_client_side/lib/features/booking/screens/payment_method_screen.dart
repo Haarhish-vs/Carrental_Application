@@ -170,44 +170,49 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
                   children: [
                     Expanded(
                       flex: 1,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          ref.read(bookingFlowProvider.notifier).prevStep();
-                          context.pop();
-                        },
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.arrow_back, size: 18),
-                            Gap(4),
-                            Text("Back"),
-                          ],
-                        ),
+                    child: OutlinedButton(
+                      onPressed: () {
+                        ref.read(bookingFlowProvider.notifier).prevStep();
+                        context.pop();
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.slate300, width: 1.5),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.arrow_back, size: 18),
+                          Gap(4),
+                          Text("Back"),
+                        ],
                       ),
                     ),
-                    const Gap(AppSpacing.md),
-                    Expanded(
-                      flex: 2,
-                      child: ElevatedButton(
-                        onPressed: flowState.isLoading ? null : _submitPayment,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                        ),
-                        child: flowState.isLoading
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                              )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text("Pay & Confirm"),
-                                  const Gap(6),
-                                  const Icon(Icons.lock_outline_rounded, size: 16),
-                                ],
-                              ),
+                  ),
+                  const Gap(AppSpacing.md),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: flowState.isLoading ? null : _submitPayment,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
                       ),
+                      child: flowState.isLoading
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text("Pay & Confirm"),
+                                Gap(6),
+                                Icon(Icons.lock_outline_rounded, size: 16),
+                              ],
+                            ),
+                    ),
                     ),
                   ],
                 ),
