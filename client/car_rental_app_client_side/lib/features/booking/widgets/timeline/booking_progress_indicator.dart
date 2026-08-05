@@ -64,7 +64,6 @@ class BookingProgressIndicator extends StatelessWidget {
             final double width = constraints.maxWidth;
             final double dotSize = 24.0;
             final int totalSteps = milestones.length;
-            final double stepSpacing = (width - (dotSize * totalSteps)) / (totalSteps - 1);
 
             return Column(
               mainAxisSize: MainAxisSize.min,
