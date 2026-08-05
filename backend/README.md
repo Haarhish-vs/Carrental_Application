@@ -1,12 +1,13 @@
 # Booking Module for Peer-to-Peer Car Rental App Backend
 
-This is the Booking Module built for a peer-to-peer car rental app backend.
+This backend includes the existing booking module and the new vehicle document verification module.
 
 ## Tech Stack
 - **Node.js (Express)**
-- **Supabase (PostgreSQL)** via the `@supabase/supabase-js` client
-- **Zod** (for request and query parameter validation)
-- **node-cron** (for background cleanup of stale pending bookings)
+- **Supabase (PostgreSQL + Storage)** via the `@supabase/supabase-js` client
+- **Multer** for multipart uploads
+- **JWT authentication** via the existing auth middleware
+- **OCR + Gemini-ready service layer** for document analysis
 - **Jest & Supertest** (for unit and integration testing)
 
 ---
@@ -19,43 +20,34 @@ Create a `.env` file in the root directory based on the `.env.example` file:
 PORT=3000
 SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+GEMINI_API_KEY=your-gemini-api-key
+JWT_SECRET=your-jwt-secret
 ```
 
-*Note: The `SUPABASE_SERVICE_ROLE_KEY` is required because the backend needs to perform administrative actions such as updating status, cancellation tracking, and cron job modifications that bypass row-level security (RLS).*
-
 ---
 
-## Running Database Migrations on Supabase
-
-Follow these steps to apply the schema and index constraints to your Supabase project:
-
-1. In the Supabase dashboard of your project, navigate to the **SQL Editor**.
-2. Click **New Query**.
-3. Copy the contents of the migration file located at:
-   `database/migrations/001_create_bookings_table.sql`
-4. Paste it into the editor and click **Run**.
-
-### Key Features of Database Migration:
-- **`btree_gist` Extension**: Enabled to support GIST indexing on basic types like UUID.
-- **Generated `date_range` Column**: Automatically aggregates `start_date` and `end_date` into a `daterange` type stored in the database.
-- **GIST Exclusion Constraint**: Prevents double-booking at the PostgreSQL level. This applies only to active bookings with statuses `'pending'`, `'confirmed'`, or `'active'`.
-
----
-
-## Starting the Application and Cron Jobs
+## Starting the Application
 
 1. Install dependencies:
    ```bash
    npm install
    ```
-2. Start the Express server and initialize the cron job:
+2. Start the Express server:
    ```bash
    npm start
    ```
 
-*The scheduled cron job (`expire-pending-bookings.cron.js`) automatically initializes on startup and runs every 10 minutes. It scans for `'pending'` bookings with `'unpaid'` status that were created more than 15 minutes ago, changing their status to `'cancelled'` under system authority.*
-
 ---
+
+## Vehicle Document Verification Endpoints
+
+- POST /api/documents/upload
+- POST /api/documents/analyze
+- POST /api/documents/verify
+
+## Postman example
+
+A sample collection is available in the backend root as `postman_document_verification.json`.
 
 ## Running Automated Tests
 
