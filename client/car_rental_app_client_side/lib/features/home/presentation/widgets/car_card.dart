@@ -1,0 +1,140 @@
+import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../models/car_model.dart';
+
+/// Reusable car card used by both Recommended Cars and Popular Cars.
+/// Tapping the card fires onCarTap; tapping the button fires onBookNow —
+/// kept separate since teammates may route them to different screens
+/// (car details vs. booking flow).
+class CarCard extends StatelessWidget {
+  final CarModel car;
+  final VoidCallback? onCarTap;
+  final VoidCallback? onBookNow;
+  final double width;
+
+  const CarCard({
+    super.key,
+    required this.car,
+    this.onCarTap,
+    this.onBookNow,
+    this.width = 220,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onCarTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        width: width,
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 14, offset: const Offset(0, 6)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                  child: Image.network(car.imageUrl, height: 110, width: double.infinity, fit: BoxFit.cover),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.star_rounded, size: 14, color: AppColors.rating),
+                        const SizedBox(width: 2),
+                        Text(car.rating.toString(), style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(car.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      _SpecChip(icon: Icons.settings, label: car.transmission),
+                      _SpecChip(icon: Icons.local_gas_station, label: car.fuelType),
+                      _SpecChip(icon: Icons.event_seat, label: '${car.seats} Seats'),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: RichText(
+                          overflow: TextOverflow.ellipsis,
+                          text: TextSpan(
+                            style: const TextStyle(color: AppColors.textPrimary),
+                            children: [
+                              TextSpan(
+                                text: '₹${car.pricePerDay.toStringAsFixed(0)}',
+                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                              ),
+                              const TextSpan(text: '/day', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: onBookNow,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                          decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(10)),
+                          child: const Text('Book Now',
+                              style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SpecChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _SpecChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 12, color: AppColors.textSecondary),
+        const SizedBox(width: 3),
+        Text(label, style: const TextStyle(fontSize: 10.5, color: AppColors.textSecondary)),
+      ],
+    );
+  }
+}
