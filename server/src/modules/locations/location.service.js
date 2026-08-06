@@ -5,37 +5,39 @@ const env = require('../../config/env');
 const GOOGLE_MAPS_API_KEY = env.GOOGLE_MAPS_API_KEY;
 
 /**
- * Searches for a location using Google Places API (Text Search)
+ * Searches for a location using OpenStreetMap Nominatim API
  * @param {string} query 
  * @returns {Array} Array of location objects
  */
 const searchLocations = async (query) => {
   if (!query) return [];
-  
-  if (!GOOGLE_MAPS_API_KEY) {
-    throw new Error('Google Maps API key is not configured');
-  }
 
-  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${GOOGLE_MAPS_API_KEY}`;
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=jsonv2&addressdetails=1&limit=10`;
   
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'CarRentalApp/1.0',
+      'Accept': 'application/json'
+    }
+  });
+  
   const data = await response.json();
 
-  if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-    throw new Error(`Google Places API error: ${data.status} - ${data.error_message || ''}`);
+  if (!Array.isArray(data)) {
+    return []; // Return empty array on unexpected response instead of throwing
   }
 
-  return data.results.map(place => ({
-    placeId: place.place_id,
-    name: place.name,
-    address: place.formatted_address,
-    latitude: place.geometry?.location?.lat,
-    longitude: place.geometry?.location?.lng
+  return data.map(place => ({
+    placeId: place.place_id?.toString() || place.osm_id?.toString() || Math.random().toString(),
+    name: place.name || (place.display_name ? place.display_name.split(',')[0] : 'Unknown'),
+    address: place.display_name || '',
+    latitude: parseFloat(place.lat),
+    longitude: parseFloat(place.lon)
   }));
 };
 
 /**
- * Reverse geocodes coordinates using Google Geocoding API
+ * Reverse geocodes coordinates using OpenStreetMap Nominatim API
  * @param {number} latitude 
  * @param {number} longitude 
  * @returns {Object} Location details (address, city, state, country)
@@ -45,46 +47,28 @@ const reverseGeocode = async (latitude, longitude) => {
     throw new Error('Latitude and longitude are required');
   }
 
-  if (!GOOGLE_MAPS_API_KEY) {
-    throw new Error('Google Maps API key is not configured');
-  }
-
-  const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`;
+  const url = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=jsonv2&addressdetails=1`;
   
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'CarRentalApp/1.0',
+      'Accept': 'application/json'
+    }
+  });
+  
   const data = await response.json();
 
-  if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-    throw new Error(`Google Geocoding API error: ${data.status} - ${data.error_message || ''}`);
+  if (data.error) {
+    return null; // Gracefully handle not found or errors
   }
 
-  if (!data.results || data.results.length === 0) {
-    return null;
-  }
-
-  const result = data.results[0];
-  let city = '';
-  let state = '';
-  let country = '';
-
-  for (const component of result.address_components) {
-    const types = component.types;
-    if (types.includes('locality') || types.includes('administrative_area_level_2')) {
-      if (!city) city = component.long_name;
-    }
-    if (types.includes('administrative_area_level_1')) {
-      state = component.long_name;
-    }
-    if (types.includes('country')) {
-      country = component.long_name;
-    }
-  }
+  const address = data.address || {};
 
   return {
-    formattedAddress: result.formatted_address,
-    city,
-    state,
-    country
+    formattedAddress: data.display_name || '',
+    city: address.city || address.town || address.village || address.county || '',
+    state: address.state || '',
+    country: address.country || ''
   };
 };
 
