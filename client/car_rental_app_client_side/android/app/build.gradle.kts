@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.car_rental_app_client_side"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
