@@ -1,0 +1,344 @@
+{
+  "info": {
+    "name": "Vehicle Document Verification API - Fixed",
+    "description": "Fixed Postman collection for Zoomcar Clone Document Verification Module",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Upload Documents",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "vehicleId",
+              "value": "TN38AB1234",
+              "type": "text"
+            },
+            {
+              "key": "rc",
+              "type": "file",
+              "src": "/path/to/rc_document.jpg"
+            },
+            {
+              "key": "insurance",
+              "type": "file",
+              "src": "/path/to/insurance_document.jpg"
+            },
+            {
+              "key": "fc",
+              "type": "file",
+              "src": "/path/to/fc_document.jpg"
+            },
+            {
+              "key": "puc",
+              "type": "file",
+              "src": "/path/to/puc_document.jpg"
+            },
+            {
+              "key": "permit",
+              "type": "file",
+              "src": "/path/to/permit_document.jpg"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/documents/upload",
+          "host": ["{{base_url}}"],
+          "path": ["api", "documents", "upload"]
+        },
+        "description": "Upload vehicle documents to Supabase Storage. Supports RC, Insurance, FC, PUC, and Permit documents. Returns uploaded document details with storage paths and public URLs."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": []
+            },
+            "url": {
+              "raw": "{{base_url}}/api/documents/upload",
+              "host": ["{{base_url}}"],
+              "path": ["api", "documents", "upload"]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Documents uploaded successfully\",\n  \"data\": {\n    \"uploadedDocuments\": [\n      {\n        \"documentType\": \"rc\",\n        \"storagePath\": \"vehicle-documents/TN38AB1234/rc.jpg\",\n        \"publicUrl\": \"https://supabase-url.com/...\",\n        \"recordId\": 1\n      }\n    ]\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Analyze Document",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vehicleId\": \"TN38AB1234\",\n  \"documentType\": \"rc\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/documents/analyze",
+          "host": ["{{base_url}}"],
+          "path": ["api", "documents", "analyze"]
+        },
+        "description": "Analyze a previously uploaded document using OCR. Reads the document from Supabase Storage, extracts text using Tesseract, extracts structured fields, and saves OCR data to database. NO file upload required - uses stored document."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": \"TN38AB1234\",\n  \"documentType\": \"rc\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/documents/analyze",
+              "host": ["{{base_url}}"],
+              "path": ["api", "documents", "analyze"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Document analyzed successfully\",\n  \"data\": {\n    \"documentType\": \"rc\",\n    \"ocrText\": \"REGN NO: TN38AB1234...\",\n    \"extractedFields\": {\n      \"registrationNumber\": \"TN38AB1234\",\n      \"ownerName\": \"JOHN DOE\",\n      \"vehicleNumber\": \"TN38AB1234\",\n      \"engineNumber\": \"ABC12345\",\n      \"chassisNumber\": \"XYZ67890\",\n      \"registrationDate\": \"15-01-2020\",\n      \"manufacturer\": \"MARUTI SUZUKI\"\n    },\n    \"status\": \"analyzed\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Verify Documents",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vehicleId\": \"TN38AB1234\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/documents/verify",
+          "host": ["{{base_url}}"],
+          "path": ["api", "documents", "verify"]
+        },
+        "description": "Verify all analyzed documents for a vehicle. Validates required fields, checks expiry dates, performs cross-validation across documents (vehicle number, owner name, engine number, chassis number), generates AI analysis using Gemini, and creates verification report. NO file upload required - uses OCR data from database."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": \"TN38AB1234\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/documents/verify",
+              "host": ["{{base_url}}"],
+              "path": ["api", "documents", "verify"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Verification completed\",\n  \"data\": {\n    \"reportId\": 1,\n    \"overallStatus\": \"passed\",\n    \"overallScore\": 95,\n    \"summary\": \"Vehicle TN38AB1234 document verification completed with 5 documents reviewed.\",\n    \"recommendation\": \"All documents are valid. Vehicle is ready for rental.\",\n    \"validationResults\": [\n      {\n        \"documentType\": \"rc\",\n        \"status\": \"passed\",\n        \"score\": 100,\n        \"missingFields\": [],\n        \"expiryStatus\": \"valid\",\n        \"fields\": { }\n      }\n    ],\n    \"crossValidationResults\": {\n      \"vehicleNumber\": {\n        \"status\": \"match\",\n        \"details\": {\n          \"value\": \"TN38AB1234\",\n          \"sources\": [\"rc\", \"insurance\", \"fc\", \"puc\", \"permit\"]\n        }\n      },\n      \"ownerName\": {\n        \"status\": \"match\",\n        \"details\": {\n          \"value\": \"JOHN DOE\",\n          \"sources\": [\"rc\"]\n        }\n      },\n      \"overallStatus\": \"match\"\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Vehicle Documents",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/documents/TN38AB1234",
+          "host": ["{{base_url}}"],
+          "path": ["api", "documents", "TN38AB1234"]
+        },
+        "description": "Retrieve all documents for a specific vehicle ID including status, OCR text, and extracted fields."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/documents/TN38AB1234",
+              "host": ["{{base_url}}"],
+              "path": ["api", "documents", "TN38AB1234"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Documents retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"vehicle_id\": \"TN38AB1234\",\n      \"document_type\": \"rc\",\n      \"storage_path\": \"vehicle-documents/TN38AB1234/rc.jpg\",\n      \"public_url\": \"https://supabase-url.com/...\",\n      \"ocr_text\": \"REGN NO: TN38AB1234...\",\n      \"extracted_fields\": { },\n      \"status\": \"verified\",\n      \"uploaded_at\": \"2024-01-15T10:30:00Z\"\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Verification Report",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/documents/TN38AB1234/report",
+          "host": ["{{base_url}}"],
+          "path": ["api", "documents", "TN38AB1234", "report"]
+        },
+        "description": "Retrieve the latest verification report for a vehicle including overall status, score, AI summary, and recommendations."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/documents/TN38AB1234/report",
+              "host": ["{{base_url}}"],
+              "path": ["api", "documents", "TN38AB1234", "report"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Verification report retrieved successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"vehicle_id\": \"TN38AB1234\",\n    \"overall_status\": \"passed\",\n    \"overall_score\": 95,\n    \"ai_summary\": \"Vehicle TN38AB1234 document verification completed with 5 documents reviewed.\",\n    \"recommendation\": \"All documents are valid. Vehicle is ready for rental.\",\n    \"validation_results\": [ ],\n    \"cross_validation_results\": { },\n    \"created_at\": \"2024-01-15T11:00:00Z\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Delete Document",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/documents/1",
+          "host": ["{{base_url}}"],
+          "path": ["api", "documents", "1"]
+        },
+        "description": "Delete a specific document by its ID. Removes the file from Supabase Storage and deletes the database record."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/documents/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "documents", "1"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Document deleted successfully\",\n  \"data\": {\n    \"documentId\": \"1\",\n    \"message\": \"Document deleted successfully\"\n  }\n}"
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "your_jwt_token_here",
+      "type": "string"
+    }
+  ]
+}

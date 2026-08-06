@@ -1,10 +1,11 @@
 class GeminiService {
-  async analyzeDocuments({ vehicleId, documents, validationResults }) {
+  async analyzeDocuments({ vehicleId, documents, validationResults, crossValidationResults }) {
+    const failedDocs = validationResults.filter((item) => item.status === 'failed');
     const fallback = {
-      overallStatus: validationResults.some((item) => item.status === 'failed') ? 'failed' : 'passed',
+      overallStatus: failedDocs.length > 0 ? 'failed' : 'passed',
       score: validationResults.reduce((acc, item) => acc + item.score, 0) / Math.max(1, validationResults.length),
-      summary: `Vehicle ${vehicleId} document verification completed with ${documents.length} documents reviewed.`,
-      recommendation: 'Review flagged fields and upload clearer copies if needed.',
+      summary: `Vehicle ${vehicleId} document verification completed with ${documents.length} documents reviewed. ${failedDocs.length} documents failed validation.`,
+      recommendation: failedDocs.length > 0 ? 'Review failed documents and upload clearer copies. Check expiry dates and missing fields.' : 'All documents are valid. Vehicle is ready for rental.',
     };
 
     const apiKey = process.env.GEMINI_API_KEY;
@@ -18,7 +19,21 @@ class GeminiService {
           {
             parts: [
               {
-                text: `Analyze these vehicle document verification results and return a concise JSON object with fields: overallStatus, score, summary, recommendation. Results: ${JSON.stringify({ vehicleId, documents, validationResults })}`,
+                text: `You are a vehicle document verification expert. Analyze these vehicle document verification results and return a concise JSON object with fields: overallStatus (passed/failed), score (0-100), summary (brief overview), recommendation (actionable advice).
+
+Vehicle ID: ${vehicleId}
+Documents: ${JSON.stringify(documents, null, 2)}
+Validation Results: ${JSON.stringify(validationResults, null, 2)}
+Cross-Validation Results: ${JSON.stringify(crossValidationResults, null, 2)}
+
+Consider:
+1. Individual document validation status and scores
+2. Missing required fields
+3. Expiry dates (expired, expiring soon, valid)
+4. Cross-validation consistency (vehicle number, owner name, engine number, chassis number should match across documents)
+5. Overall document completeness
+
+Return ONLY valid JSON without markdown formatting.`,
               },
             ],
           },
@@ -42,7 +57,9 @@ class GeminiService {
         return fallback;
       }
 
-      const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
+      const cleanedText = text.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(cleanedText);
+      
       return {
         overallStatus: parsed.overallStatus || fallback.overallStatus,
         score: parsed.score || fallback.score,

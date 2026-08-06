@@ -41,22 +41,45 @@ class DocumentService {
     return { uploadedDocuments: uploaded };
   }
 
-  async analyzeDocument({ vehicleId, documentType, file }) {
-    const detectedType = documentType || ocrService.detectDocumentType(file.originalname);
-    const ocrText = await ocrService.extractText(file);
+  async analyzeDocument({ vehicleId, documentType }) {
+    const record = await documentModel.getLatestDocumentRecord(vehicleId, documentType);
 
-    const record = await documentModel.getLatestDocumentRecord(vehicleId, detectedType);
-
-    if (record) {
-      await documentModel.updateDocumentRecord(record.id, {
-        ocr_text: ocrText,
-        status: 'analyzed',
-      });
+    if (!record) {
+      const error = new Error(`No uploaded document found for vehicleId: ${vehicleId} and documentType: ${documentType}`);
+      error.status = 404;
+      throw error;
     }
 
+    if (record.status === 'analyzed') {
+      const extractedFields = ocrService.extractFields(record.ocr_text, documentType);
+      return {
+        documentType,
+        ocrText: record.ocr_text,
+        extractedFields,
+        status: 'analyzed',
+        message: 'Document already analyzed',
+      };
+    }
+
+    const fileBuffer = await supabaseStorageService.downloadFile({
+      bucket: 'vehicle-documents',
+      storagePath: record.storage_path,
+    });
+
+    const ocrText = await ocrService.extractTextFromBuffer(fileBuffer, record.storage_path);
+
+    const extractedFields = ocrService.extractFields(ocrText, documentType);
+
+    await documentModel.updateDocumentRecord(record.id, {
+      ocr_text: ocrText,
+      extracted_fields: extractedFields,
+      status: 'analyzed',
+    });
+
     return {
-      documentType: detectedType,
+      documentType,
       ocrText,
+      extractedFields,
       status: 'analyzed',
     };
   }
@@ -65,25 +88,36 @@ class DocumentService {
     const docs = await documentModel.getVehicleDocuments(vehicleId);
 
     if (!docs.length) {
-      throw new Error('No documents found for the provided vehicleId');
+      const error = new Error('No documents found for the provided vehicleId');
+      error.status = 404;
+      throw error;
     }
 
-    const extractionResults = [];
-
-    for (const doc of docs) {
-      const extracted = await ocrService.extractTextFromStoredDocument(doc.public_url);
-      extractionResults.push({
-        documentType: doc.document_type,
-        ocrText: extracted,
-      });
+    const analyzedDocs = docs.filter(doc => doc.status === 'analyzed');
+    if (analyzedDocs.length === 0) {
+      const error = new Error('No analyzed documents found. Please analyze documents before verification.');
+      error.status = 400;
+      throw error;
     }
 
-    const validationResults = verificationService.validateDocuments(extractionResults);
+    const documentData = analyzedDocs.map(doc => ({
+      documentType: doc.document_type,
+      ocrText: doc.ocr_text,
+      extractedFields: doc.extracted_fields || ocrService.extractFields(doc.ocr_text, doc.document_type),
+    }));
+
+    const validationResults = verificationService.validateDocuments(documentData);
+
+    const crossValidationResults = verificationService.crossValidateDocuments(documentData);
+
     const aiAnalysis = await geminiService.analyzeDocuments({
       vehicleId,
-      documents: extractionResults,
+      documents: documentData,
       validationResults,
+      crossValidationResults,
     });
+
+    await documentModel.updateAllDocumentStatuses(vehicleId, 'verified');
 
     const report = await documentModel.createVerificationReport({
       vehicleId,
@@ -91,6 +125,8 @@ class DocumentService {
       overall_score: aiAnalysis.score,
       ai_summary: aiAnalysis.summary,
       recommendation: aiAnalysis.recommendation,
+      validation_results: validationResults,
+      cross_validation_results: crossValidationResults,
     });
 
     return {
@@ -98,9 +134,53 @@ class DocumentService {
       overallStatus: aiAnalysis.overallStatus,
       overallScore: aiAnalysis.score,
       summary: aiAnalysis.summary,
-      recommendations: aiAnalysis.recommendation,
+      recommendation: aiAnalysis.recommendation,
       validationResults,
+      crossValidationResults,
     };
+  }
+
+  async getVehicleDocuments(vehicleId) {
+    const docs = await documentModel.getVehicleDocuments(vehicleId);
+
+    if (!docs.length) {
+      const error = new Error('No documents found for the provided vehicleId');
+      error.status = 404;
+      throw error;
+    }
+
+    return docs;
+  }
+
+  async getVerificationReport(vehicleId) {
+    const report = await documentModel.getVerificationReport(vehicleId);
+
+    if (!report) {
+      const error = new Error('No verification report found for the provided vehicleId');
+      error.status = 404;
+      throw error;
+    }
+
+    return report;
+  }
+
+  async deleteDocument(documentId) {
+    const record = await documentModel.getDocumentById(documentId);
+
+    if (!record) {
+      const error = new Error('Document not found');
+      error.status = 404;
+      throw error;
+    }
+
+    await supabaseStorageService.deleteFile({
+      bucket: 'vehicle-documents',
+      storagePath: record.storage_path,
+    });
+
+    await documentModel.deleteDocumentRecord(documentId);
+
+    return { documentId, message: 'Document deleted successfully' };
   }
 
   getFileExt(fileName) {

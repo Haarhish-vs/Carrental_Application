@@ -13,7 +13,7 @@ const uploadDocuments = async (req, res, next) => {
 
     const result = await documentService.uploadDocuments({ vehicleId, files: req.files || {} });
 
-    return res.status(200).json({
+    return res.status(201).json({
       success: true,
       message: 'Documents uploaded successfully',
       data: result,
@@ -26,16 +26,30 @@ const uploadDocuments = async (req, res, next) => {
 const analyzeDocument = async (req, res, next) => {
   try {
     const { vehicleId, documentType } = req.body;
-    const file = req.files?.[documentType]?.[0] || req.file;
 
-    if (!file) {
+    if (!vehicleId) {
       return res.status(400).json({
         success: false,
-        message: 'A document file is required',
+        message: 'vehicleId is required',
       });
     }
 
-    const result = await documentService.analyzeDocument({ vehicleId, documentType, file });
+    if (!documentType) {
+      return res.status(400).json({
+        success: false,
+        message: 'documentType is required (rc, insurance, fc, puc, permit)',
+      });
+    }
+
+    const validTypes = ['rc', 'insurance', 'fc', 'puc', 'permit'];
+    if (!validTypes.includes(documentType)) {
+      return res.status(422).json({
+        success: false,
+        message: `Invalid documentType. Must be one of: ${validTypes.join(', ')}`,
+      });
+    }
+
+    const result = await documentService.analyzeDocument({ vehicleId, documentType });
 
     return res.status(200).json({
       success: true,
@@ -70,8 +84,80 @@ const verifyDocuments = async (req, res, next) => {
   }
 };
 
+const getVehicleDocuments = async (req, res, next) => {
+  try {
+    const { vehicleId } = req.params;
+
+    if (!vehicleId) {
+      return res.status(400).json({
+        success: false,
+        message: 'vehicleId is required',
+      });
+    }
+
+    const result = await documentService.getVehicleDocuments(vehicleId);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Documents retrieved successfully',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getVerificationReport = async (req, res, next) => {
+  try {
+    const { vehicleId } = req.params;
+
+    if (!vehicleId) {
+      return res.status(400).json({
+        success: false,
+        message: 'vehicleId is required',
+      });
+    }
+
+    const result = await documentService.getVerificationReport(vehicleId);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Verification report retrieved successfully',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteDocument = async (req, res, next) => {
+  try {
+    const { documentId } = req.params;
+
+    if (!documentId) {
+      return res.status(400).json({
+        success: false,
+        message: 'documentId is required',
+      });
+    }
+
+    const result = await documentService.deleteDocument(documentId);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Document deleted successfully',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   uploadDocuments,
   analyzeDocument,
   verifyDocuments,
+  getVehicleDocuments,
+  getVerificationReport,
+  deleteDocument,
 };
