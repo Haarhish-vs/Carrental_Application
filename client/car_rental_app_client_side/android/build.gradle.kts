@@ -21,7 +21,7 @@ subprojects {
 
 subprojects {
     plugins.withId("com.android.library") {
-        the<com.android.build.gradle.LibraryExtension>().apply {
+        (this@subprojects.extensions.getByName("android") as com.android.build.gradle.LibraryExtension).apply {
             compileSdk = 36
         }
     }
