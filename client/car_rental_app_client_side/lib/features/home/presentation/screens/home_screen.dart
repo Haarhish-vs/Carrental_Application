@@ -12,6 +12,7 @@ import '../widgets/become_host_banner.dart';
 import '../widgets/stats_section.dart';
 import '../widgets/home_footer.dart';
 import '../widgets/bottom_navigation.dart';
+import '../widgets/home_drawer.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +22,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   int _navIndex = 0;
 
   String? _userName;
@@ -31,16 +34,52 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _returnDate;
   String? _returnTime;
 
+<<<<<<< Updated upstream
+=======
+  Future<void> _goHost() async {
+    if (AuthService.isAuthenticated) {
+      if (!mounted) return;
+
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const CarSpecificationScreen(),
+        ),
+      );
+      return;
+    }
+
+    final authSuccess = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => const AuthScreen(),
+      ),
+    );
+
+    if (authSuccess == true && mounted) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const CarSpecificationScreen(),
+        ),
+      );
+    }
+  }
+
+>>>>>>> Stashed changes
   Future<void> _pickDate({required bool isPickup}) async {
     final picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      lastDate: DateTime.now().add(
+        const Duration(days: 365),
+      ),
     );
+
     if (picked == null) return;
-    final formatted = '${picked.day.toString().padLeft(2, '0')}/'
+
+    final formatted =
+        '${picked.day.toString().padLeft(2, '0')}/'
         '${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+
     setState(() {
       if (isPickup) {
         _pickupDate = formatted;
@@ -55,8 +94,11 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       initialTime: TimeOfDay.now(),
     );
+
     if (picked == null) return;
+
     final formatted = picked.format(context);
+
     setState(() {
       if (isPickup) {
         _pickupTime = formatted;
@@ -69,7 +111,97 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: AppColors.background,
+
+      drawer: HomeDrawer(
+        userName: _userName,
+        userLocation: _userLocation,
+
+        onProfileTap: () {
+          Navigator.pop(context);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile coming soon'),
+            ),
+          );
+        },
+
+        onTripsTap: () {
+          Navigator.pop(context);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Trips coming soon'),
+            ),
+          );
+        },
+        onFavoritesTap: () {
+  Navigator.pop(context);
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Favorites coming soon'),
+    ),
+  );
+},
+
+        onSupportTap: () {
+          Navigator.pop(context);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Support coming soon'),
+            ),
+          );
+        },
+
+        onHostTap: () async {
+          Navigator.pop(context);
+          await _goHost();
+        },
+        onSettingsTap: () {
+  Navigator.pop(context);
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Settings coming soon'),
+    ),
+  );
+},
+
+onHelpTap: () {
+  Navigator.pop(context);
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Help & FAQs coming soon'),
+    ),
+  );
+},
+
+onPrivacyTap: () {
+  Navigator.pop(context);
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Privacy Policy coming soon'),
+    ),
+  );
+},
+
+        onLogoutTap: () {
+          Navigator.pop(context);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Logout coming soon'),
+            ),
+          );
+        },
+      ),
+
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -77,28 +209,27 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               CustomHomeAppBar(
                 userName: _userName,
-                location:  _userLocation,
+                location: _userLocation,
+
                 onMenuTap: () {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Menu coming soon'),
-    ),
-  );
-},
+                  _scaffoldKey.currentState?.openDrawer();
+                },
+
                 onFavoriteTap: () {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Favorites coming soon'),
-    ),
-  );
-},
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Favorites coming soon'),
+                    ),
+                  );
+                },
+
                 onProfileTap: () {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Profile screen coming soon'),
-    ),
-  );
-},
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Profile coming soon'),
+                    ),
+                  );
+                },
               ),
 
               const SizedBox(height: 10),
@@ -109,34 +240,41 @@ class _HomeScreenState extends State<HomeScreen> {
                 pickupTime: _pickupTime,
                 returnDate: _returnDate,
                 returnTime: _returnTime,
+
                 onPickupLocationTap: () {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Location selection will be connected soon.'),
-    ),
-  );
-},
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Location selection will be connected soon.',
+                      ),
+                    ),
+                  );
+                },
+
                 onPickupDateTap: () => _pickDate(isPickup: true),
                 onPickupTimeTap: () => _pickTime(isPickup: true),
                 onReturnDateTap: () => _pickDate(isPickup: false),
                 onReturnTimeTap: () => _pickTime(isPickup: false),
-                onSearch: () {
-  if (_pickupLocation == null ||
-      _pickupDate == null ||
-      _pickupTime == null ||
-      _returnDate == null ||
-      _returnTime == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please fill all search details'),
-      ),
-    );
-    return;
-  }
 
-  // TODO:
-  // Navigate to Search Result Screen
-},
+                onSearch: () {
+                  if (_pickupLocation == null ||
+                      _pickupDate == null ||
+                      _pickupTime == null ||
+                      _returnDate == null ||
+                      _returnTime == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Please fill all search details',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+
+                  // TODO:
+                  // Navigate to Search Results Screen
+                },
               ),
 
               const SizedBox(height: 22),
@@ -194,12 +332,36 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+
       bottomNavigationBar: BottomNavigation(
         currentIndex: _navIndex,
+<<<<<<< Updated upstream
         onHomeTap: () => setState(() => _navIndex = 0),
         onTripsTap: () => setState(() => _navIndex = 1),
         onSupportTap: () => setState(() => _navIndex = 2),
         onHostTap: () => setState(() => _navIndex = 3),
+=======
+
+        onHomeTap: () {
+          setState(() {
+            _navIndex = 0;
+          });
+        },
+
+        onTripsTap: () {
+          setState(() {
+            _navIndex = 1;
+          });
+        },
+
+        onSupportTap: () {
+          setState(() {
+            _navIndex = 2;
+          });
+        },
+
+        onHostTap: _goHost,
+>>>>>>> Stashed changes
       ),
     );
   }
