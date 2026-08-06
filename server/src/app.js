@@ -4,6 +4,7 @@ const cors = require('cors');
 const authRoutes = require('./modules/auth/auth.routes');
 const vehicleRoutes = require('./modules/vehicles/vehicle.routes');
 const bookingRoutes = require('./modules/bookings/booking.routes');
+const locationRoutes = require('./modules/locations/location.routes');
 const errorHandler = require('./shared/middlewares/error.middleware');
 
 const app = express();
@@ -315,6 +316,43 @@ app.get('/', (req, res) => {
               </li>
             </ul>
           </div>
+
+          <!-- Locations Module Card -->
+          <div class="card">
+            <h2>📍 Locations Services</h2>
+            <ul class="endpoint-list">
+              <li class="endpoint-row">
+                <span class="method get">GET</span>
+                <span class="path">/api/locations/search?q=</span>
+                <span class="desc">Search places via Google Maps</span>
+              </li>
+              <li class="endpoint-row">
+                <span class="method post">POST</span>
+                <span class="path">/api/locations/reverse-geocode</span>
+                <span class="desc">Get address from lat/lng</span>
+              </li>
+              <li class="endpoint-row">
+                <span class="method get">GET</span>
+                <span class="path">/api/locations/popular</span>
+                <span class="desc">List popular default cities</span>
+              </li>
+              <li class="endpoint-row">
+                <span class="method get">GET</span>
+                <span class="path">/api/locations/recent</span>
+                <span class="desc">User's recent searches (Auth)</span>
+              </li>
+              <li class="endpoint-row">
+                <span class="method post">POST</span>
+                <span class="path">/api/locations/recent</span>
+                <span class="desc">Save a recent search (Auth)</span>
+              </li>
+              <li class="endpoint-row">
+                <span class="method delete">DELETE</span>
+                <span class="path">/api/locations/recent/:id</span>
+                <span class="desc">Remove a recent search (Auth)</span>
+              </li>
+            </ul>
+          </div>
         </div>
 
         <footer>
@@ -337,6 +375,7 @@ app.post('/api/vehicles/upload', protectAuth, uploadMiddleware.array('files'), v
 app.use('/api/auth', authRoutes);
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/locations', locationRoutes);
 
 // Unhandled Endpoint Catcher (404)
 app.use((req, res, next) => {
