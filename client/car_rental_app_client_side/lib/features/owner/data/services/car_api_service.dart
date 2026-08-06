@@ -213,6 +213,59 @@ class CarApiService {
     }
   }
 
+  /// Upload a single document file to Supabase storage via the backend API.
+  Future<String> uploadDocument(XFile file) async {
+    try {
+      final formData = FormData();
+      final bytes = await file.readAsBytes();
+      
+      // Determine file extension and name
+      final fileSegments = file.name.split('.');
+      final fileExt = fileSegments.isNotEmpty ? fileSegments.last : 'jpg';
+      final fileName = file.name.isNotEmpty ? file.name : 'doc_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+      
+      final multipartFile = MultipartFile.fromBytes(
+        bytes,
+        filename: fileName,
+      );
+      formData.files.add(MapEntry('file', multipartFile));
+
+      final authToken = token ?? AuthService.currentToken;
+      if (authToken == null || authToken.isEmpty) {
+        throw DioException(
+          requestOptions: RequestOptions(path: '/api/vehicles/upload-document'),
+          message: 'Not authenticated. Please log in before uploading documents.',
+          type: DioExceptionType.cancel,
+        );
+      }
+
+      final response = await _dio.post(
+        '/api/vehicles/upload-document',
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+          headers: {
+            'Authorization': 'Bearer $authToken',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final success = response.data['success'] as bool? ?? false;
+        if (success && response.data['data'] != null) {
+          return response.data['data'].toString();
+        }
+      }
+      
+      throw DioException(
+        requestOptions: RequestOptions(path: '/api/vehicles/upload-document'),
+        message: response.data?['message'] ?? 'Document upload failed',
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
   Exception _handleDioError(DioException error) {
     String message = 'An unexpected error occurred';
     if (error.response != null) {

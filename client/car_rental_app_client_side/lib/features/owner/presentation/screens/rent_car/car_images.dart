@@ -54,10 +54,39 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
   }
 
   void _seedExistingImages() {
-    for (var index = 0; index < widget.draft.selectedPhotos.length; index++) {
-      final url = widget.draft.selectedPhotos[index];
+    // Seed local photos first (if any)
+    for (var index = 0; index < widget.draft.localPhotos.length; index++) {
+      final file = widget.draft.localPhotos[index];
       final slot = index < _requiredSlots.length
           ? _requiredSlots[index]
+          : RentCarImageSlot.additional;
+      
+      final id = _buildImageId();
+      _items.add(
+        RentCarUploadImageItem(
+          id: id,
+          slot: slot,
+          file: file,
+          state: RentCarImageUploadState.pending,
+        ),
+      );
+      
+      file.readAsBytes().then((bytes) {
+        if (!mounted) return;
+        setState(() {
+          final idx = _items.indexWhere((item) => item.id == id);
+          if (idx != -1) {
+            _items[idx] = _items[idx].copyWith(bytes: bytes);
+          }
+        });
+      });
+    }
+
+    // Seed remote photos if any
+    for (var index = 0; index < widget.draft.selectedPhotos.length; index++) {
+      final url = widget.draft.selectedPhotos[index];
+      final slot = _items.length < _requiredSlots.length
+          ? _requiredSlots[_items.length]
           : RentCarImageSlot.additional;
       _items.add(
         RentCarUploadImageItem.remote(
@@ -296,24 +325,21 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
       return;
     }
 
-    if (_missingRequiredSlots.isNotEmpty) {
+    final missingSlots = _requiredSlots
+        .where((slot) => !_items.any((item) => item.slot == slot && (item.file != null || item.hasRemoteUrl)))
+        .toList();
+
+    if (missingSlots.isNotEmpty) {
       _showMessage('Please add all required images before continuing.');
       return;
     }
 
-    // Auto-upload pending local files if any exist
-    if (_pendingLocalFiles.isNotEmpty && widget.onUploadRequested != null) {
-      await _uploadSelectedImages();
-    }
-
-    // Check if all images have been successfully uploaded
-    if (_uploadedUrls.length < _items.length) {
-      _showMessage('Please complete uploading all selected images before continuing.');
-      return;
-    }
+    final localFiles = _items.where((item) => item.file != null).map((item) => item.file!).toList();
+    final remoteUrls = _items.where((item) => item.hasRemoteUrl).map((item) => item.uploadedUrl!).toList();
 
     final updatedDraft = widget.draft.copyWith(
-      selectedPhotos: _uploadedUrls,
+      localPhotos: localFiles,
+      selectedPhotos: remoteUrls,
     );
 
     if (!mounted) return;
@@ -329,10 +355,10 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
       currentStep: 3,
       title: 'Car Images',
       subtitle:
-          'Upload car photos from the camera or gallery, then preview, reorder, and upload them securely.',
+          'Select car photos from the camera or gallery, then preview, reorder, and save them locally.',
       onBack: _goBack,
       onNext: _goNext,
-      nextLabel: 'Next',
+      nextLabel: 'Submit',
       backLabel: 'Back',
       child: Column(
         children: [
@@ -340,40 +366,14 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
             selectedCount: _items.length,
             minCount: _minImages,
             maxCount: _maxImages,
-            missingSlots: _missingRequiredSlots,
+            missingSlots: _requiredSlots
+                .where((slot) => !_items.any((item) => item.slot == slot && (item.file != null || item.hasRemoteUrl)))
+                .toList(),
             onAddSlot: _handleAddSlot,
           ),
           const SizedBox(height: 16),
           RentCarImageDropArea(onTap: _handleSourceSelection),
           const SizedBox(height: 16),
-          if (_statusMessage != null) ...[
-            RentCarSectionCard(
-              title: 'Upload Status',
-              icon: Icons.info_outline,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _statusMessage!,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: const Color(0xFF103B66),
-                        ),
-                  ),
-                  if (_isUploading) ...[
-                    const SizedBox(height: 12),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(999),
-                      child: LinearProgressIndicator(
-                        value: _uploadProgress == 0 ? null : _uploadProgress,
-                        minHeight: 8,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
           RentCarSectionCard(
             title: 'Preview Grid',
             icon: Icons.grid_view_rounded,
@@ -385,22 +385,6 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
                   onReplace: _handleReplaceImage,
                   onRemove: _removeImage,
                   onReorder: _reorderImages,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _isUploading ? null : _uploadSelectedImages,
-                        icon: const Icon(Icons.cloud_upload_outlined),
-                        label: Text(
-                          widget.onUploadRequested == null
-                              ? 'Upload Integration Ready'
-                              : 'Upload Images',
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),

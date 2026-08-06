@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
@@ -26,7 +27,10 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
   late final TextEditingController _permitController;
 
   XFile? _rcDocumentFile;
-  String? _rcDocumentUrl;
+  XFile? _insuranceDocumentFile;
+  XFile? _dlDocumentFile;
+  XFile? _pollutionDocumentFile;
+
   bool _isLoading = false;
 
   @override
@@ -38,6 +42,12 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
     _insurancePolicyController = TextEditingController();
     _ownerIdController = TextEditingController();
     _permitController = TextEditingController();
+
+    // Load any existing local documents from the draft
+    _rcDocumentFile = widget.draft.localDocuments['rc_book'];
+    _insuranceDocumentFile = widget.draft.localDocuments['insurance'];
+    _dlDocumentFile = widget.draft.localDocuments['driving_license'];
+    _pollutionDocumentFile = widget.draft.localDocuments['pollution_certificate'];
   }
 
   @override
@@ -57,11 +67,23 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
   }
 
   void _goBack() {
+    // Save state back to localDocuments before pop
+    final updatedDocs = <String, XFile>{};
+    if (_rcDocumentFile != null) updatedDocs['rc_book'] = _rcDocumentFile!;
+    if (_insuranceDocumentFile != null) updatedDocs['insurance'] = _insuranceDocumentFile!;
+    if (_dlDocumentFile != null) updatedDocs['driving_license'] = _dlDocumentFile!;
+    if (_pollutionDocumentFile != null) updatedDocs['pollution_certificate'] = _pollutionDocumentFile!;
+
+    final updatedDraft = widget.draft.copyWith(
+      localDocuments: updatedDocs,
+      registrationNumber: _registrationCertificateController.text.trim(),
+    );
+
     Navigator.of(context).pop();
   }
 
-  Future<void> _pickRcDocument() async {
-    final file = await showModalBottomSheet<XFile?>(
+  Future<XFile?> _pickDocument(String title) async {
+    return showModalBottomSheet<XFile?>(
       context: context,
       showDragHandle: true,
       backgroundColor: Colors.white,
@@ -77,7 +99,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Upload RC Document / PDF',
+                  'Upload $title',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF103B66),
@@ -85,7 +107,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Choose camera, gallery, or file to upload your Registration Certificate document scan or PDF.',
+                  'Choose camera, gallery, or file to upload your document scan or PDF.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: const Color(0xFF57718A),
                       ),
@@ -147,12 +169,55 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
         );
       },
     );
+  }
 
-    if (file != null) {
-      setState(() {
-        _rcDocumentFile = file;
-      });
-    }
+  void _showDocumentPreviewDialog(XFile file) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        final isImage = ['jpg', 'jpeg', 'png'].contains(file.name.split('.').last.toLowerCase()) || 
+          (file.mimeType?.startsWith('image/') ?? false);
+
+        return AlertDialog(
+          title: Text(file.name),
+          content: isImage
+              ? FutureBuilder<Uint8List>(
+                  future: file.readAsBytes(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const SizedBox(
+                        height: 200,
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                    if (snapshot.hasData) {
+                      return Image.memory(snapshot.data!);
+                    }
+                    return const Text('Failed to load image');
+                  },
+                )
+              : const SizedBox(
+                  height: 120,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.picture_as_pdf, size: 48, color: Colors.red),
+                        SizedBox(height: 8),
+                        Text('PDF Scan Document', style: TextStyle(fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _submit() async {
@@ -160,7 +225,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
       return;
     }
 
-    if (_rcDocumentFile == null && (_rcDocumentUrl == null || _rcDocumentUrl!.isEmpty)) {
+    if (_rcDocumentFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please upload the Registration Certificate (RC) document.'),
@@ -173,63 +238,97 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // 1. Upload RC document file to get permanent URL or Base64 URL
-      String uploadedRcUrl = _rcDocumentUrl ?? '';
-      if (_rcDocumentFile != null) {
-        try {
-          final urls = await _apiService.uploadFiles([_rcDocumentFile!], (p) {});
-          if (urls.isNotEmpty) {
-            uploadedRcUrl = urls.first;
-          }
-        } catch (_) {
-          final bytes = await _rcDocumentFile!.readAsBytes();
-          uploadedRcUrl = 'data:image/jpeg;base64,${base64Encode(bytes)}';
-        }
+      // 1. Upload car images to Cloudinary (using existing uploadFiles flow)
+      final List<XFile> localCarImages = widget.draft.localPhotos;
+      final List<String> uploadedCarUrls = List<String>.from(widget.draft.selectedPhotos);
+
+      if (localCarImages.isNotEmpty) {
+        final cloudUrls = await _apiService.uploadFiles(localCarImages, (progress) {});
+        uploadedCarUrls.addAll(cloudUrls);
       }
 
-      // 2. Prepare vehicle payload
-      final payload = VehicleModel.fromDraft(widget.draft);
+      // 2. Upload verification documents to Supabase storage flow
+      String? rcDocUrl;
+      String? insuranceDocUrl;
+      String? dlDocUrl;
+      String? pollutionDocUrl;
+
+      // RC Book
+      rcDocUrl = await _apiService.uploadDocument(_rcDocumentFile!);
+
+      // Insurance (Optional)
+      if (_insuranceDocumentFile != null) {
+        insuranceDocUrl = await _apiService.uploadDocument(_insuranceDocumentFile!);
+      }
+
+      // Driving License (Optional)
+      if (_dlDocumentFile != null) {
+        dlDocUrl = await _apiService.uploadDocument(_dlDocumentFile!);
+      }
+
+      // Pollution Certificate (Optional)
+      if (_pollutionDocumentFile != null) {
+        pollutionDocUrl = await _apiService.uploadDocument(_pollutionDocumentFile!);
+      }
+
+      // 3. Prepare vehicle payload
+      final payload = VehicleModel.fromDraft(widget.draft.copyWith(
+        selectedPhotos: uploadedCarUrls,
+      ));
       payload['rc_number'] = _registrationCertificateController.text.trim();
 
-      // 3. Post vehicle listing to backend
+      // 4. Create vehicle listing
       final vehicle = await _apiService.createVehicle(payload);
       final vehicleId = vehicle['id'] as String?;
 
       if (vehicleId != null) {
-        // 4. Post RC document metadata to vehicle_documents table
+        // 5. Submit documents metadata to vehicle_documents table
+        // RC Book metadata
         await _apiService.uploadVehicleDocument(
           vehicleId: vehicleId,
           documentType: 'rc_book',
-          documentUrl: uploadedRcUrl,
+          documentUrl: rcDocUrl,
         );
 
-        if (_insurancePolicyController.text.isNotEmpty) {
+        // Insurance metadata
+        if (insuranceDocUrl != null || _insurancePolicyController.text.isNotEmpty) {
           await _apiService.uploadVehicleDocument(
             vehicleId: vehicleId,
             documentType: 'insurance',
-            documentUrl: _insurancePolicyController.text.trim(),
+            documentUrl: insuranceDocUrl ?? _insurancePolicyController.text.trim(),
           );
         }
 
-        if (_permitController.text.isNotEmpty) {
+        // Driving license metadata
+        if (dlDocUrl != null || _ownerIdController.text.isNotEmpty) {
           await _apiService.uploadVehicleDocument(
             vehicleId: vehicleId,
-            documentType: 'fc',
-            documentUrl: _permitController.text.trim(),
+            documentType: 'driving_license',
+            documentUrl: dlDocUrl ?? _ownerIdController.text.trim(),
+          );
+        }
+
+        // Pollution Certificate metadata
+        if (pollutionDocUrl != null || _permitController.text.isNotEmpty) {
+          await _apiService.uploadVehicleDocument(
+            vehicleId: vehicleId,
+            documentType: 'pollution_certificate',
+            documentUrl: pollutionDocUrl ?? _permitController.text.trim(),
           );
         }
       }
 
       if (!mounted) return;
 
-      // 5. Show success dialog
+      // 6. Show success summary dialog
       final summary = <String, String>{
         'Brand': widget.draft.brand,
         'Model': widget.draft.model,
         'Year': widget.draft.manufacturingYear,
-        'Daily Price': widget.draft.dailyPrice,
+        'Daily Price': '₹${widget.draft.dailyPrice}',
         'RC Number': _registrationCertificateController.text.trim(),
-        'RC Document': 'Attached & Saved',
+        'RC Document': 'Uploaded & Verified',
+        'Car Images': '${uploadedCarUrls.length} Uploaded to Cloudinary',
         'Listing Status': vehicle['status'] ?? 'under_review',
       };
 
@@ -238,27 +337,46 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
         barrierDismissible: false,
         builder: (context) {
           return AlertDialog(
-            title: const Text('Car Listing Submitted'),
+            title: Row(
+              children: const [
+                Icon(Icons.check_circle_rounded, color: Colors.green, size: 28),
+                SizedBox(width: 8),
+                Text('Listing Created!'),
+              ],
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Your vehicle listing and RC documents have been successfully submitted and stored in the database.'),
+                const Text('Your vehicle listing has been successfully saved, and documents have been uploaded to Supabase Storage.'),
                 const SizedBox(height: 16),
                 ...summary.entries.map(
                   (entry) => Padding(
                     padding: const EdgeInsets.only(bottom: 8),
-                    child: Text('${entry.key}: ${entry.value}'),
+                    child: RichText(
+                      text: TextSpan(
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: const Color(0xFF103B66),
+                            ),
+                        children: [
+                          TextSpan(
+                            text: '${entry.key}: ',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          TextSpan(text: entry.value),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
             actions: [
-              TextButton(
+              FilledButton(
                 onPressed: () {
                   Navigator.of(context).popUntil((route) => route.isFirst);
                 },
-                child: const Text('Close'),
+                child: const Text('Back to Home'),
               ),
             ],
           );
@@ -279,6 +397,82 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
     }
   }
 
+  Widget _buildDocUploadCard({
+    required String title,
+    required String subtitle,
+    required XFile? file,
+    required VoidCallback onPick,
+    required VoidCallback onRemove,
+    required VoidCallback onPreview,
+    required IconData icon,
+  }) {
+    final hasFile = file != null;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: hasFile ? const Color(0xFFEAF2FF) : const Color(0xFFF7FAFD),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: hasFile ? AppColors.primary : const Color(0xFFD7E2EF),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: hasFile ? AppColors.primary : const Color(0xFFE0EBF8),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              hasFile ? Icons.picture_as_pdf_rounded : icon,
+              color: hasFile ? Colors.white : AppColors.primary,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: const Color(0xFF103B66),
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  hasFile ? file.name : subtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF57718A),
+                      ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          if (hasFile) ...[
+            IconButton(
+              icon: const Icon(Icons.visibility_outlined, color: Color(0xFF57718A)),
+              onPressed: onPreview,
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+              onPressed: onRemove,
+            ),
+          ] else
+            IconButton(
+              icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary),
+              onPressed: onPick,
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Form(
@@ -289,101 +483,30 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
             currentStep: 4,
             title: 'Documents',
             subtitle:
-                'Upload your Registration Certificate (RC) PDF/document for vehicle verification.',
+                'Select your RC Book and optional verification documents to list your vehicle.',
             onBack: _isLoading ? null : _goBack,
             onNext: _isLoading ? null : _submit,
-            nextLabel: 'Submit',
+            nextLabel: 'Upload',
             backLabel: 'Back',
             isLastStep: true,
             child: Column(
               children: [
                 RentCarSectionCard(
-                  title: 'Upload RC Book Document (Required)',
+                  title: 'Required Verification Documents',
                   icon: Icons.upload_file_rounded,
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      InkWell(
-                        onTap: _isLoading ? null : _pickRcDocument,
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: _rcDocumentFile != null
-                                ? const Color(0xFFEAF2FF)
-                                : const Color(0xFFF7FAFD),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: _rcDocumentFile != null
-                                  ? const Color(0xFF1E5AA8)
-                                  : const Color(0xFFD7E2EF),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: _rcDocumentFile != null
-                                      ? const Color(0xFF1E5AA8)
-                                      : const Color(0xFFE0EBF8),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Icon(
-                                  _rcDocumentFile != null
-                                      ? Icons.picture_as_pdf_rounded
-                                      : Icons.cloud_upload_outlined,
-                                  color: _rcDocumentFile != null
-                                      ? Colors.white
-                                      : const Color(0xFF1E5AA8),
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      _rcDocumentFile != null
-                                          ? 'RC Document Attached'
-                                          : 'Upload RC Book Document / PDF',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleSmall
-                                          ?.copyWith(
-                                            color: const Color(0xFF103B66),
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      _rcDocumentFile != null
-                                          ? _rcDocumentFile!.name
-                                          : 'Tap to pick PDF scan or document image',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            color: const Color(0xFF57718A),
-                                          ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Icon(
-                                _rcDocumentFile != null
-                                    ? Icons.check_circle_rounded
-                                    : Icons.add_a_photo_outlined,
-                                color: _rcDocumentFile != null
-                                    ? const Color(0xFF2E7D32)
-                                    : const Color(0xFF1E5AA8),
-                              ),
-                            ],
-                          ),
-                        ),
+                      _buildDocUploadCard(
+                        title: 'RC Book Document (Required)',
+                        subtitle: 'Tap to pick PDF scan or document image',
+                        file: _rcDocumentFile,
+                        icon: Icons.receipt_long_outlined,
+                        onPick: () async {
+                          final file = await _pickDocument('RC Book');
+                          if (file != null) setState(() => _rcDocumentFile = file);
+                        },
+                        onRemove: () => setState(() => _rcDocumentFile = null),
+                        onPreview: () => _showDocumentPreviewDialog(_rcDocumentFile!),
                       ),
                       const SizedBox(height: 16),
                       RentCarTextField(
@@ -401,10 +524,23 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                 ),
                 const SizedBox(height: 16),
                 RentCarSectionCard(
-                  title: 'Optional Document References',
+                  title: 'Optional Verification Documents',
                   icon: Icons.article_outlined,
                   child: Column(
                     children: [
+                      _buildDocUploadCard(
+                        title: 'Insurance Policy',
+                        subtitle: 'Tap to pick insurance scan/PDF',
+                        file: _insuranceDocumentFile,
+                        icon: Icons.policy_outlined,
+                        onPick: () async {
+                          final file = await _pickDocument('Insurance Policy');
+                          if (file != null) setState(() => _insuranceDocumentFile = file);
+                        },
+                        onRemove: () => setState(() => _insuranceDocumentFile = null),
+                        onPreview: () => _showDocumentPreviewDialog(_insuranceDocumentFile!),
+                      ),
+                      const SizedBox(height: 14),
                       RentCarTextField(
                         controller: _insurancePolicyController,
                         label: 'Insurance Policy Number (Optional)',
@@ -413,20 +549,46 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                         textInputAction: TextInputAction.next,
                         readOnly: _isLoading,
                       ),
+                      const SizedBox(height: 20),
+                      _buildDocUploadCard(
+                        title: 'Driving License',
+                        subtitle: 'Tap to pick driving license scan/PDF',
+                        file: _dlDocumentFile,
+                        icon: Icons.badge_outlined,
+                        onPick: () async {
+                          final file = await _pickDocument('Driving License');
+                          if (file != null) setState(() => _dlDocumentFile = file);
+                        },
+                        onRemove: () => setState(() => _dlDocumentFile = null),
+                        onPreview: () => _showDocumentPreviewDialog(_dlDocumentFile!),
+                      ),
                       const SizedBox(height: 14),
                       RentCarTextField(
                         controller: _ownerIdController,
-                        label: 'Owner ID Reference (Optional)',
-                        hint: 'Enter owner identity reference',
+                        label: 'Owner ID Reference / DL Number (Optional)',
+                        hint: 'Enter owner DL reference',
                         icon: Icons.badge_outlined,
                         textInputAction: TextInputAction.next,
                         readOnly: _isLoading,
                       ),
+                      const SizedBox(height: 20),
+                      _buildDocUploadCard(
+                        title: 'Pollution Certificate / Permit',
+                        subtitle: 'Tap to pick permit or pollution scan/PDF',
+                        file: _pollutionDocumentFile,
+                        icon: Icons.credit_card_outlined,
+                        onPick: () async {
+                          final file = await _pickDocument('Pollution Certificate / Permit');
+                          if (file != null) setState(() => _pollutionDocumentFile = file);
+                        },
+                        onRemove: () => setState(() => _pollutionDocumentFile = null),
+                        onPreview: () => _showDocumentPreviewDialog(_pollutionDocumentFile!),
+                      ),
                       const SizedBox(height: 14),
                       RentCarTextField(
                         controller: _permitController,
-                        label: 'Permit / Fitness Reference (Optional)',
-                        hint: 'Enter permit or license number',
+                        label: 'Permit / Fitness / Pollution Reference (Optional)',
+                        hint: 'Enter permit or pollution number',
                         icon: Icons.credit_card_outlined,
                         readOnly: _isLoading,
                       ),
@@ -456,20 +618,28 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
           if (_isLoading)
             Positioned.fill(
               child: Container(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withOpacity(0.4),
                 child: const Center(
                   child: Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(24)),
+                    ),
                     child: Padding(
-                      padding: EdgeInsets.all(24),
+                      padding: EdgeInsets.symmetric(horizontal: 32, vertical: 24),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           CircularProgressIndicator(),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 20),
                           Text(
-                            'Submitting Listing & Documents...',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          )
+                            'Uploading Listing & Documents...',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Please do not close the app.',
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
                         ],
                       ),
                     ),

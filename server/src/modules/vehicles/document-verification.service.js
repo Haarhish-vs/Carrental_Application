@@ -9,8 +9,8 @@ class DocumentVerificationService {
    * @param {object} documentData - { documentType, documentUrl }
    */
   async uploadDocument(vehicleId, userId, { documentType, documentUrl }) {
-    if (!['rc_book', 'insurance', 'fc'].includes(documentType)) {
-      const error = new Error('Invalid document type. Allowed types: rc_book, insurance, fc');
+    if (!['rc_book', 'insurance', 'fc', 'driving_license', 'pollution_certificate'].includes(documentType)) {
+      const error = new Error('Invalid document type. Allowed types: rc_book, insurance, fc, driving_license, pollution_certificate');
       error.statusCode = 400;
       throw error;
     }
@@ -96,7 +96,7 @@ class DocumentVerificationService {
    * @param {string} rejectionReason - Optional reason for rejection
    */
   async verifyDocumentAdmin(vehicleId, documentType, verificationStatus, rejectionReason = null) {
-    if (!['rc_book', 'insurance', 'fc'].includes(documentType)) {
+    if (!['rc_book', 'insurance', 'fc', 'driving_license', 'pollution_certificate'].includes(documentType)) {
       const error = new Error('Invalid document type');
       error.statusCode = 400;
       throw error;

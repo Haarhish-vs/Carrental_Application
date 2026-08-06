@@ -12,6 +12,7 @@ const upload = require('../../shared/middlewares/upload.middleware');
 // Static / collection endpoints - MUST be defined before /:id parameter routes to prevent routing collisions
 router.get('/my-listings', protect, vehicleController.getMyListings);
 router.post('/upload', protect, upload.array('files'), vehicleController.uploadMedia);
+router.post('/upload-document', protect, upload.single('file'), vehicleController.uploadDocumentFile);
 router.post('/', protect, vehicleController.createVehicle);
 
 // Specific vehicle detail & sub-resource endpoints (parameterized by :id)

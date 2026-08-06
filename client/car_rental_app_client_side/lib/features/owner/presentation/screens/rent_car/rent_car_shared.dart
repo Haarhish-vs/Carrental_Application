@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../../../core/theme/app_colors.dart';
 
 const List<String> rentCarStepTitles = <String>[
   'Car Specifications',
@@ -48,6 +50,8 @@ class RentCarDraft {
     this.deliveryFee = '',
     this.selectedPhotos = const <String>[],
     this.selectedDocuments = const <String>[],
+    this.localPhotos = const <XFile>[],
+    this.localDocuments = const <String, XFile>{},
   });
 
   final String brand;
@@ -72,6 +76,8 @@ class RentCarDraft {
   final String deliveryFee;
   final List<String> selectedPhotos;
   final List<String> selectedDocuments;
+  final List<XFile> localPhotos;
+  final Map<String, XFile> localDocuments;
 
   RentCarDraft copyWith({
     String? brand,
@@ -96,6 +102,8 @@ class RentCarDraft {
     String? deliveryFee,
     List<String>? selectedPhotos,
     List<String>? selectedDocuments,
+    List<XFile>? localPhotos,
+    Map<String, XFile>? localDocuments,
   }) {
     return RentCarDraft(
       brand: brand ?? this.brand,
@@ -120,6 +128,8 @@ class RentCarDraft {
       deliveryFee: deliveryFee ?? this.deliveryFee,
       selectedPhotos: selectedPhotos ?? this.selectedPhotos,
       selectedDocuments: selectedDocuments ?? this.selectedDocuments,
+      localPhotos: localPhotos ?? this.localPhotos,
+      localDocuments: localDocuments ?? this.localDocuments,
     );
   }
 }

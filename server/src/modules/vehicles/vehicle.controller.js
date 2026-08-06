@@ -1,6 +1,7 @@
 // vehicle.controller.js
 const jwt = require('jsonwebtoken');
 const env = require('../../config/env');
+const { supabase } = require('../../config/supabase');
 const vehicleService = require('./vehicle.service');
 const docVerificationService = require('./document-verification.service');
 
@@ -183,6 +184,68 @@ const uploadMedia = async (req, res, next) => {
   }
 };
 
+const uploadDocumentFile = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No document file uploaded'
+      });
+    }
+
+    // Ensure the 'documents' bucket exists in Supabase
+    const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+    if (bucketError) {
+      return res.status(500).json({
+        success: false,
+        message: `Failed to list Supabase buckets: ${bucketError.message}`
+      });
+    }
+
+    const hasBucket = buckets && buckets.some(b => b.name === 'documents');
+    if (!hasBucket) {
+      const { error: createError } = await supabase.storage.createBucket('documents', {
+        public: true
+      });
+      if (createError) {
+        return res.status(500).json({
+          success: false,
+          message: `Failed to create Supabase documents bucket: ${createError.message}`
+        });
+      }
+    }
+
+    const fileExt = req.file.originalname.split('.').pop();
+    const fileName = `doc_${Date.now()}_${Math.round(Math.random() * 1E9)}.${fileExt}`;
+
+    const { data, error } = await supabase.storage
+      .from('documents')
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: true
+      });
+
+    if (error) {
+      return res.status(500).json({
+        success: false,
+        message: `Supabase storage upload failed: ${error.message}`
+      });
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('documents')
+      .getPublicUrl(fileName);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Document uploaded to Supabase storage successfully',
+      data: publicUrl
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getVehicles,
   getVehicleById,
@@ -193,5 +256,6 @@ module.exports = {
   getMyListings,
   deleteVehicle,
   verifyDocumentAdmin,
-  uploadMedia
+  uploadMedia,
+  uploadDocumentFile
 };
