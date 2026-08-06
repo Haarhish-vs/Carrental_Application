@@ -276,8 +276,12 @@ class VehicleService {
     let query = supabase
       .from('vehicles')
       .select('*')
-      .eq('status', 'active')
       .eq('is_available', true);
+
+    // Only filter by status when explicitly requested by the client
+    if (filters.status) {
+      query = query.eq('status', filters.status);
+    }
 
     // Apply Filters
     if (filters.city) {

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/dummy_data.dart';
+import '../../models/car_model.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../../auth/services/auth_service.dart';
+import '../../../owner/data/services/car_api_service.dart';
 import '../../../owner/presentation/screens/rent_car/car_spefication.dart';
 import '../widgets/custom_home_app_bar.dart';
 import '../widgets/hero_search_card.dart';
@@ -26,6 +28,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _navIndex = 0;
 
+  final CarApiService _carApiService = CarApiService();
+  late final Future<List<CarModel>> _recommendedCarsFuture;
+
   String? _userName;
   String? _userLocation;
   String? _pickupLocation;
@@ -33,6 +38,17 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _pickupTime;
   String? _returnDate;
   String? _returnTime;
+
+  @override
+  void initState() {
+    super.initState();
+    _recommendedCarsFuture = _fetchRecommendedCars();
+  }
+
+  Future<List<CarModel>> _fetchRecommendedCars() async {
+    final vehicles = await _carApiService.getVehicles();
+    return vehicles.map(CarModel.fromJson).toList();
+  }
 
   Future<void> _goHost() async {
     if (AuthService.isAuthenticated) {
@@ -61,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    if (picked == null) return;
+    if (picked == null || !mounted) return;
     final formatted = '${picked.day.toString().padLeft(2, '0')}/'
         '${picked.month.toString().padLeft(2, '0')}/${picked.year}';
     setState(() {
@@ -78,7 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       initialTime: TimeOfDay.now(),
     );
-    if (picked == null) return;
+    if (picked == null || !mounted) return;
     final formatted = picked.format(context);
     setState(() {
       if (isPickup) {
@@ -178,10 +194,66 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 22),
 
-              RecommendedCars(
-                cars: DummyData.recommendedCars,
-                onCarTap: (car) {},
-                onBookNow: (car) {},
+              FutureBuilder<List<CarModel>>(
+                future: _recommendedCarsFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: SizedBox(
+                        height: 250,
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('Recommended Cars',
+                              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                          SizedBox(height: 12),
+                          Text('Unable to load vehicles. Please try again later.',
+                              style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final cars = snapshot.data ?? [];
+                  if (cars.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('Recommended Cars',
+                              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                          SizedBox(height: 12),
+                          Text('No cars available at the moment.',
+                              style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return RecommendedCars(
+                    cars: cars,
+                    onCarTap: (car) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Selected ${car.name}')),
+                      );
+                    },
+                    onBookNow: (car) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Book now requested for ${car.name}')),
+                      );
+                    },
+                  );
+                },
               ),
 
               const SizedBox(height: 26),

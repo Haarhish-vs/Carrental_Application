@@ -228,7 +228,7 @@ class CarApiService {
         bytes,
         filename: fileName,
       );
-      formData.files.add(MapEntry('file', multipartFile));
+      formData.files.add(MapEntry('files', multipartFile));
 
       final authToken = token ?? AuthService.currentToken;
       if (authToken == null || authToken.isEmpty) {
@@ -240,7 +240,7 @@ class CarApiService {
       }
 
       final response = await _dio.post(
-        '/api/vehicles/upload-document',
+        '/api/vehicles/upload',
         data: formData,
         options: Options(
           contentType: 'multipart/form-data',
@@ -253,12 +253,16 @@ class CarApiService {
       if (response.statusCode == 200 && response.data != null) {
         final success = response.data['success'] as bool? ?? false;
         if (success && response.data['data'] != null) {
-          return response.data['data'].toString();
+          final data = response.data['data'];
+          if (data is List && data.isNotEmpty) {
+            return data.first.toString();
+          }
+          return data.toString();
         }
       }
       
       throw DioException(
-        requestOptions: RequestOptions(path: '/api/vehicles/upload-document'),
+        requestOptions: RequestOptions(path: '/api/vehicles/upload'),
         message: response.data?['message'] ?? 'Document upload failed',
       );
     } on DioException catch (e) {

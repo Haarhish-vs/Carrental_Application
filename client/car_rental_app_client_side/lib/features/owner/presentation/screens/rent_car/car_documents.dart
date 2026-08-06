@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:car_rental_app_client_side/core/theme/app_colors.dart';
 import 'package:car_rental_app_client_side/features/owner/data/models/vehicle_model.dart';
 import 'package:car_rental_app_client_side/features/owner/data/services/car_api_service.dart';
 import 'rent_car_shared.dart';
@@ -465,7 +466,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
             ),
           ] else
             IconButton(
-              icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary),
+              icon: Icon(Icons.add_circle_outline_rounded, color: AppColors.primary),
               onPressed: onPick,
             ),
         ],
