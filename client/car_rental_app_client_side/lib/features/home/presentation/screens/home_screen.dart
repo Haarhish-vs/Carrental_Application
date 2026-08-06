@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../data/dummy_data.dart';
+import '../../models/car_model.dart';
+import '../../models/category_model.dart';
+import '../../models/offer_model.dart';
+import '../../models/feature_item_model.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../../auth/services/auth_service.dart';
+import '../../../owner/data/services/car_api_service.dart';
 import '../../../owner/presentation/screens/rent_car/car_spefication.dart';
 import '../widgets/custom_home_app_bar.dart';
 import '../widgets/hero_search_card.dart';
@@ -16,6 +20,52 @@ import '../widgets/stats_section.dart';
 import '../widgets/home_footer.dart';
 import '../widgets/bottom_navigation.dart';
 import '../widgets/home_drawer.dart';
+import 'car_detail_screen.dart';
+
+const List<CategoryModel> _homeCategories = [
+  CategoryModel(id: '1', label: 'Daily Rental', icon: Icons.calendar_today_outlined),
+  CategoryModel(id: '2', label: 'Weekly Rental', icon: Icons.date_range_outlined),
+  CategoryModel(id: '3', label: 'SUV', icon: Icons.directions_car_filled_outlined),
+  CategoryModel(id: '4', label: 'Luxury', icon: Icons.diamond_outlined),
+  CategoryModel(id: '5', label: 'Electric', icon: Icons.electric_bolt_outlined),
+  CategoryModel(id: '6', label: 'Automatic', icon: Icons.settings_outlined),
+];
+
+const List<OfferModel> _homeOffers = [
+  OfferModel(
+    id: '1',
+    title: 'Weekend Offer',
+    subtitle: 'Get 20% off on weekend bookings',
+    imageUrl: 'https://images.unsplash.com/photo-1502877338535-766e1452684a?w=800',
+  ),
+  OfferModel(
+    id: '2',
+    title: 'Festival Offer',
+    subtitle: 'Flat ₹500 cashback this festive season',
+    imageUrl: 'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?w=800',
+  ),
+  OfferModel(
+    id: '3',
+    title: 'Refer & Earn',
+    subtitle: 'Invite friends, earn ₹250 per referral',
+    imageUrl: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=800',
+  ),
+  OfferModel(
+    id: '4',
+    title: 'Host Your Car',
+    subtitle: 'Turn your idle car into income',
+    imageUrl: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=800',
+  ),
+];
+
+const List<FeatureItemModel> _whyChooseUsItems = [
+  FeatureItemModel(id: '1', icon: Icons.verified_outlined, title: 'Verified Cars'),
+  FeatureItemModel(id: '2', icon: Icons.badge_outlined, title: 'Verified Owners'),
+  FeatureItemModel(id: '3', icon: Icons.car_repair_outlined, title: 'Roadside Assistance'),
+  FeatureItemModel(id: '4', icon: Icons.lock_outline, title: 'Secure Payments'),
+  FeatureItemModel(id: '5', icon: Icons.flash_on_outlined, title: 'Instant Booking'),
+  FeatureItemModel(id: '6', icon: Icons.headset_mic_outlined, title: '24×7 Support'),
+];
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,8 +76,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final CarApiService _carApiService = CarApiService();
 
   int _navIndex = 0;
+
+  late final Future<List<CarModel>> _vehiclesFuture;
 
   String? _userName;
   String? _userLocation;
@@ -36,6 +89,17 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _pickupTime;
   String? _returnDate;
   String? _returnTime;
+
+  @override
+  void initState() {
+    super.initState();
+    _vehiclesFuture = _fetchHomeVehicles();
+  }
+
+  Future<List<CarModel>> _fetchHomeVehicles() async {
+    final vehicles = await _carApiService.getVehicles();
+    return vehicles.map(CarModel.fromJson).toList();
+  }
 
   Future<void> _goHost() async {
     if (AuthService.isAuthenticated) {
@@ -74,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
 
-    if (picked == null) return;
+    if (picked == null || !mounted) return;
 
     final formatted =
         '${picked.day.toString().padLeft(2, '0')}/'
@@ -95,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
       initialTime: TimeOfDay.now(),
     );
 
-    if (picked == null) return;
+    if (picked == null || !mounted) return;
 
     final formatted = picked.format(context);
 
@@ -274,29 +338,89 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 22),
 
               CategoryList(
-                categories: DummyData.categories,
+                categories: _homeCategories,
                 onCategoryTap: (category) {},
               ),
 
               const SizedBox(height: 22),
 
               OfferCarousel(
-                offers: DummyData.offers,
+                offers: _homeOffers,
                 onOfferTap: (offer) {},
               ),
 
               const SizedBox(height: 22),
 
-              RecommendedCars(
-                cars: DummyData.recommendedCars,
-                onCarTap: (car) {},
-                onBookNow: (car) {},
+              FutureBuilder<List<CarModel>>(
+                future: _vehiclesFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: SizedBox(
+                        height: 250,
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('Recommended Cars',
+                              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                          SizedBox(height: 12),
+                          Text('Unable to load vehicles. Please try again later.',
+                              style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final cars = snapshot.data ?? [];
+                  if (cars.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('Recommended Cars',
+                              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                          SizedBox(height: 12),
+                          Text('No cars available at the moment.',
+                              style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return RecommendedCars(
+                    cars: cars,
+                    onCarTap: (car) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => CarDetailScreen(car: car),
+                        ),
+                      );
+                    },
+                    onBookNow: (car) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => CarDetailScreen(car: car),
+                        ),
+                      );
+                    },
+                  );
+                },
               ),
 
               const SizedBox(height: 26),
 
               WhyChooseUsSection(
-                items: DummyData.whyChooseUs,
+                items: _whyChooseUsItems,
               ),
 
               const SizedBox(height: 26),

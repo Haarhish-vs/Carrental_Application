@@ -16,28 +16,40 @@ class BookingService {
     // 2. Calculate pricing
     const pricing = pricingService.calculatePricing(vehicle.price_per_day, vehicle.deposit_amount, startDate, endDate);
 
-    // 3. Insert the booking
-    const { data, error } = await supabase
+    // 3. Insert the booking as paid and confirmed since payment is handled by the client.
+    const { data: booking, error: insertError } = await supabase
       .from('bookings')
       .insert({
         vehicle_id: vehicleId,
         renter_id: renterId,
         start_date: startDate,
         end_date: endDate,
-        status: 'pending',
-        payment_status: 'unpaid',
+        status: 'confirmed',
+        payment_status: 'paid',
         total_price: pricing.totalPrice,
         deposit_amount: pricing.depositAmount
       })
       .select()
       .single();
 
-    if (error) {
+    if (insertError) {
       // Forward the error to let error middleware capture 23P01 (overlap)
-      throw error;
+      throw insertError;
     }
 
-    return data;
+    const { error: availabilityError } = await supabase
+      .from('vehicles')
+      .update({
+        is_available: false,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', vehicleId);
+
+    if (availabilityError) {
+      throw new Error(`Booking created but failed to reserve vehicle: ${availabilityError.message}`);
+    }
+
+    return booking;
   }
 
   /**
@@ -234,6 +246,19 @@ class BookingService {
       .single();
 
     if (updateError) throw updateError;
+
+    const { error: availabilityError } = await supabase
+      .from('vehicles')
+      .update({
+        is_available: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', booking.vehicle.id);
+
+    if (availabilityError) {
+      throw new Error(`Booking completed but failed to release vehicle availability: ${availabilityError.message}`);
+    }
+
     return data;
   }
 
@@ -282,6 +307,19 @@ class BookingService {
       .single();
 
     if (updateError) throw updateError;
+
+    const { error: availabilityError } = await supabase
+      .from('vehicles')
+      .update({
+        is_available: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', booking.vehicle.id);
+
+    if (availabilityError) {
+      throw new Error(`Booking cancelled but failed to release vehicle availability: ${availabilityError.message}`);
+    }
+
     return data;
   }
 }

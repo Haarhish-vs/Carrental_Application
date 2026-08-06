@@ -7,6 +7,8 @@ class CarModel {
   final int seats;
   final double rating;
   final double pricePerDay;
+  final String city;
+  final String status;
 
   const CarModel({
     required this.id,
@@ -17,6 +19,8 @@ class CarModel {
     required this.seats,
     required this.rating,
     required this.pricePerDay,
+    required this.city,
+    required this.status,
   });
 
   factory CarModel.fromJson(Map<String, dynamic> json) {
@@ -44,6 +48,8 @@ class CarModel {
     final int seats = int.tryParse(json['seats']?.toString() ?? json['seatingCapacity']?.toString() ?? '') ?? 4;
     final double pricePerDay = double.tryParse(json['price_per_day']?.toString() ?? json['dailyPrice']?.toString() ?? '') ?? 0.0;
     final double rating = double.tryParse(json['rating']?.toString() ?? '') ?? 4.5;
+    final String city = json['city']?.toString() ?? 'Unknown City';
+    final String status = json['status']?.toString() ?? 'unknown';
 
     return CarModel(
       id: id,
@@ -54,6 +60,8 @@ class CarModel {
       seats: seats,
       rating: rating,
       pricePerDay: pricePerDay,
+      city: city,
+      status: status,
     );
   }
 }

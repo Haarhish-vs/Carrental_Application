@@ -12,7 +12,8 @@ class AuthService {
   static String? currentToken;
   static Map<String, dynamic>? currentUser;
 
-  static bool get isAuthenticated => currentToken != null && currentToken!.isNotEmpty;
+  static bool get isAuthenticated =>
+      currentToken != null && currentToken!.isNotEmpty;
 
   void _initDio() {
     _dio.options.baseUrl = CarApiService.baseUrl;
@@ -62,10 +63,7 @@ class AuthService {
     try {
       final response = await _dio.post(
         '/api/auth/verify-otp',
-        data: {
-          'phoneNumber': phoneNumber,
-          'otp': otp,
-        },
+        data: {'phoneNumber': phoneNumber, 'otp': otp},
       );
 
       if (response.statusCode == 200 && response.data != null) {
@@ -80,11 +78,7 @@ class AuthService {
         CarApiService.token = token;
         debugPrint('✅ Auth verified, token length: ${token.length}');
 
-        return {
-          'token': token,
-          'user': user,
-          'isNewUser': isNewUser,
-        };
+        return {'token': token, 'user': user, 'isNewUser': isNewUser};
       }
       throw Exception('Invalid OTP verification response');
     } on DioException catch (e) {

@@ -10,10 +10,10 @@ class CarApiService {
   }
 
   final Dio _dio;
-  
+
   // Base URL for the Rent-A-Car backend
   static String baseUrl = 'https://carrental-application-1.onrender.com';
-  
+
   // Static token storage that can be set from elsewhere in the app (e.g., login)
   static String? token;
 
@@ -22,9 +22,7 @@ class CarApiService {
     _dio.options.connectTimeout = const Duration(seconds: 60);
     _dio.options.receiveTimeout = const Duration(seconds: 60);
     _dio.options.sendTimeout = const Duration(seconds: 60);
-    _dio.options.headers = {
-      'Accept': 'application/json',
-    };
+    _dio.options.headers = {'Accept': 'application/json'};
 
     // Authentication, Logging, and Retry Interceptor
     _dio.interceptors.add(
@@ -40,16 +38,19 @@ class CarApiService {
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          debugPrint('✅ [API Response] ${response.statusCode} | ${response.requestOptions.path}');
+          debugPrint(
+            '✅ [API Response] ${response.statusCode} | ${response.requestOptions.path}',
+          );
           return handler.next(response);
         },
         onError: (DioException error, handler) async {
-          debugPrint('❌ [API Error] Status: ${error.response?.statusCode} | Path: ${error.requestOptions.path} | Error: ${error.message}');
+          debugPrint(
+            '❌ [API Error] Status: ${error.response?.statusCode} | Path: ${error.requestOptions.path} | Error: ${error.message}',
+          );
           // Implement simple retry functionality for network connection timeouts
           if (error.type == DioExceptionType.connectionTimeout ||
               error.type == DioExceptionType.sendTimeout ||
               error.type == DioExceptionType.receiveTimeout) {
-            
             final requestOptions = error.requestOptions;
             // Retry only once to prevent infinite loops
             if (requestOptions.extra['isRetry'] != true) {
@@ -84,12 +85,14 @@ class CarApiService {
   ) async {
     try {
       final formData = FormData();
-      
+
       for (final file in files) {
         final bytes = await file.readAsBytes();
         final multipartFile = MultipartFile.fromBytes(
           bytes,
-          filename: file.name.isNotEmpty ? file.name : 'upload_${DateTime.now().millisecondsSinceEpoch}.jpg',
+          filename: file.name.isNotEmpty
+              ? file.name
+              : 'upload_${DateTime.now().millisecondsSinceEpoch}.jpg',
         );
         formData.files.add(MapEntry('files', multipartFile));
       }
@@ -110,9 +113,7 @@ class CarApiService {
         data: formData,
         options: Options(
           contentType: 'multipart/form-data',
-          headers: {
-            'Authorization': 'Bearer $authToken',
-          },
+          headers: {'Authorization': 'Bearer $authToken'},
         ),
         onSendProgress: (sent, total) {
           if (total > 0) {
@@ -130,7 +131,7 @@ class CarApiService {
           }
         }
       }
-      
+
       throw DioException(
         requestOptions: RequestOptions(path: '/api/vehicles/upload'),
         message: 'Upload failed: Invalid response format',
@@ -158,13 +159,44 @@ class CarApiService {
     }
   }
 
-  /// Create a new vehicle listing
-  Future<Map<String, dynamic>> createVehicle(Map<String, dynamic> vehicleData) async {
+  /// Create a new booking for a selected vehicle.
+  Future<Map<String, dynamic>> createBooking({
+    required String vehicleId,
+    required String startDate,
+    required String endDate,
+  }) async {
     try {
       final response = await _dio.post(
-        '/api/vehicles',
-        data: vehicleData,
+        '/api/bookings',
+        data: {
+          'vehicleId': vehicleId,
+          'startDate': startDate,
+          'endDate': endDate,
+        },
       );
+
+      if (response.statusCode == 201 && response.data != null) {
+        final success = response.data['success'] as bool? ?? false;
+        if (success && response.data['data'] != null) {
+          return response.data['data'] as Map<String, dynamic>;
+        }
+      }
+
+      throw DioException(
+        requestOptions: RequestOptions(path: '/api/bookings'),
+        message: 'Failed to create booking',
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// Create a new vehicle listing
+  Future<Map<String, dynamic>> createVehicle(
+    Map<String, dynamic> vehicleData,
+  ) async {
+    try {
+      final response = await _dio.post('/api/vehicles', data: vehicleData);
 
       if (response.statusCode == 201 && response.data != null) {
         final success = response.data['success'] as bool? ?? false;
@@ -191,10 +223,7 @@ class CarApiService {
     try {
       final response = await _dio.post(
         '/api/vehicles/$vehicleId/documents',
-        data: {
-          'documentType': documentType,
-          'documentUrl': documentUrl,
-        },
+        data: {'documentType': documentType, 'documentUrl': documentUrl},
       );
 
       if (response.statusCode == 201 && response.data != null) {
@@ -205,7 +234,9 @@ class CarApiService {
       }
 
       throw DioException(
-        requestOptions: RequestOptions(path: '/api/vehicles/$vehicleId/documents'),
+        requestOptions: RequestOptions(
+          path: '/api/vehicles/$vehicleId/documents',
+        ),
         message: 'Failed to submit document details',
       );
     } on DioException catch (e) {
@@ -218,23 +249,23 @@ class CarApiService {
     try {
       final formData = FormData();
       final bytes = await file.readAsBytes();
-      
+
       // Determine file extension and name
       final fileSegments = file.name.split('.');
       final fileExt = fileSegments.isNotEmpty ? fileSegments.last : 'jpg';
-      final fileName = file.name.isNotEmpty ? file.name : 'doc_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
-      
-      final multipartFile = MultipartFile.fromBytes(
-        bytes,
-        filename: fileName,
-      );
+      final fileName = file.name.isNotEmpty
+          ? file.name
+          : 'doc_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+
+      final multipartFile = MultipartFile.fromBytes(bytes, filename: fileName);
       formData.files.add(MapEntry('files', multipartFile));
 
       final authToken = token ?? AuthService.currentToken;
       if (authToken == null || authToken.isEmpty) {
         throw DioException(
           requestOptions: RequestOptions(path: '/api/vehicles/upload-document'),
-          message: 'Not authenticated. Please log in before uploading documents.',
+          message:
+              'Not authenticated. Please log in before uploading documents.',
           type: DioExceptionType.cancel,
         );
       }
@@ -244,9 +275,7 @@ class CarApiService {
         data: formData,
         options: Options(
           contentType: 'multipart/form-data',
-          headers: {
-            'Authorization': 'Bearer $authToken',
-          },
+          headers: {'Authorization': 'Bearer $authToken'},
         ),
       );
 
@@ -260,7 +289,7 @@ class CarApiService {
           return data.toString();
         }
       }
-      
+
       throw DioException(
         requestOptions: RequestOptions(path: '/api/vehicles/upload'),
         message: response.data?['message'] ?? 'Document upload failed',
@@ -287,7 +316,8 @@ class CarApiService {
           message = 'Network connection timed out';
           break;
         case DioExceptionType.connectionError:
-          message = 'Cannot connect to the server. Please check your network connection.';
+          message =
+              'Cannot connect to the server. Please check your network connection.';
           break;
         default:
           message = error.message ?? message;
