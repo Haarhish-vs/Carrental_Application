@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/dummy_data.dart';
-import '../../models/car_model.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../../auth/services/auth_service.dart';
-import '../../../owner/data/services/car_api_service.dart';
 import '../../../owner/presentation/screens/rent_car/car_spefication.dart';
 import '../widgets/custom_home_app_bar.dart';
 import '../widgets/hero_search_card.dart';
@@ -17,6 +15,7 @@ import '../widgets/become_host_banner.dart';
 import '../widgets/stats_section.dart';
 import '../widgets/home_footer.dart';
 import '../widgets/bottom_navigation.dart';
+import '../widgets/home_drawer.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,10 +25,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _navIndex = 0;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  final CarApiService _carApiService = CarApiService();
-  late final Future<List<CarModel>> _recommendedCarsFuture;
+  int _navIndex = 0;
 
   String? _userName;
   String? _userLocation;
@@ -39,33 +37,29 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _returnDate;
   String? _returnTime;
 
-  @override
-  void initState() {
-    super.initState();
-    _recommendedCarsFuture = _fetchRecommendedCars();
-  }
-
-  Future<List<CarModel>> _fetchRecommendedCars() async {
-    final vehicles = await _carApiService.getVehicles();
-    return vehicles.map(CarModel.fromJson).toList();
-  }
-
   Future<void> _goHost() async {
     if (AuthService.isAuthenticated) {
       if (!mounted) return;
+
       await Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const CarSpecificationScreen()),
+        MaterialPageRoute(
+          builder: (_) => const CarSpecificationScreen(),
+        ),
       );
       return;
     }
 
     final authSuccess = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => const AuthScreen()),
+      MaterialPageRoute(
+        builder: (_) => const AuthScreen(),
+      ),
     );
 
     if (authSuccess == true && mounted) {
       await Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const CarSpecificationScreen()),
+        MaterialPageRoute(
+          builder: (_) => const CarSpecificationScreen(),
+        ),
       );
     }
   }
@@ -75,11 +69,17 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      lastDate: DateTime.now().add(
+        const Duration(days: 365),
+      ),
     );
-    if (picked == null || !mounted) return;
-    final formatted = '${picked.day.toString().padLeft(2, '0')}/'
+
+    if (picked == null) return;
+
+    final formatted =
+        '${picked.day.toString().padLeft(2, '0')}/'
         '${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+
     setState(() {
       if (isPickup) {
         _pickupDate = formatted;
@@ -94,8 +94,11 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       initialTime: TimeOfDay.now(),
     );
-    if (picked == null || !mounted) return;
+
+    if (picked == null) return;
+
     final formatted = picked.format(context);
+
     setState(() {
       if (isPickup) {
         _pickupTime = formatted;
@@ -108,7 +111,91 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: AppColors.background,
+
+      drawer: HomeDrawer(
+  userName: _userName,
+  userLocation: _userLocation,
+
+  onProfileTap: () {
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Profile coming soon'),
+      ),
+    );
+  },
+
+  onTripsTap: () {
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Trips coming soon'),
+      ),
+    );
+  },
+
+  onFavoritesTap: () {
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Favorites coming soon'),
+      ),
+    );
+  },
+
+  onSupportTap: () {
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Support coming soon'),
+      ),
+    );
+  },
+
+  onHostTap: () async {
+    Navigator.pop(context);
+    await _goHost();
+  },
+
+  onSettingsTap: () {
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Settings coming soon'),
+      ),
+    );
+  },
+
+  onHelpTap: () {
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Help & FAQs coming soon'),
+      ),
+    );
+  },
+
+  onPrivacyTap: () {
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Privacy Policy coming soon'),
+      ),
+    );
+  },
+
+  onLogoutTap: () {
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Logout coming soon'),
+      ),
+    );
+  },
+),
+
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -116,28 +203,27 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               CustomHomeAppBar(
                 userName: _userName,
-                location:  _userLocation,
+                location: _userLocation,
+
                 onMenuTap: () {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Menu coming soon'),
-    ),
-  );
-},
+                  _scaffoldKey.currentState?.openDrawer();
+                },
+
                 onFavoriteTap: () {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Favorites coming soon'),
-    ),
-  );
-},
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Favorites coming soon'),
+                    ),
+                  );
+                },
+
                 onProfileTap: () {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Profile screen coming soon'),
-    ),
-  );
-},
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Profile coming soon'),
+                    ),
+                  );
+                },
               ),
 
               const SizedBox(height: 10),
@@ -148,34 +234,41 @@ class _HomeScreenState extends State<HomeScreen> {
                 pickupTime: _pickupTime,
                 returnDate: _returnDate,
                 returnTime: _returnTime,
+
                 onPickupLocationTap: () {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Location selection will be connected soon.'),
-    ),
-  );
-},
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Location selection will be connected soon.',
+                      ),
+                    ),
+                  );
+                },
+
                 onPickupDateTap: () => _pickDate(isPickup: true),
                 onPickupTimeTap: () => _pickTime(isPickup: true),
                 onReturnDateTap: () => _pickDate(isPickup: false),
                 onReturnTimeTap: () => _pickTime(isPickup: false),
-                onSearch: () {
-  if (_pickupLocation == null ||
-      _pickupDate == null ||
-      _pickupTime == null ||
-      _returnDate == null ||
-      _returnTime == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please fill all search details'),
-      ),
-    );
-    return;
-  }
 
-  // TODO:
-  // Navigate to Search Result Screen
-},
+                onSearch: () {
+                  if (_pickupLocation == null ||
+                      _pickupDate == null ||
+                      _pickupTime == null ||
+                      _returnDate == null ||
+                      _returnTime == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Please fill all search details',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+
+                  // TODO:
+                  // Navigate to Search Results Screen
+                },
               ),
 
               const SizedBox(height: 22),
@@ -194,66 +287,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 22),
 
-              FutureBuilder<List<CarModel>>(
-                future: _recommendedCarsFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20),
-                      child: SizedBox(
-                        height: 250,
-                        child: Center(child: CircularProgressIndicator()),
-                      ),
-                    );
-                  }
-
-                  if (snapshot.hasError) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('Recommended Cars',
-                              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                          SizedBox(height: 12),
-                          Text('Unable to load vehicles. Please try again later.',
-                              style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                        ],
-                      ),
-                    );
-                  }
-
-                  final cars = snapshot.data ?? [];
-                  if (cars.isEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('Recommended Cars',
-                              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                          SizedBox(height: 12),
-                          Text('No cars available at the moment.',
-                              style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                        ],
-                      ),
-                    );
-                  }
-
-                  return RecommendedCars(
-                    cars: cars,
-                    onCarTap: (car) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Selected ${car.name}')),
-                      );
-                    },
-                    onBookNow: (car) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Book now requested for ${car.name}')),
-                      );
-                    },
-                  );
-                },
+              RecommendedCars(
+                cars: DummyData.recommendedCars,
+                onCarTap: (car) {},
+                onBookNow: (car) {},
               ),
 
               const SizedBox(height: 26),
@@ -289,11 +326,28 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+
       bottomNavigationBar: BottomNavigation(
         currentIndex: _navIndex,
-        onHomeTap: () => setState(() => _navIndex = 0),
-        onTripsTap: () => setState(() => _navIndex = 1),
-        onSupportTap: () => setState(() => _navIndex = 2),
+
+        onHomeTap: () {
+          setState(() {
+            _navIndex = 0;
+          });
+        },
+
+        onTripsTap: () {
+          setState(() {
+            _navIndex = 1;
+          });
+        },
+
+        onSupportTap: () {
+          setState(() {
+            _navIndex = 2;
+          });
+        },
+
         onHostTap: _goHost,
       ),
     );
