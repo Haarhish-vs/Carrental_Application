@@ -37,18 +37,6 @@ class BookingService {
       throw insertError;
     }
 
-    const { error: availabilityError } = await supabase
-      .from('vehicles')
-      .update({
-        is_available: false,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', vehicleId);
-
-    if (availabilityError) {
-      throw new Error(`Booking created but failed to reserve vehicle: ${availabilityError.message}`);
-    }
-
     return booking;
   }
 
@@ -247,18 +235,6 @@ class BookingService {
 
     if (updateError) throw updateError;
 
-    const { error: availabilityError } = await supabase
-      .from('vehicles')
-      .update({
-        is_available: true,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', booking.vehicle.id);
-
-    if (availabilityError) {
-      throw new Error(`Booking completed but failed to release vehicle availability: ${availabilityError.message}`);
-    }
-
     return data;
   }
 
@@ -307,18 +283,6 @@ class BookingService {
       .single();
 
     if (updateError) throw updateError;
-
-    const { error: availabilityError } = await supabase
-      .from('vehicles')
-      .update({
-        is_available: true,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', booking.vehicle.id);
-
-    if (availabilityError) {
-      throw new Error(`Booking cancelled but failed to release vehicle availability: ${availabilityError.message}`);
-    }
 
     return data;
   }

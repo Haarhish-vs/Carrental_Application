@@ -21,6 +21,7 @@ import '../widgets/home_footer.dart';
 import '../widgets/bottom_navigation.dart';
 import '../widgets/home_drawer.dart';
 import 'car_detail_screen.dart';
+import 'my_bookings_screen.dart';
 
 const List<CategoryModel> _homeCategories = [
   CategoryModel(id: '1', label: 'Daily Rental', icon: Icons.calendar_today_outlined),
@@ -193,11 +194,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   onTripsTap: () {
     Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Trips coming soon'),
-      ),
-    );
+    setState(() {
+      _navIndex = 1;
+    });
   },
 
   onFavoritesTap: () {
@@ -261,194 +260,202 @@ class _HomeScreenState extends State<HomeScreen> {
 ),
 
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CustomHomeAppBar(
-                userName: _userName,
-                location: _userLocation,
-
-                onMenuTap: () {
-                  _scaffoldKey.currentState?.openDrawer();
+        child: _navIndex == 1
+            ? MyBookingsScreen(
+                onExplorePressed: () {
+                  setState(() {
+                    _navIndex = 0;
+                  });
                 },
+              )
+            : SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CustomHomeAppBar(
+                      userName: _userName,
+                      location: _userLocation,
 
-                onFavoriteTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Favorites coming soon'),
+                      onMenuTap: () {
+                        _scaffoldKey.currentState?.openDrawer();
+                      },
+
+                      onFavoriteTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Favorites coming soon'),
+                          ),
+                        );
+                      },
+
+                      onProfileTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Profile coming soon'),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
 
-                onProfileTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Profile coming soon'),
+                    const SizedBox(height: 10),
+
+                    HeroSearchCard(
+                      pickupLocation: _pickupLocation,
+                      pickupDate: _pickupDate,
+                      pickupTime: _pickupTime,
+                      returnDate: _returnDate,
+                      returnTime: _returnTime,
+
+                      onPickupLocationTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Location selection will be connected soon.',
+                            ),
+                          ),
+                        );
+                      },
+
+                      onPickupDateTap: () => _pickDate(isPickup: true),
+                      onPickupTimeTap: () => _pickTime(isPickup: true),
+                      onReturnDateTap: () => _pickDate(isPickup: false),
+                      onReturnTimeTap: () => _pickTime(isPickup: false),
+
+                      onSearch: () {
+                        if (_pickupLocation == null ||
+                            _pickupDate == null ||
+                            _pickupTime == null ||
+                            _returnDate == null ||
+                            _returnTime == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Please fill all search details',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+
+                        // TODO:
+                        // Navigate to Search Results Screen
+                      },
                     ),
-                  );
-                },
-              ),
 
-              const SizedBox(height: 10),
+                    const SizedBox(height: 22),
 
-              HeroSearchCard(
-                pickupLocation: _pickupLocation,
-                pickupDate: _pickupDate,
-                pickupTime: _pickupTime,
-                returnDate: _returnDate,
-                returnTime: _returnTime,
-
-                onPickupLocationTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Location selection will be connected soon.',
-                      ),
+                    CategoryList(
+                      categories: _homeCategories,
+                      onCategoryTap: (category) {},
                     ),
-                  );
-                },
 
-                onPickupDateTap: () => _pickDate(isPickup: true),
-                onPickupTimeTap: () => _pickTime(isPickup: true),
-                onReturnDateTap: () => _pickDate(isPickup: false),
-                onReturnTimeTap: () => _pickTime(isPickup: false),
+                    const SizedBox(height: 22),
 
-                onSearch: () {
-                  if (_pickupLocation == null ||
-                      _pickupDate == null ||
-                      _pickupTime == null ||
-                      _returnDate == null ||
-                      _returnTime == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Please fill all search details',
-                        ),
-                      ),
-                    );
-                    return;
-                  }
+                    OfferCarousel(
+                      offers: _homeOffers,
+                      onOfferTap: (offer) {},
+                    ),
 
-                  // TODO:
-                  // Navigate to Search Results Screen
-                },
+                    const SizedBox(height: 22),
+
+                    FutureBuilder<List<CarModel>>(
+                      future: _vehiclesFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 20),
+                            child: SizedBox(
+                              height: 250,
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                          );
+                        }
+
+                        if (snapshot.hasError) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text('Recommended Cars',
+                                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                                SizedBox(height: 12),
+                                Text('Unable to load vehicles. Please try again later.',
+                                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                              ],
+                            ),
+                          );
+                        }
+
+                        final cars = snapshot.data ?? [];
+                        if (cars.isEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text('Recommended Cars',
+                                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                                SizedBox(height: 12),
+                                Text('No cars available at the moment.',
+                                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                              ],
+                            ),
+                          );
+                        }
+
+                        return RecommendedCars(
+                          cars: cars,
+                          onCarTap: (car) {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => CarDetailScreen(car: car),
+                              ),
+                            );
+                          },
+                          onBookNow: (car) {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => CarDetailScreen(car: car),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 26),
+
+                    WhyChooseUsSection(
+                      items: _whyChooseUsItems,
+                    ),
+
+                    const SizedBox(height: 26),
+
+                    const HowItWorksSection(),
+
+                    const SizedBox(height: 26),
+
+                    BecomeHostBanner(
+                      onHostTap: _goHost,
+                    ),
+
+                    const SizedBox(height: 26),
+
+                    const StatsSection(),
+
+                    const SizedBox(height: 30),
+
+                    HomeFooter(
+                      onAboutTap: () {},
+                      onPrivacyPolicyTap: () {},
+                      onTermsTap: () {},
+                      onFaqsTap: () {},
+                      onContactUsTap: () {},
+                    ),
+                  ],
+                ),
               ),
-
-              const SizedBox(height: 22),
-
-              CategoryList(
-                categories: _homeCategories,
-                onCategoryTap: (category) {},
-              ),
-
-              const SizedBox(height: 22),
-
-              OfferCarousel(
-                offers: _homeOffers,
-                onOfferTap: (offer) {},
-              ),
-
-              const SizedBox(height: 22),
-
-              FutureBuilder<List<CarModel>>(
-                future: _vehiclesFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20),
-                      child: SizedBox(
-                        height: 250,
-                        child: Center(child: CircularProgressIndicator()),
-                      ),
-                    );
-                  }
-
-                  if (snapshot.hasError) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('Recommended Cars',
-                              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                          SizedBox(height: 12),
-                          Text('Unable to load vehicles. Please try again later.',
-                              style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                        ],
-                      ),
-                    );
-                  }
-
-                  final cars = snapshot.data ?? [];
-                  if (cars.isEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('Recommended Cars',
-                              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                          SizedBox(height: 12),
-                          Text('No cars available at the moment.',
-                              style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                        ],
-                      ),
-                    );
-                  }
-
-                  return RecommendedCars(
-                    cars: cars,
-                    onCarTap: (car) {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => CarDetailScreen(car: car),
-                        ),
-                      );
-                    },
-                    onBookNow: (car) {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => CarDetailScreen(car: car),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-
-              const SizedBox(height: 26),
-
-              WhyChooseUsSection(
-                items: _whyChooseUsItems,
-              ),
-
-              const SizedBox(height: 26),
-
-              const HowItWorksSection(),
-
-              const SizedBox(height: 26),
-
-              BecomeHostBanner(
-                onHostTap: _goHost,
-              ),
-
-              const SizedBox(height: 26),
-
-              const StatsSection(),
-
-              const SizedBox(height: 30),
-
-              HomeFooter(
-                onAboutTap: () {},
-                onPrivacyPolicyTap: () {},
-                onTermsTap: () {},
-                onFaqsTap: () {},
-                onContactUsTap: () {},
-              ),
-            ],
-          ),
-        ),
       ),
 
       bottomNavigationBar: BottomNavigation(

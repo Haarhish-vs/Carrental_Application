@@ -30,6 +30,7 @@ jest.mock('../src/config/supabase', () => {
     ilike: jest.fn().mockReturnThis(),
     single: mockSingle,
     maybeSingle: mockMaybeSingle,
+    not: jest.fn().mockReturnThis(),
     
     _data: null,
     _error: null,
