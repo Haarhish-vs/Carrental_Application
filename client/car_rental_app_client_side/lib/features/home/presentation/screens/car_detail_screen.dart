@@ -117,13 +117,13 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
             title: const Row(
               children: [
-                Icon(Icons.pending_actions_rounded, color: Color(0xFFFF9800)),
+                Icon(Icons.check_circle_rounded, color: AppColors.success),
                 SizedBox(width: 8),
-                Text('Request Sent!'),
+                Text('Booking Confirmed!'),
               ],
             ),
             content: Text(
-              'Your booking request for ${widget.car.name} has been sent to the owner.\n\nStatus: PENDING\n\nYou will see the booking in My Bookings once the owner confirms.',
+              'Your booking for ${widget.car.name} is confirmed!\n\nTotal: ₹${_totalAmount.toStringAsFixed(0)}\n\nView details in My Bookings.',
             ),
             actions: [
               FilledButton(
@@ -338,7 +338,7 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                     ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : (_paymentSuccess
                         ? const Text('Done', style: TextStyle(fontSize: 16))
-                        : const Text('Request Booking', style: TextStyle(fontSize: 16))),
+                        : const Text('Book Now', style: TextStyle(fontSize: 16))),
               ),
               const SizedBox(height: 24),
             ],

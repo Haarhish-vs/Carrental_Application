@@ -16,7 +16,7 @@ class BookingService {
     // 2. Calculate pricing
     const pricing = pricingService.calculatePricing(vehicle.price_per_day, vehicle.deposit_amount, startDate, endDate);
 
-    // 3. Insert the booking as PENDING — owner must confirm before it becomes active.
+    // 3. Insert the booking as confirmed and paid — no owner approval required.
     const { data: booking, error: insertError } = await supabase
       .from('bookings')
       .insert({
@@ -24,8 +24,8 @@ class BookingService {
         renter_id: renterId,
         start_date: startDate,
         end_date: endDate,
-        status: 'pending',
-        payment_status: 'unpaid',
+        status: 'confirmed',
+        payment_status: 'paid',
         total_price: pricing.totalPrice,
         deposit_amount: pricing.depositAmount
       })

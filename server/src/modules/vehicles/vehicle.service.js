@@ -303,13 +303,14 @@ class VehicleService {
     let query = supabase
       .from('vehicles')
       .select('*')
-      .eq('is_available', true);
+      .eq('is_available', true)
+      .eq('status', 'active'); // Only show active, available cars on home screen
 
     if (excludedVehicleIds.length > 0) {
       query = query.not('id', 'in', excludedVehicleIds);
     }
 
-    // Only filter by status when explicitly requested by the client
+    // Only override status filter if client explicitly passes one
     if (filters.status) {
       query = query.eq('status', filters.status);
     }
@@ -408,6 +409,43 @@ class VehicleService {
     }
 
     return vehicle;
+  }
+  /**
+   * Toggle a vehicle's is_available flag (owner only).
+   */
+  async toggleAvailability(vehicleId, userId, isAvailable) {
+    // 1. Verify the vehicle exists and the user owns it
+    const { data: vehicle, error: fetchError } = await supabase
+      .from('vehicles')
+      .select('id, owner_id')
+      .eq('id', vehicleId)
+      .maybeSingle();
+
+    if (fetchError || !vehicle) {
+      const error = new Error('Vehicle not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (vehicle.owner_id !== userId) {
+      const error = new Error('You are not authorized to update this vehicle');
+      error.statusCode = 403;
+      throw error;
+    }
+
+    // 2. Update the flag
+    const { data, error: updateError } = await supabase
+      .from('vehicles')
+      .update({ is_available: isAvailable, updated_at: new Date().toISOString() })
+      .eq('id', vehicleId)
+      .select()
+      .single();
+
+    if (updateError) {
+      throw new Error(`Failed to update availability: ${updateError.message}`);
+    }
+
+    return data;
   }
 }
 
