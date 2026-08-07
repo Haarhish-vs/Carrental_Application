@@ -2,14 +2,14 @@ const axios = require('axios');
 
 async function run() {
   try {
-    const res = await axios.get('https://carrental-application-1.onrender.com/api/locations/recent');
-    console.log('Recent Locations Success:', res.data);
+    const res = await axios.get('https://carrental-application-1.onrender.com/api/vehicles');
+    console.log('Vehicles Success:', res.data);
   } catch (err) {
     if (err.response) {
-      console.log('Recent Locations Status:', err.response.status);
-      console.log('Recent Locations Data:', err.response.data);
+      console.log('Vehicles Error Status:', err.response.status);
+      console.log('Vehicles Error Data:', err.response.data);
     } else {
-      console.error('Recent Locations Error:', err.message);
+      console.error('Vehicles Error Message:', err.message);
     }
   }
 }

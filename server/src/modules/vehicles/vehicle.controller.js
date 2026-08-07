@@ -14,7 +14,11 @@ const getVehicles = async (req, res, next) => {
       data: vehicles
     });
   } catch (error) {
-    next(error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+      stack: error.stack
+    });
   }
 };
 
