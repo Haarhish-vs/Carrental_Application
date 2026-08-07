@@ -102,7 +102,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<List<CarModel>> _fetchHomeVehicles() async {
     final vehicles = await _carApiService.getVehicles();
-    return vehicles.map(CarModel.fromJson).toList();
+    return vehicles
+        .map(CarModel.fromJson)
+        .where((car) => car.isAvailable)
+        .toList();
   }
 
   Future<void> _goHost() async {
@@ -645,6 +648,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onExplorePressed: () {
                   setState(() {
                     _navIndex = 0;
+                    _vehiclesFuture = _fetchHomeVehicles();
                   });
                 },
               )
@@ -653,7 +657,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     onListCarPressed: () async {
                       await _goHost();
                       // after returning from host flow, refresh
-                      setState(() {});
+                      setState(() {
+                        _vehiclesFuture = _fetchHomeVehicles();
+                      });
                     },
                   )
                 : SingleChildScrollView(
@@ -794,19 +800,29 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         return RecommendedCars(
                           cars: cars,
-                          onCarTap: (car) {
-                            Navigator.of(context).push(
+                          onCarTap: (car) async {
+                            await Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) => CarDetailScreen(car: car),
                               ),
                             );
+                            if (mounted) {
+                              setState(() {
+                                _vehiclesFuture = _fetchHomeVehicles();
+                              });
+                            }
                           },
-                          onBookNow: (car) {
-                            Navigator.of(context).push(
+                          onBookNow: (car) async {
+                            await Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) => CarDetailScreen(car: car),
                               ),
                             );
+                            if (mounted) {
+                              setState(() {
+                                _vehiclesFuture = _fetchHomeVehicles();
+                              });
+                            }
                           },
                         );
                       },
@@ -852,6 +868,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onHomeTap: () {
           setState(() {
             _navIndex = 0;
+            _vehiclesFuture = _fetchHomeVehicles();
           });
         },
 

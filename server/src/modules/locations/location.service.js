@@ -2,7 +2,7 @@
 const { supabase } = require('../../config/supabase');
 const env = require('../../config/env');
 
-const GOOGLE_MAPS_API_KEY = env.GOOGLE_MAPS_API_KEY;
+//const GOOGLE_MAPS_API_KEY = env.GOOGLE_MAPS_API_KEY;
 
 /**
  * Searches for a location using OpenStreetMap Nominatim API
@@ -13,14 +13,14 @@ const searchLocations = async (query) => {
   if (!query) return [];
 
   const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=jsonv2&addressdetails=1&limit=10`;
-  
+
   const response = await fetch(url, {
     headers: {
       'User-Agent': 'CarRentalApp/1.0',
       'Accept': 'application/json'
     }
   });
-  
+
   const data = await response.json();
 
   if (!Array.isArray(data)) {
@@ -48,14 +48,14 @@ const reverseGeocode = async (latitude, longitude) => {
   }
 
   const url = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=jsonv2&addressdetails=1`;
-  
+
   const response = await fetch(url, {
     headers: {
       'User-Agent': 'CarRentalApp/1.0',
       'Accept': 'application/json'
     }
   });
-  
+
   const data = await response.json();
 
   if (data.error) {
@@ -133,7 +133,7 @@ const saveRecentLocation = async (userId, locationData) => {
       .from('recent_locations')
       .delete()
       .eq('id', existingRecords[0].id);
-      
+
     if (deleteExistingError) {
       throw new Error(`Error removing duplicate recent location: ${deleteExistingError.message}`);
     }
@@ -152,7 +152,7 @@ const saveRecentLocation = async (userId, locationData) => {
     if (allUserLocations && allUserLocations.length >= 10) {
       // Delete the oldest ones to make space for the new one (keep 9 newest)
       const idsToDelete = allUserLocations.slice(9).map(loc => loc.id);
-      
+
       const { error: pruneError } = await supabase
         .from('recent_locations')
         .delete()

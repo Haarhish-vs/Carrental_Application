@@ -19,7 +19,8 @@ class RecommendedCars extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (cars.isEmpty) return const SizedBox.shrink();
+    final availableCars = cars.where((c) => c.isAvailable).toList();
+    if (availableCars.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,10 +43,10 @@ class RecommendedCars extends StatelessWidget {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: cars.length,
+            itemCount: availableCars.length,
             separatorBuilder: (_, __) => const SizedBox(width: 14),
             itemBuilder: (context, index) {
-              final car = cars[index];
+              final car = availableCars[index];
               return CarCard(
                 car: car,
                 onCarTap: () => onCarTap(car),
