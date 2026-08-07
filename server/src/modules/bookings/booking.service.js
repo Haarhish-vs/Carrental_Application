@@ -37,7 +37,32 @@ class BookingService {
       throw insertError;
     }
 
+    // 4. Mark the vehicle as unavailable so it is hidden from the home listing
+    await supabase
+      .from('vehicles')
+      .update({ is_available: false, updated_at: new Date().toISOString() })
+      .eq('id', vehicleId);
+
     return booking;
+  }
+
+  /**
+   * Restore vehicle availability if no other active/confirmed bookings exist.
+   */
+  async _restoreVehicleAvailability(vehicleId) {
+    const { data: activeBookings } = await supabase
+      .from('bookings')
+      .select('id')
+      .eq('vehicle_id', vehicleId)
+      .in('status', ['confirmed', 'active'])
+      .limit(1);
+
+    if (!activeBookings || activeBookings.length === 0) {
+      await supabase
+        .from('vehicles')
+        .update({ is_available: true, updated_at: new Date().toISOString() })
+        .eq('id', vehicleId);
+    }
   }
 
   /**
@@ -235,6 +260,9 @@ class BookingService {
 
     if (updateError) throw updateError;
 
+    // Restore availability if no other active bookings remain
+    await this._restoreVehicleAvailability(booking.vehicle_id);
+
     return data;
   }
 
@@ -283,6 +311,9 @@ class BookingService {
       .single();
 
     if (updateError) throw updateError;
+
+    // Restore vehicle availability once booking is cancelled
+    await this._restoreVehicleAvailability(booking.vehicle_id);
 
     return data;
   }
