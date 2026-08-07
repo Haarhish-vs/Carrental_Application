@@ -103,7 +103,7 @@ class VehicleService {
     }
 
     mapped.owner_id = userId;
-    mapped.status = 'under_review'; // Force under_review status on creation
+    mapped.status = 'active'; // Directly set to active status on creation
     if (mapped.is_available === undefined) mapped.is_available = true;
 
     const { data, error } = await supabase
@@ -307,7 +307,7 @@ class VehicleService {
       .eq('status', 'active'); // Only show active, available cars on home screen
 
     if (excludedVehicleIds.length > 0) {
-      const excludedString = `(${excludedVehicleIds.map(id => `"${id}"`).join(',')})`;
+      const excludedString = `(${excludedVehicleIds.join(',')})`;
       query = query.not('id', 'in', excludedString);
     }
 
