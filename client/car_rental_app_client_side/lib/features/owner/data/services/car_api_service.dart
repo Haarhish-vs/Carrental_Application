@@ -297,6 +297,8 @@ class CarApiService {
     } on DioException catch (e) {
       throw _handleDioError(e);
     }
+  }
+
   /// Fetch renter's bookings
   Future<List<Map<String, dynamic>>> getMyBookings() async {
     try {
