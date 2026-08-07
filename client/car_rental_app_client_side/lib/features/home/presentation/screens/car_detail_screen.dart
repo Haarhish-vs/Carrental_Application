@@ -122,6 +122,9 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
           );
         },
       );
+
+      if (!mounted) return;
+      Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

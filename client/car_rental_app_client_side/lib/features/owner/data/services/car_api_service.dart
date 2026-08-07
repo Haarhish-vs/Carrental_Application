@@ -159,6 +159,42 @@ class CarApiService {
     }
   }
 
+  /// Fetch the logged-in user's bookings.
+  Future<List<Map<String, dynamic>>> getMyBookings() async {
+    try {
+      final response = await _dio.get('/api/bookings/my-bookings');
+      if (response.statusCode == 200 && response.data != null) {
+        final success = response.data['success'] as bool? ?? false;
+        if (success && response.data['data'] != null) {
+          final list = response.data['data'] as List<dynamic>;
+          return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        }
+      }
+      return [];
+    } on DioException catch (e) {
+      debugPrint('Error fetching my bookings: ${e.message}');
+      return [];
+    }
+  }
+
+  /// Fetch the logged-in user's listed vehicles.
+  Future<List<Map<String, dynamic>>> getMyListings() async {
+    try {
+      final response = await _dio.get('/api/vehicles/my-listings');
+      if (response.statusCode == 200 && response.data != null) {
+        final success = response.data['success'] as bool? ?? false;
+        if (success && response.data['data'] != null) {
+          final list = response.data['data'] as List<dynamic>;
+          return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        }
+      }
+      return [];
+    } on DioException catch (e) {
+      debugPrint('Error fetching my listings: ${e.message}');
+      return [];
+    }
+  }
+
   /// Create a new booking for a selected vehicle.
   Future<Map<String, dynamic>> createBooking({
     required String vehicleId,
