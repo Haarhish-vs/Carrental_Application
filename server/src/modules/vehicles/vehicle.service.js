@@ -297,7 +297,7 @@ class VehicleService {
 
     let excludedVehicleIds = [];
     if (!bookingsError && overlappingBookings) {
-      excludedVehicleIds = [...new Set(overlappingBookings.map(b => b.vehicle_id))];
+      excludedVehicleIds = [...new Set(overlappingBookings.map(b => b.vehicle_id).filter(id => !!id))];
     }
 
     let query = supabase
@@ -307,7 +307,8 @@ class VehicleService {
       .eq('status', 'active'); // Only show active, available cars on home screen
 
     if (excludedVehicleIds.length > 0) {
-      query = query.not('id', 'in', excludedVehicleIds);
+      const excludedString = `(${excludedVehicleIds.map(id => `"${id}"`).join(',')})`;
+      query = query.not('id', 'in', excludedString);
     }
 
     // Only override status filter if client explicitly passes one

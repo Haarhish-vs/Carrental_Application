@@ -102,10 +102,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<List<CarModel>> _fetchHomeVehicles() async {
     final vehicles = await _carApiService.getVehicles();
-    return vehicles
-        .map(CarModel.fromJson)
-        .where((car) => car.isAvailable)
-        .toList();
+    debugPrint('🚗 [DEBUG] Fetched ${vehicles.length} vehicles from API:');
+    for (var v in vehicles) {
+      debugPrint('   - Brand: ${v['brand']}, Model: ${v['model']}, Status: ${v['status']}, is_available: ${v['is_available']}');
+    }
+    final mapped = vehicles.map(CarModel.fromJson).toList();
+    debugPrint('🚗 [DEBUG] After mapping, ${mapped.length} cars total.');
+    final filtered = mapped.where((car) => car.isAvailable).toList();
+    debugPrint('🚗 [DEBUG] After filtering isAvailable, ${filtered.length} cars remaining.');
+    return filtered;
   }
 
   Future<void> _goHost() async {
