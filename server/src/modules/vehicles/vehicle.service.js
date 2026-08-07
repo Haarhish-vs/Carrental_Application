@@ -282,8 +282,12 @@ class VehicleService {
       targetStart = startStr;
       targetEnd = endStr;
     } else {
-      // Use local today date format YYYY-MM-DD
-      targetStart = new Date().toLocaleDateString('en-CA');
+      // Manually format local today date as YYYY-MM-DD to avoid ICU locale dependencies
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      targetStart = `${year}-${month}-${day}`;
       targetEnd = targetStart;
     }
 
