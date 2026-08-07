@@ -1,8 +1,5 @@
 // location.service.js
 const { supabase } = require('../../config/supabase');
-const env = require('../../config/env');
-
-//const GOOGLE_MAPS_API_KEY = env.GOOGLE_MAPS_API_KEY;
 
 /**
  * Searches for a location using OpenStreetMap Nominatim API
