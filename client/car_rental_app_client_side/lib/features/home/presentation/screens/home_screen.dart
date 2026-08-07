@@ -82,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int _navIndex = 0;
 
-  late final Future<List<CarModel>> _vehiclesFuture;
+  late Future<List<CarModel>> _vehiclesFuture;
   Future<List<Map<String, dynamic>>>? _myBookingsFuture;
   Future<List<Map<String, dynamic>>>? _myCarsFuture;
 

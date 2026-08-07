@@ -52,8 +52,7 @@ class CarModel {
     final double rating = double.tryParse(json['rating']?.toString() ?? '') ?? 4.5;
     final String city = json['city']?.toString() ?? 'Unknown City';
     final String status = json['status']?.toString() ?? 'unknown';
-    final bool isAvailable = json['is_available'] == true ||
-        json['isAvailable'] == true ||
+    final bool isAvailable = (json['is_available'] != false && json['isAvailable'] != false) &&
         json['status']?.toString().toLowerCase() == 'active';
 
     return CarModel(
