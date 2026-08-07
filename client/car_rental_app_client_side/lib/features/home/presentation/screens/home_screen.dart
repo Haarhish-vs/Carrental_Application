@@ -22,6 +22,7 @@ import '../widgets/bottom_navigation.dart';
 import '../widgets/home_drawer.dart';
 import 'car_detail_screen.dart';
 import 'my_bookings_screen.dart';
+import 'my_cars_screen.dart';
 
 const List<CategoryModel> _homeCategories = [
   CategoryModel(id: '1', label: 'Daily Rental', icon: Icons.calendar_today_outlined),
@@ -647,7 +648,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   });
                 },
               )
-            : SingleChildScrollView(
+            : _navIndex == 2
+                ? MyCarsScreen(
+                    onListCarPressed: () async {
+                      await _goHost();
+                      // after returning from host flow, refresh
+                      setState(() {});
+                    },
+                  )
+                : SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

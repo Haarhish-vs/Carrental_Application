@@ -335,21 +335,38 @@ class CarApiService {
     }
   }
 
-  /// Fetch renter's bookings
-  Future<List<Map<String, dynamic>>> getMyBookings() async {
+  /// Cancel a booking by its ID. Can be called by the renter or owner.
+  Future<void> cancelBooking(String bookingId, {String? reason}) async {
     try {
-      final response = await _dio.get('/api/bookings/my-bookings');
-      if (response.statusCode == 200 && response.data != null) {
-        final success = response.data['success'] as bool? ?? false;
-        if (success && response.data['data'] != null) {
-          final list = response.data['data'] as List<dynamic>;
-          return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-        }
-      }
-      return [];
+      final response = await _dio.patch(
+        '/api/bookings/$bookingId/cancel',
+        data: {'reason': reason ?? 'Cancelled by user'},
+      );
+      if (response.statusCode == 200) return;
+      throw DioException(
+        requestOptions: RequestOptions(path: '/api/bookings/$bookingId/cancel'),
+        message: response.data?['message'] ?? 'Failed to cancel booking',
+      );
     } on DioException catch (e) {
-      debugPrint('Error fetching my bookings: ${e.message}');
-      return [];
+      throw _handleDioError(e);
+    }
+  }
+
+  /// Toggle a vehicle's availability (owner only).
+  /// Pass [isAvailable] = false to mark as unavailable, true to re-enable.
+  Future<void> toggleVehicleAvailability(String vehicleId, {required bool isAvailable}) async {
+    try {
+      final response = await _dio.patch(
+        '/api/vehicles/$vehicleId/availability',
+        data: {'isAvailable': isAvailable},
+      );
+      if (response.statusCode == 200) return;
+      throw DioException(
+        requestOptions: RequestOptions(path: '/api/vehicles/$vehicleId/availability'),
+        message: response.data?['message'] ?? 'Failed to update availability',
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
     }
   }
 

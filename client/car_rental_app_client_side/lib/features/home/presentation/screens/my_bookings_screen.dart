@@ -29,6 +29,52 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     });
   }
 
+  bool _isCancellable(String status) =>
+      status == 'pending' || status == 'confirmed';
+
+  Future<void> _cancelBooking(String bookingId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text('Cancel Booking'),
+        content: const Text(
+          'Are you sure you want to cancel this booking? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('No, Keep It'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Yes, Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await _apiService.cancelBooking(bookingId, reason: 'Cancelled by renter');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Booking cancelled successfully'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+      _refreshBookings();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    }
+  }
+
   String _formatBookingDate(String? dateStr) {
     if (dateStr == null) return '';
     try {
@@ -440,6 +486,27 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                   ),
                                 ],
                               ),
+                              // Cancel button for cancellable bookings
+                              if (_isCancellable(booking['status'] ?? '')) ...[
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton.icon(
+                                    onPressed: () => _cancelBooking(
+                                      booking['id']?.toString() ?? '',
+                                    ),
+                                    icon: const Icon(Icons.cancel_outlined, size: 16),
+                                    label: const Text('Cancel Booking'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.red,
+                                      side: const BorderSide(color: Colors.red),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),

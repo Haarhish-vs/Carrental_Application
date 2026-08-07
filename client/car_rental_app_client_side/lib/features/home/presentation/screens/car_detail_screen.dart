@@ -114,12 +114,19 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
         context: context,
         builder: (context) {
           return AlertDialog(
-            title: const Text('Payment Complete'),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            title: const Row(
+              children: [
+                Icon(Icons.pending_actions_rounded, color: Color(0xFFFF9800)),
+                SizedBox(width: 8),
+                Text('Request Sent!'),
+              ],
+            ),
             content: Text(
-              'Your booking for ${widget.car.name} has been confirmed. Total paid: ₹${_totalAmount.toStringAsFixed(0)}.',
+              'Your booking request for ${widget.car.name} has been sent to the owner.\n\nStatus: PENDING\n\nYou will see the booking in My Bookings once the owner confirms.',
             ),
             actions: [
-              TextButton(
+              FilledButton(
                 onPressed: () => Navigator.of(context).pop(),
                 child: const Text('OK'),
               ),
@@ -328,10 +335,10 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 child: _processingPayment
-                    ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                    ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : (_paymentSuccess
-                        ? const Text('OK', style: TextStyle(fontSize: 16))
-                        : const Text('Pay Now', style: TextStyle(fontSize: 16))),
+                        ? const Text('Done', style: TextStyle(fontSize: 16))
+                        : const Text('Request Booking', style: TextStyle(fontSize: 16))),
               ),
               const SizedBox(height: 24),
             ],
