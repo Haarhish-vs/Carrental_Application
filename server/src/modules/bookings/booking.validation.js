@@ -79,6 +79,25 @@ const validateBookingCreation = async (vehicleId, renterId, startDateStr, endDat
     throw error;
   }
 
+  // 3. Check for overlapping bookings
+  const { data: overlappingBookings, error: bookingsError } = await supabase
+    .from('bookings')
+    .select('id')
+    .eq('vehicle_id', vehicleId)
+    .in('status', ['pending', 'confirmed', 'active'])
+    .lte('start_date', endDateStr)
+    .gte('end_date', startDateStr);
+
+  if (bookingsError) {
+    throw new Error(`Failed to check booking availability: ${bookingsError.message}`);
+  }
+
+  if (overlappingBookings && overlappingBookings.length > 0) {
+    const error = new Error('This vehicle is already booked for the selected period.');
+    error.statusCode = 400;
+    throw error;
+  }
+
   return vehicle;
 };
 

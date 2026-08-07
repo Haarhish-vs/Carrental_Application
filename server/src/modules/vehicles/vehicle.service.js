@@ -273,10 +273,41 @@ class VehicleService {
    * Public browsing for active/available vehicles.
    */
   async getVehicles(filters = {}) {
+    // 1. Get dates to check for availability exclusion
+    const startStr = filters.startDate || filters.start_date;
+    const endStr = filters.endDate || filters.end_date;
+    
+    let targetStart, targetEnd;
+    if (startStr && endStr) {
+      targetStart = startStr;
+      targetEnd = endStr;
+    } else {
+      // Use local today date format YYYY-MM-DD
+      targetStart = new Date().toLocaleDateString('en-CA');
+      targetEnd = targetStart;
+    }
+
+    // 2. Query bookings that overlap with the target range and are active/confirmed/pending
+    const { data: overlappingBookings, error: bookingsError } = await supabase
+      .from('bookings')
+      .select('vehicle_id')
+      .in('status', ['pending', 'confirmed', 'active'])
+      .lte('start_date', targetEnd)
+      .gte('end_date', targetStart);
+
+    let excludedVehicleIds = [];
+    if (!bookingsError && overlappingBookings) {
+      excludedVehicleIds = [...new Set(overlappingBookings.map(b => b.vehicle_id))];
+    }
+
     let query = supabase
       .from('vehicles')
       .select('*')
       .eq('is_available', true);
+
+    if (excludedVehicleIds.length > 0) {
+      query = query.not('id', 'in', excludedVehicleIds);
+    }
 
     // Only filter by status when explicitly requested by the client
     if (filters.status) {

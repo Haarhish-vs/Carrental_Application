@@ -335,6 +335,24 @@ class CarApiService {
     }
   }
 
+  /// Fetch renter's bookings
+  Future<List<Map<String, dynamic>>> getMyBookings() async {
+    try {
+      final response = await _dio.get('/api/bookings/my-bookings');
+      if (response.statusCode == 200 && response.data != null) {
+        final success = response.data['success'] as bool? ?? false;
+        if (success && response.data['data'] != null) {
+          final list = response.data['data'] as List<dynamic>;
+          return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        }
+      }
+      return [];
+    } on DioException catch (e) {
+      debugPrint('Error fetching my bookings: ${e.message}');
+      return [];
+    }
+  }
+
   Exception _handleDioError(DioException error) {
     String message = 'An unexpected error occurred';
     if (error.response != null) {

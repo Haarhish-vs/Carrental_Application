@@ -20,6 +20,7 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
   DateTime? _returnDate;
   double _totalAmount = 0.0;
   bool _processingPayment = false;
+  bool _paymentSuccess = false;
 
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/'
@@ -105,6 +106,10 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
 
       if (!mounted) return;
 
+      setState(() {
+        _paymentSuccess = true;
+      });
+
       await showDialog<void>(
         context: context,
         builder: (context) {
@@ -136,6 +141,10 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
         _processingPayment = false;
       });
     }
+  }
+
+  void _redirectToHome() {
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   Widget _buildDetailTile(String title, String value) {
@@ -311,14 +320,18 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
               ),
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: _processingPayment ? null : _handlePayNow,
+                onPressed: _processingPayment
+                    ? null
+                    : (_paymentSuccess ? _redirectToHome : _handlePayNow),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size(double.infinity, 56),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 child: _processingPayment
                     ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Pay Now', style: TextStyle(fontSize: 16)),
+                    : (_paymentSuccess
+                        ? const Text('OK', style: TextStyle(fontSize: 16))
+                        : const Text('Pay Now', style: TextStyle(fontSize: 16))),
               ),
               const SizedBox(height: 24),
             ],
