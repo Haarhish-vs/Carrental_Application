@@ -306,11 +306,6 @@ class VehicleService {
       .eq('is_available', true)
       .eq('status', 'active'); // Only show active, available cars on home screen
 
-    if (excludedVehicleIds.length > 0) {
-      const excludedString = `(${excludedVehicleIds.join(',')})`;
-      query = query.not('id', 'in', excludedString);
-    }
-
     // Only override status filter if client explicitly passes one
     if (filters.status) {
       query = query.eq('status', filters.status);
@@ -347,6 +342,10 @@ class VehicleService {
     const { data, error } = await query;
     if (error) {
       throw new Error(`Failed to retrieve vehicles: ${error.message}`);
+    }
+
+    if (data && excludedVehicleIds.length > 0) {
+      return data.filter(vehicle => !excludedVehicleIds.includes(vehicle.id));
     }
 
     return data;
