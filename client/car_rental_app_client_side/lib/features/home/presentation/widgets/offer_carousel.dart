@@ -56,7 +56,7 @@ class _OfferCarouselState extends State<OfferCarousel> {
                         Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [Colors.black.withOpacity(0.65), Colors.transparent],
+                              colors: [Colors.black.withValues(alpha: 0.65), Colors.transparent],
                               begin: Alignment.bottomCenter,
                               end: Alignment.topCenter,
                             ),
@@ -73,7 +73,7 @@ class _OfferCarouselState extends State<OfferCarousel> {
                                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                               const SizedBox(height: 2),
                               Text(offer.subtitle,
-                                  style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12)),
+                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12)),
                             ],
                           ),
                         ),

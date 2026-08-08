@@ -50,7 +50,10 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: Text(targetAvailable ? 'Mark as Available' : 'Mark as Unavailable'),
+        title: Text(
+          targetAvailable ? 'Mark as Available' : 'Mark as Unavailable',
+          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+        ),
         content: Text(
           targetAvailable
               ? 'This car will become visible and bookable by renters.'
@@ -62,6 +65,9 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
             child: const Text('Cancel'),
           ),
           FilledButton(
+            style: targetAvailable
+                ? AppColors.primaryButtonStyle(verticalPadding: 10, borderRadius: 12)
+                : AppColors.dangerButtonStyle(verticalPadding: 10, borderRadius: 12),
             onPressed: () => Navigator.of(ctx).pop(true),
             child: Text(actionLabel[0].toUpperCase() + actionLabel.substring(1)),
           ),
@@ -77,14 +83,14 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(targetAvailable ? 'Car is now available for booking.' : 'Car is now marked as unavailable.'),
-          backgroundColor: targetAvailable ? AppColors.success : Colors.orange,
+          backgroundColor: targetAvailable ? AppColors.success : AppColors.warning,
         ),
       );
       _refresh();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        SnackBar(content: Text(e.toString()), backgroundColor: AppColors.error),
       );
     }
   }
@@ -117,7 +123,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: const Color(0xFFE6F4EA),
+          color: AppColors.successLight,
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Text(
@@ -134,13 +140,13 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFFCE8E6),
+        color: AppColors.errorLight,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         bookedUntil != null ? 'BOOKED TILL $bookedUntil' : 'UNAVAILABLE',
         style: const TextStyle(
-          color: Colors.red,
+          color: AppColors.error,
           fontSize: 11,
           fontWeight: FontWeight.bold,
         ),
@@ -182,7 +188,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
 
     return Card(
       elevation: 0,
-      color: Colors.white,
+      color: AppColors.cardBackground,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -198,7 +204,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                     ? Image.network(
                         imageUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _placeholderImage(),
+                        errorBuilder: (context, error, stackTrace) => _placeholderImage(),
                       )
                     : _placeholderImage(),
                 // Overlay banner if unavailable
@@ -209,7 +215,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                     right: 0,
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 6),
-                      color: Colors.black.withOpacity(0.55),
+                      color: Colors.black.withValues(alpha: 0.55),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -245,7 +251,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                       child: Text(
                         name.isNotEmpty ? name : 'My Car',
                         style: const TextStyle(
-                          color: Color(0xFF103B66),
+                          color: AppColors.textPrimary,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -311,13 +317,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                           ),
                           icon: const Icon(Icons.block_outlined, size: 16),
                           label: const Text('Mark as Unavailable'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.red,
-                            side: const BorderSide(color: Colors.red),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
+                          style: AppColors.outlinedButtonStyle(color: AppColors.error),
                         )
                       : FilledButton.icon(
                           onPressed: () => _toggleAvailability(
@@ -328,6 +328,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                           label: const Text('Mark as Available'),
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.success,
+                            foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -344,7 +345,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
 
   Widget _placeholderImage() {
     return Container(
-      color: const Color(0xFFEAF2FF),
+      color: AppColors.primaryLight,
       child: const Icon(
         Icons.directions_car_rounded,
         size: 48,
@@ -378,7 +379,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF103B66),
+                  color: AppColors.textPrimary,
                 ),
               ),
               IconButton(
@@ -395,7 +396,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
             future: _carsFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(child: CircularProgressIndicator(color: AppColors.primary));
               }
 
               if (snapshot.hasError) {
@@ -405,11 +406,11 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                        const Icon(Icons.error_outline, size: 48, color: AppColors.error),
                         const SizedBox(height: 12),
                         const Text(
                           'Something went wrong',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -420,6 +421,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                         const SizedBox(height: 16),
                         OutlinedButton(
                           onPressed: _refresh,
+                          style: AppColors.outlinedButtonStyle(color: AppColors.primary),
                           child: const Text('Retry'),
                         ),
                       ],
@@ -436,7 +438,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.garage_outlined, size: 64, color: Color(0xFF8EA6BE)),
+                        const Icon(Icons.garage_outlined, size: 64, color: AppColors.textMuted),
                         const SizedBox(height: 16),
                         const Text(
                           'No Cars Listed Yet',
@@ -457,12 +459,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                           onPressed: widget.onListCarPressed,
                           icon: const Icon(Icons.add_rounded),
                           label: const Text('List a Car'),
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
+                          style: AppColors.primaryButtonStyle(verticalPadding: 12, borderRadius: 12),
                         ),
                       ],
                     ),
@@ -473,7 +470,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
               return ListView.separated(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 itemCount: cars.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 16),
+                separatorBuilder: (context, index) => const SizedBox(height: 16),
                 itemBuilder: (context, index) => _buildCarCard(cars[index]),
               );
             },

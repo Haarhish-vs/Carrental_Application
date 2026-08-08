@@ -35,7 +35,7 @@ class CarCard extends StatelessWidget {
             color: AppColors.cardBackground,
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 14, offset: const Offset(0, 6)),
+              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 14, offset: const Offset(0, 6)),
             ],
           ),
           child: Column(
@@ -73,7 +73,7 @@ class CarCard extends StatelessWidget {
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(0)),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 5),
-                          color: Colors.black.withOpacity(0.55),
+                          color: Colors.black.withValues(alpha: 0.55),
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [

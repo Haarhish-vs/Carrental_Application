@@ -50,7 +50,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('Cancel Booking'),
+        title: const Text('Cancel Booking', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
         content: const Text(
           'Are you sure you want to cancel this booking? This action cannot be undone.',
         ),
@@ -60,7 +60,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
             child: const Text('No, Keep It'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: AppColors.dangerButtonStyle(verticalPadding: 10),
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Yes, Cancel'),
           ),
@@ -83,7 +83,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        SnackBar(content: Text(e.toString()), backgroundColor: AppColors.error),
       );
     }
   }
@@ -106,29 +106,29 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
 
     switch (status.toLowerCase()) {
       case 'confirmed':
-        bg = const Color(0xFFE6F4EA);
+        bg = AppColors.successLight;
         text = AppColors.success;
         label = 'CONFIRMED';
         break;
       case 'active':
-        bg = const Color(0xFFEAF2FF);
+        bg = AppColors.primaryLight;
         text = AppColors.primary;
         label = 'ACTIVE';
         break;
       case 'completed':
-        bg = const Color(0xFFF1F3F4);
+        bg = AppColors.segmentBackground;
         text = AppColors.textSecondary;
         label = 'COMPLETED';
         break;
       case 'cancelled':
-        bg = const Color(0xFFFCE8E6);
-        text = Colors.red;
+        bg = AppColors.errorLight;
+        text = AppColors.error;
         label = 'CANCELLED';
         break;
       case 'pending':
       default:
-        bg = const Color(0xFFFEF7E0);
-        text = Colors.orange;
+        bg = AppColors.warningLight;
+        text = AppColors.warning;
         label = 'PENDING';
         break;
     }
@@ -188,7 +188,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF103B66),
+                  color: AppColors.textPrimary,
                 ),
               ),
               IconButton(
@@ -205,7 +205,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
-                  child: CircularProgressIndicator(),
+                  child: CircularProgressIndicator(color: AppColors.primary),
                 );
               }
 
@@ -216,11 +216,11 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                        const Icon(Icons.error_outline, size: 48, color: AppColors.error),
                         const SizedBox(height: 12),
                         const Text(
                           'Something went wrong',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -245,7 +245,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                         const Icon(
                           Icons.directions_car_outlined,
                           size: 64,
-                          color: Color(0xFF8EA6BE),
+                          color: AppColors.textMuted,
                         ),
                         const SizedBox(height: 16),
                         const Text(
@@ -268,12 +268,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                         const SizedBox(height: 24),
                         FilledButton(
                           onPressed: widget.onExplorePressed,
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
+                          style: AppColors.primaryButtonStyle(verticalPadding: 12, borderRadius: 12),
                           child: const Text('Explore Cars'),
                         ),
                       ],
@@ -285,7 +280,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
               return ListView.separated(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 itemCount: bookings.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 16),
+                separatorBuilder: (context, index) => const SizedBox(height: 16),
                 itemBuilder: (context, index) {
                   final booking = bookings[index];
                   final car = booking['vehicle'] as Map<String, dynamic>? ?? {};
@@ -305,7 +300,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
 
                   return Card(
                     elevation: 0,
-                    color: Colors.white,
+                    color: AppColors.cardBackground,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -319,8 +314,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                               ? Image.network(
                                   imageUrl,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
-                                    color: const Color(0xFFEAF2FF),
+                                  errorBuilder: (context, error, stackTrace) => Container(
+                                    color: AppColors.primaryLight,
                                     child: const Icon(
                                       Icons.directions_car_rounded,
                                       size: 48,
@@ -329,7 +324,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                   ),
                                 )
                               : Container(
-                                  color: const Color(0xFFEAF2FF),
+                                  color: AppColors.primaryLight,
                                   child: const Icon(
                                     Icons.directions_car_rounded,
                                     size: 48,
@@ -349,7 +344,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                     child: Text(
                                       '$brand $model',
                                       style: const TextStyle(
-                                        color: Color(0xFF103B66),
+                                        color: AppColors.textPrimary,
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -447,7 +442,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                     style: TextStyle(
                                       color: (booking['payment_status'] == 'paid')
                                           ? AppColors.success
-                                          : Colors.orange,
+                                          : AppColors.warning,
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -465,13 +460,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                     ),
                                     icon: const Icon(Icons.cancel_outlined, size: 16),
                                     label: const Text('Cancel Booking'),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: Colors.red,
-                                      side: const BorderSide(color: Colors.red),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
+                                    style: AppColors.outlinedButtonStyle(color: AppColors.error),
                                   ),
                                 ),
                               ],

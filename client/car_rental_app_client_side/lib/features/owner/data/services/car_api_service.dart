@@ -12,7 +12,7 @@ class CarApiService {
   final Dio _dio;
 
   // Base URL for the Rent-A-Car backend
-  static String baseUrl = 'https://carrental-application-1.onrender.com';
+  static String baseUrl = 'https://carrental-application-z49a.onrender.com';
 
   // Static token storage that can be set from elsewhere in the app (e.g., login)
   static String? token;

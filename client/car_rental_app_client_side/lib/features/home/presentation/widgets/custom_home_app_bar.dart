@@ -86,7 +86,7 @@ class CustomHomeAppBar extends StatelessWidget {
             onTap: onProfileTap,
             child: CircleAvatar(
               radius: 20,
-              backgroundColor: AppColors.primary.withOpacity(0.1),
+              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
               backgroundImage: (profileImageUrl != null && profileImageUrl!.isNotEmpty)
                   ? NetworkImage(profileImageUrl!)
                   : null,

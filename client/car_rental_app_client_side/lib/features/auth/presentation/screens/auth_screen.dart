@@ -197,7 +197,7 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget _buildSegmentedTabs() {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF4FA),
+        color: AppColors.segmentBackground,
         borderRadius: BorderRadius.circular(18),
       ),
       padding: const EdgeInsets.all(4),
@@ -217,7 +217,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: _currentMode == AuthMode.login ? Colors.white : Colors.transparent,
+                  color: _currentMode == AuthMode.login ? AppColors.surface : Colors.transparent,
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: _currentMode == AuthMode.login
                       ? [
@@ -236,8 +236,8 @@ class _AuthScreenState extends State<AuthScreen> {
                     fontWeight: FontWeight.bold,
                     fontSize: 14.5,
                     color: _currentMode == AuthMode.login
-                        ? const Color(0xFF1E5AA8)
-                        : const Color(0xFF64748B),
+                        ? AppColors.primary
+                        : AppColors.textSecondary,
                   ),
                 ),
               ),
@@ -257,7 +257,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: _currentMode == AuthMode.register ? Colors.white : Colors.transparent,
+                  color: _currentMode == AuthMode.register ? AppColors.surface : Colors.transparent,
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: _currentMode == AuthMode.register
                       ? [
@@ -276,8 +276,8 @@ class _AuthScreenState extends State<AuthScreen> {
                     fontWeight: FontWeight.bold,
                     fontSize: 14.5,
                     color: _currentMode == AuthMode.register
-                        ? const Color(0xFF1E5AA8)
-                        : const Color(0xFF64748B),
+                        ? AppColors.primary
+                        : AppColors.textSecondary,
                   ),
                 ),
               ),
@@ -291,14 +291,14 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7FB),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: Container(
           margin: const EdgeInsets.only(left: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.surface,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
@@ -309,7 +309,7 @@ class _AuthScreenState extends State<AuthScreen> {
             ],
           ),
           child: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF103B66), size: 18),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
             onPressed: () {
               if (Navigator.of(context).canPop()) {
                 Navigator.of(context).pop(false);
@@ -330,7 +330,7 @@ class _AuthScreenState extends State<AuthScreen> {
               constraints: const BoxConstraints(maxWidth: 440),
               child: Card(
                 elevation: 0,
-                color: Colors.white,
+                color: AppColors.cardBackground,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(28),
                 ),
@@ -346,7 +346,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           width: 68,
                           height: 68,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEAF2FF),
+                            color: AppColors.primaryLight,
                             borderRadius: BorderRadius.circular(22),
                           ),
                           child: Icon(
@@ -356,7 +356,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                     : Icons.person_add_outlined)
                                 : Icons.mark_email_read_outlined,
                             size: 34,
-                            color: const Color(0xFF1E5AA8),
+                            color: AppColors.primary,
                           ),
                         ),
                       ),
@@ -369,7 +369,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             : 'Verify Phone Number',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: const Color(0xFF103B66),
+                              color: AppColors.textPrimary,
                               fontWeight: FontWeight.bold,
                               fontSize: 22,
                             ),
@@ -383,7 +383,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             : 'Enter the 6-digit OTP code sent to +91 ${_phoneController.text.trim()}',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                          color: Color(0xFF64748B),
+                          color: AppColors.textSecondary,
                           fontSize: 13.5,
                           height: 1.4,
                         ),
@@ -395,19 +395,19 @@ class _AuthScreenState extends State<AuthScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFEBEE),
+                            color: AppColors.errorLight,
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: const Color(0xFFFFCDD2)),
+                            border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.error_outline_rounded, color: Colors.red, size: 22),
+                              const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 22),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
                                   _errorMessage!,
                                   style: const TextStyle(
-                                    color: Colors.red,
+                                    color: AppColors.error,
                                     fontSize: 13.5,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -432,20 +432,20 @@ class _AuthScreenState extends State<AuthScreen> {
                             decoration: InputDecoration(
                               labelText: 'Full Name',
                               hintText: 'e.g. John Doe',
-                              prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF1E5AA8)),
+                              prefixIcon: const Icon(Icons.person_outline, color: AppColors.primary),
                               filled: true,
-                              fillColor: const Color(0xFFF8FAFC),
+                              fillColor: AppColors.inputFill,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                borderSide: const BorderSide(color: AppColors.inputBorder),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                borderSide: const BorderSide(color: AppColors.inputBorder),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(color: Color(0xFF1E5AA8), width: 2),
+                                borderSide: const BorderSide(color: AppColors.primary, width: 2),
                               ),
                             ),
                           ),
@@ -460,41 +460,41 @@ class _AuthScreenState extends State<AuthScreen> {
                             labelText: 'Mobile Number',
                             hintText: '9876543210',
                             filled: true,
-                            fillColor: const Color(0xFFF8FAFC),
+                            fillColor: AppColors.inputFill,
                             prefixIcon: const Padding(
                               padding: EdgeInsets.symmetric(horizontal: 14),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.phone_outlined, color: Color(0xFF1E5AA8), size: 20),
+                                  Icon(Icons.phone_outlined, color: AppColors.primary, size: 20),
                                   SizedBox(width: 8),
                                   Text(
                                     '+91',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color: Color(0xFF103B66),
+                                      color: AppColors.textPrimary,
                                       fontSize: 15,
                                     ),
                                   ),
                                   SizedBox(width: 8),
                                   SizedBox(
                                     height: 20,
-                                    child: VerticalDivider(color: Color(0xFFCBD5E1), thickness: 1),
+                                    child: VerticalDivider(color: AppColors.border, thickness: 1),
                                   ),
                                 ],
                               ),
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                              borderSide: const BorderSide(color: AppColors.inputBorder),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                              borderSide: const BorderSide(color: AppColors.inputBorder),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(color: Color(0xFF1E5AA8), width: 2),
+                              borderSide: const BorderSide(color: AppColors.primary, width: 2),
                             ),
                           ),
                         ),
@@ -503,14 +503,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         // Send OTP Button
                         FilledButton(
                           onPressed: _isLoading ? null : _handleSendOtp,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF1E5AA8),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            elevation: 0,
-                          ),
+                          style: AppColors.primaryButtonStyle(),
                           child: _isLoading
                               ? const SizedBox(
                                   height: 20,
@@ -522,7 +515,6 @@ class _AuthScreenState extends State<AuthScreen> {
                                 )
                               : Text(
                                   _currentMode == AuthMode.login ? 'Send Login OTP' : 'Send Registration OTP',
-                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                                 ),
                         ),
                       ]
@@ -537,24 +529,24 @@ class _AuthScreenState extends State<AuthScreen> {
                             fontSize: 24,
                             letterSpacing: 10,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF103B66),
+                            color: AppColors.textPrimary,
                           ),
                           decoration: InputDecoration(
                             labelText: '6-Digit Verification Code',
                             hintText: '123456',
                             filled: true,
-                            fillColor: const Color(0xFFF8FAFC),
+                            fillColor: AppColors.inputFill,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                              borderSide: const BorderSide(color: AppColors.inputBorder),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                              borderSide: const BorderSide(color: AppColors.inputBorder),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(color: Color(0xFF1E5AA8), width: 2),
+                              borderSide: const BorderSide(color: AppColors.primary, width: 2),
                             ),
                           ),
                         ),
@@ -564,7 +556,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFE6F4EA),
+                              color: AppColors.successLight,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
@@ -582,14 +574,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
                         FilledButton(
                           onPressed: _isLoading ? null : _handleVerifyOtp,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF1E5AA8),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            elevation: 0,
-                          ),
+                          style: AppColors.primaryButtonStyle(),
                           child: _isLoading
                               ? const SizedBox(
                                   height: 20,
@@ -599,10 +584,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : const Text(
-                                  'Verify & Continue',
-                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                                ),
+                              : const Text('Verify & Continue'),
                         ),
                         const SizedBox(height: 14),
 
@@ -626,13 +608,13 @@ class _AuthScreenState extends State<AuthScreen> {
                                     onPressed: _isLoading ? null : _handleSendOtp,
                                     child: const Text(
                                       'Resend OTP',
-                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                      style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
                                     ),
                                   )
                                 : Text(
                                     'Resend in ${_resendCountdown.toString().padLeft(2, '0')}s',
                                     style: const TextStyle(
-                                      color: Color(0xFF94A3B8),
+                                      color: AppColors.textMuted,
                                       fontSize: 13,
                                     ),
                                   ),

@@ -44,7 +44,7 @@ class RecommendedCars extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
             itemCount: availableCars.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 14),
+            separatorBuilder: (context, index) => const SizedBox(width: 14),
             itemBuilder: (context, index) {
               final car = availableCars[index];
               return CarCard(

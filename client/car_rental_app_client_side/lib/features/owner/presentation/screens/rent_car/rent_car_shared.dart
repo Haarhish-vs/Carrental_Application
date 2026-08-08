@@ -160,14 +160,12 @@ class RentCarScreenScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7FB),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Rent Out Your Car'),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF103B66),
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
         centerTitle: false,
       ),
@@ -182,7 +180,7 @@ class RentCarScreenScaffold extends StatelessWidget {
               Text(
                 title,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: const Color(0xFF103B66),
+                  color: AppColors.textPrimary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -190,7 +188,7 @@ class RentCarScreenScaffold extends StatelessWidget {
               Text(
                 subtitle,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF57718A),
+                  color: AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 20),
@@ -201,13 +199,7 @@ class RentCarScreenScaffold extends StatelessWidget {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: onBack,
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: BorderSide(color: colorScheme.primary),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
+                      style: AppColors.outlinedButtonStyle(color: AppColors.primary, verticalPadding: 16),
                       child: Text(backLabel),
                     ),
                   ),
@@ -215,12 +207,7 @@ class RentCarScreenScaffold extends StatelessWidget {
                   Expanded(
                     child: FilledButton(
                       onPressed: onNext,
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
+                      style: AppColors.primaryButtonStyle(verticalPadding: 16),
                       child: Text(nextLabel),
                     ),
                   ),
@@ -241,11 +228,9 @@ class _StepHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Card(
       elevation: 0,
-      color: Colors.white,
+      color: AppColors.cardBackground,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -260,9 +245,9 @@ class _StepHeader extends StatelessWidget {
                     child: LinearProgressIndicator(
                       minHeight: 8,
                       value: currentStep / rentCarStepTitles.length,
-                      backgroundColor: const Color(0xFFE5EEF8),
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        colorScheme.primary,
+                      backgroundColor: AppColors.primaryLight,
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.primary,
                       ),
                     ),
                   ),
@@ -271,7 +256,7 @@ class _StepHeader extends StatelessWidget {
                 Text(
                   '$currentStep/${rentCarStepTitles.length}',
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: const Color(0xFF103B66),
+                    color: AppColors.textPrimary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -295,21 +280,21 @@ class _StepHeader extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? colorScheme.primary
+                        ? AppColors.primary
                         : isDone
-                        ? const Color(0xFFE6F0FF)
-                        : const Color(0xFFF5F8FC),
+                        ? AppColors.primaryLight
+                        : AppColors.inputFill,
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(
                       color: isActive
-                          ? colorScheme.primary
-                          : const Color(0xFFD9E4F1),
+                          ? AppColors.primary
+                          : AppColors.border,
                     ),
                   ),
                   child: Text(
                     rentCarStepTitles[index],
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: isActive ? Colors.white : const Color(0xFF103B66),
+                      color: isActive ? Colors.white : AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -339,7 +324,7 @@ class RentCarSectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      color: Colors.white,
+      color: AppColors.cardBackground,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -347,13 +332,13 @@ class RentCarSectionCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (icon != null) ...[
-              Icon(icon, color: const Color(0xFF1E5AA8)),
+              Icon(icon, color: AppColors.primary),
               const SizedBox(height: 12),
             ],
             Text(
               title,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: const Color(0xFF103B66),
+                color: AppColors.textPrimary,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -384,8 +369,6 @@ class RentCarToggleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
@@ -394,9 +377,9 @@ class RentCarToggleTile extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          color: selected ? const Color(0xFFEAF2FF) : const Color(0xFFF7FAFD),
+          color: selected ? AppColors.primaryLight : AppColors.inputFill,
           border: Border.all(
-            color: selected ? colorScheme.primary : const Color(0xFFDDE6F2),
+            color: selected ? AppColors.primary : AppColors.border,
           ),
         ),
         child: Row(
@@ -405,12 +388,12 @@ class RentCarToggleTile extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: selected ? colorScheme.primary : Colors.white,
+                color: selected ? AppColors.primary : AppColors.surface,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
                 icon,
-                color: selected ? Colors.white : const Color(0xFF1E5AA8),
+                color: selected ? Colors.white : AppColors.primary,
               ),
             ),
             const SizedBox(width: 12),
@@ -421,7 +404,7 @@ class RentCarToggleTile extends StatelessWidget {
                   Text(
                     title,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: const Color(0xFF103B66),
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -429,7 +412,7 @@ class RentCarToggleTile extends StatelessWidget {
                   Text(
                     subtitle,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF62778F),
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -438,7 +421,7 @@ class RentCarToggleTile extends StatelessWidget {
             const SizedBox(width: 8),
             Icon(
               selected ? Icons.check_circle_rounded : Icons.add_circle_outline,
-              color: selected ? colorScheme.primary : const Color(0xFF9AAEC4),
+              color: selected ? AppColors.primary : AppColors.textMuted,
             ),
           ],
         ),
@@ -456,32 +439,32 @@ InputDecoration rentCarInputDecoration(
   return InputDecoration(
     labelText: label,
     hintText: hint,
-    prefixIcon: icon == null ? null : Icon(icon),
+    prefixIcon: icon == null ? null : Icon(icon, color: AppColors.primary),
     filled: true,
-    fillColor: const Color(0xFFF7FAFD),
+    fillColor: AppColors.inputFill,
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(18),
-      borderSide: const BorderSide(color: Color(0xFFD7E2EF)),
+      borderSide: const BorderSide(color: AppColors.inputBorder),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(18),
-      borderSide: const BorderSide(color: Color(0xFFD7E2EF)),
+      borderSide: const BorderSide(color: AppColors.inputBorder),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(18),
-      borderSide: BorderSide(
-        color: Theme.of(context).colorScheme.primary,
+      borderSide: const BorderSide(
+        color: AppColors.inputFocusedBorder,
         width: 1.4,
       ),
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(18),
-      borderSide: const BorderSide(color: Color(0xFFE06B6B)),
+      borderSide: const BorderSide(color: AppColors.error),
     ),
     focusedErrorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(18),
-      borderSide: const BorderSide(color: Color(0xFFE06B6B), width: 1.4),
+      borderSide: const BorderSide(color: AppColors.error, width: 1.4),
     ),
   );
 }
@@ -555,7 +538,7 @@ class RentCarDropdownField<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       items: options
           .map(
             (option) => DropdownMenuItem<T>(

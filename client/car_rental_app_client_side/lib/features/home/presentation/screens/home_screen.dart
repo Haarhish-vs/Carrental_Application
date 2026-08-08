@@ -99,14 +99,14 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFEAF2FF),
+                color: AppColors.primaryLight,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.lock_outline_rounded, color: Color(0xFF1E5AA8)),
+              child: const Icon(Icons.lock_outline_rounded, color: AppColors.primary),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
             ),
           ],
         ),
@@ -121,10 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF1E5AA8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+            style: AppColors.primaryButtonStyle(verticalPadding: 12, borderRadius: 12),
             child: const Text('Log In / Register'),
           ),
         ],
@@ -172,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Log Out'),
+        title: const Text('Log Out', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
         content: const Text('Are you sure you want to log out of your account?'),
         actions: [
           TextButton(
@@ -181,10 +178,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+            style: AppColors.dangerButtonStyle(),
             child: const Text('Log Out'),
           ),
         ],
@@ -231,12 +225,12 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Row(
           children: [
             const CircleAvatar(
-              backgroundColor: Color(0xFFEAF2FF),
-              child: Icon(Icons.person, color: Color(0xFF1E5AA8)),
+              backgroundColor: AppColors.primaryLight,
+              child: Icon(Icons.person, color: AppColors.primary),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              child: Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
             ),
           ],
         ),
@@ -247,7 +241,7 @@ class _HomeScreenState extends State<HomeScreen> {
             if (phone.isNotEmpty) ...[
               const Text('Phone Number', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
               const SizedBox(height: 2),
-              Text(phone, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              Text(phone, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
               const SizedBox(height: 14),
             ],
             const Text('Account Status: Active', style: TextStyle(color: AppColors.success, fontWeight: FontWeight.bold)),
@@ -263,10 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.of(ctx).pop();
               await _handleLogout();
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+            style: AppColors.dangerButtonStyle(),
             child: const Text('Log Out'),
           ),
         ],

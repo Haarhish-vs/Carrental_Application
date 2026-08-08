@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:car_rental_app_client_side/core/theme/app_colors.dart';
 import 'package:car_rental_app_client_side/features/auth/presentation/screens/auth_screen.dart';
 
 class AuthRequiredView extends StatelessWidget {
@@ -24,7 +25,7 @@ class AuthRequiredView extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 440),
           child: Card(
             elevation: 0,
-            color: Colors.white,
+            color: AppColors.cardBackground,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(28),
             ),
@@ -40,13 +41,13 @@ class AuthRequiredView extends StatelessWidget {
                       width: 68,
                       height: 68,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEAF2FF),
+                        color: AppColors.primaryLight,
                         borderRadius: BorderRadius.circular(22),
                       ),
                       child: const Icon(
                         Icons.lock_outline_rounded,
                         size: 34,
-                        color: Color(0xFF1E5AA8),
+                        color: AppColors.primary,
                       ),
                     ),
                   ),
@@ -57,7 +58,7 @@ class AuthRequiredView extends StatelessWidget {
                     title,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: const Color(0xFF103B66),
+                          color: AppColors.textPrimary,
                           fontWeight: FontWeight.bold,
                           fontSize: 20,
                         ),
@@ -69,7 +70,7 @@ class AuthRequiredView extends StatelessWidget {
                     message,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Color(0xFF64748B),
+                      color: AppColors.textSecondary,
                       fontSize: 14,
                       height: 1.45,
                     ),
@@ -89,21 +90,8 @@ class AuthRequiredView extends StatelessWidget {
                         onAuthenticated!();
                       }
                     },
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E5AA8),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      buttonText,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    style: AppColors.primaryButtonStyle(),
+                    child: Text(buttonText),
                   ),
                 ],
               ),

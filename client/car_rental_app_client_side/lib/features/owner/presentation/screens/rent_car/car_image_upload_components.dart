@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:car_rental_app_client_side/core/theme/app_colors.dart';
 
 enum RentCarImageSlot {
   front,
@@ -180,7 +181,7 @@ Future<void> showRentCarImagePreviewDialog(
       ? Image.network(
           item.uploadedUrl!,
           fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image_outlined)),
+          errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image_outlined)),
         )
       : Image.memory(
           item.bytes!,
@@ -265,12 +266,12 @@ class RentCarImageRequirementCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.rule_folder_outlined, color: Color(0xFF1E5AA8)),
+                const Icon(Icons.rule_folder_outlined, color: AppColors.primary),
                 const SizedBox(width: 10),
                 Text(
                   'Image Requirements',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: const Color(0xFF103B66),
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.w700,
                       ),
                 ),
@@ -283,18 +284,18 @@ class RentCarImageRequirementCard extends StatelessWidget {
               children: [
                 _RequirementPill(
                   label: '$selectedCount selected',
-                  color: const Color(0xFFEAF2FF),
-                  textColor: const Color(0xFF103B66),
+                  color: AppColors.primaryLight,
+                  textColor: AppColors.textPrimary,
                 ),
                 _RequirementPill(
                   label: 'Min $minCount',
-                  color: const Color(0xFFF1F8E9),
-                  textColor: const Color(0xFF2E7D32),
+                  color: AppColors.successLight,
+                  textColor: AppColors.success,
                 ),
                 _RequirementPill(
                   label: 'Max $maxCount',
-                  color: const Color(0xFFFFF4E5),
-                  textColor: const Color(0xFFB26A00),
+                  color: AppColors.warningLight,
+                  textColor: AppColors.warning,
                 ),
               ],
             ),
@@ -303,13 +304,13 @@ class RentCarImageRequirementCard extends StatelessWidget {
               const _RequirementStatusRow(
                 icon: Icons.verified_rounded,
                 label: 'All required images are present.',
-                color: Color(0xFF2E7D32),
+                color: AppColors.success,
               )
             else ...[
               const _RequirementStatusRow(
                 icon: Icons.warning_amber_rounded,
                 label: 'Missing required images:',
-                color: Color(0xFFC62828),
+                color: AppColors.error,
               ),
               const SizedBox(height: 10),
               Wrap(
@@ -350,9 +351,9 @@ class RentCarImageDropArea extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FBFF),
+          color: AppColors.inputFill,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFD8E4F2)),
+          border: Border.all(color: AppColors.border),
         ),
         child: Row(
           children: [
@@ -360,12 +361,12 @@ class RentCarImageDropArea extends StatelessWidget {
               width: 54,
               height: 54,
               decoration: BoxDecoration(
-                color: const Color(0xFFEAF2FF),
+                color: AppColors.primaryLight,
                 borderRadius: BorderRadius.circular(18),
               ),
               child: const Icon(
                 Icons.cloud_upload_outlined,
-                color: Color(0xFF1E5AA8),
+                color: AppColors.primary,
               ),
             ),
             const SizedBox(width: 16),
@@ -376,7 +377,7 @@ class RentCarImageDropArea extends StatelessWidget {
                   Text(
                     'Upload car images',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: const Color(0xFF103B66),
+                          color: AppColors.textPrimary,
                           fontWeight: FontWeight.w700,
                         ),
                   ),
@@ -384,14 +385,14 @@ class RentCarImageDropArea extends StatelessWidget {
                   Text(
                     'Tap to take a photo or choose multiple images from the gallery.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF57718A),
+                          color: AppColors.textSecondary,
                         ),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 12),
-            const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Color(0xFF8EA6BE)),
+            const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.textMuted),
           ],
         ),
       ),
@@ -505,7 +506,7 @@ class _ImageTileCard extends StatelessWidget {
         ? Image.network(
             item.uploadedUrl!,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _fallbackPreview(item),
+            errorBuilder: (context, error, stackTrace) => _fallbackPreview(item),
           )
         : item.bytes != null
             ? Image.memory(item.bytes!, fit: BoxFit.cover)
@@ -537,7 +538,7 @@ class _ImageTileCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
+                        color: Colors.black.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
@@ -577,7 +578,7 @@ class _ImageTileCard extends StatelessWidget {
                   if (item.state == RentCarImageUploadState.uploading)
                     Positioned.fill(
                       child: Container(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         alignment: Alignment.center,
                         child: const SizedBox(
                           width: 34,
@@ -615,13 +616,13 @@ class _ImageTileCard extends StatelessWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(item.slot.icon, size: 18, color: const Color(0xFF1E5AA8)),
+                      Icon(item.slot.icon, size: 18, color: AppColors.primary),
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
                           item.slot.label,
                           style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                color: const Color(0xFF103B66),
+                                color: AppColors.textPrimary,
                                 fontWeight: FontWeight.w700,
                               ),
                           overflow: TextOverflow.ellipsis,
@@ -636,21 +637,22 @@ class _ImageTileCard extends StatelessWidget {
                       child: LinearProgressIndicator(
                         value: item.progress,
                         minHeight: 6,
-                        backgroundColor: const Color(0xFFE6EEF7),
+                        backgroundColor: AppColors.primaryLight,
+                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
                       ),
                     )
                   else if (item.state == RentCarImageUploadState.failed)
                     Text(
                       item.errorMessage ?? 'Upload failed. Retry replacement or upload again.',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFFC62828),
+                            color: AppColors.error,
                           ),
                     )
                   else if (item.isUploaded)
                     Text(
                       item.uploadedUrl ?? 'Uploaded image URL ready',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFF57718A),
+                            color: AppColors.textSecondary,
                           ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -659,7 +661,7 @@ class _ImageTileCard extends StatelessWidget {
                     Text(
                       item.file?.name ?? 'Local file selected',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFF57718A),
+                            color: AppColors.textSecondary,
                           ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
