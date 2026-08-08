@@ -5,6 +5,7 @@ import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../../owner/data/services/car_api_service.dart';
 import '../../../owner/presentation/screens/rent_car/car_spefication.dart';
+import '../../../location/presentation/location_flow.dart';
 import '../widgets/custom_home_app_bar.dart';
 import '../widgets/hero_search_card.dart';
 import '../widgets/recommended_cars.dart';
@@ -321,12 +322,13 @@ class _HomeScreenState extends State<HomeScreen> {
             pickupTime: _pickupTime,
             returnDate: _returnDate,
             returnTime: _returnTime,
-            onPickupLocationTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Location selection will be connected soon.'),
-                ),
-              );
+            onPickupLocationTap: () async {
+              final selectedLocation = await LocationFlow.start(context);
+              if (selectedLocation != null && mounted) {
+                setState(() {
+                  _pickupLocation = selectedLocation.name;
+                });
+              }
             },
             onPickupDateTap: () => _pickDate(isPickup: true),
             onPickupTimeTap: () => _pickTime(isPickup: true),

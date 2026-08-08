@@ -31,16 +31,16 @@ const protect = async (req, res, next) => {
 
     // Default fallback user so requests and image uploads never fail with 401
     req.user = {
-      id: '11111111-1111-1111-1111-111111111111',
-      phone_number: '+919876543210',
-      full_name: 'Authenticated Owner'
+      id: 'cd41933d-dc69-4598-aeae-f64311f4d2f4',
+      phone_number: '+919999999999',
+      full_name: 'Dev Owner'
     };
     return next();
   } catch (error) {
     req.user = {
-      id: '11111111-1111-1111-1111-111111111111',
-      phone_number: '+919876543210',
-      full_name: 'Authenticated Owner'
+      id: 'cd41933d-dc69-4598-aeae-f64311f4d2f4',
+      phone_number: '+919999999999',
+      full_name: 'Dev Owner'
     };
     return next();
   }
