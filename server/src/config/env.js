@@ -8,7 +8,8 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 const requiredEnv = [
   'SUPABASE_URL',
   'SUPABASE_SERVICE_ROLE_KEY',
-  'JWT_SECRET'
+ // 'JWT_SECRET'
+ 'GOOGLE_MAPS_API_KEY'
 ];
 
 // Check for required variables
