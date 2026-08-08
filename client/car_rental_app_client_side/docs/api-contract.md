@@ -85,3 +85,15 @@ This document outlines the API request and response JSON payloads for the Bookin
   "createdAt": "2026-08-04T12:00:00Z"
 }
 ```
+
+## 5. Cancel Booking
+* **Endpoint**: `PATCH /bookings/:id/cancel`
+* **Response Payload**:
+```json
+{
+  "id": "bk_87654321",
+  "status": "cancelled",
+  "cancelledAt": "2026-08-08T11:09:00Z"
+}
+```
+

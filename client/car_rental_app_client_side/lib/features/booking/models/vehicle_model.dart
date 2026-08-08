@@ -58,5 +58,12 @@ class Vehicle extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, name, imageUrl, pricePerDay, specifications, rating];
+  List<Object?> get props => [
+    id,
+    name,
+    imageUrl,
+    pricePerDay,
+    specifications,
+    rating,
+  ];
 }

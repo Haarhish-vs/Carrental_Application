@@ -9,19 +9,24 @@ class BookingPriceCalculator {
   }
 
   static double calculateDriverFee(BookingFlowState state) {
-    if (state.rentalType == RentalType.selfDrive) return 0.0;
-    final driverPrice = state.driver?.pricePerDay ?? 50.0;
-    return driverPrice * state.rentalDurationDays;
+    if (state.rentalType == RentalType.selfDrive || state.driver == null) {
+      return 0.0;
+    }
+    return state.driver!.pricePerDay * state.rentalDurationDays;
   }
 
   static double calculateInsurance(BookingFlowState state) {
     // Separate out insurance from general addons for summary transparency
-    final hasInsurance = state.selectedServices.any((s) => s.id == 'srv_insurance');
+    final hasInsurance = state.selectedServices.any(
+      (s) => s.id == 'srv_insurance',
+    );
     if (!hasInsurance) return 0.0;
-    
-    final insurance = state.selectedServices.firstWhere((s) => s.id == 'srv_insurance');
-    return insurance.isReoccurring 
-        ? insurance.price * state.rentalDurationDays 
+
+    final insurance = state.selectedServices.firstWhere(
+      (s) => s.id == 'srv_insurance',
+    );
+    return insurance.isReoccurring
+        ? insurance.price * state.rentalDurationDays
         : insurance.price;
   }
 
@@ -47,8 +52,10 @@ class BookingPriceCalculator {
 
   static double calculateDiscount(BookingFlowState state) {
     if (state.coupon == null) return 0.0;
-    final subtotal = calculateBaseRentalCharge(state); // Coupon typically applies to vehicle subtotal
-    
+    final subtotal = calculateBaseRentalCharge(
+      state,
+    ); // Coupon typically applies to vehicle subtotal
+
     if (state.coupon!.percentage > 0) {
       return subtotal * (state.coupon!.percentage / 100.0);
     }

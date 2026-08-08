@@ -10,6 +10,15 @@ class Driver extends Equatable {
   final double pricePerDay;
   final String imageUrl;
 
+  // New fields for availability & location-based matching
+  final List<String> serviceLocations;
+  final double latitude;
+  final double longitude;
+  final bool isAvailable;
+  final DateTime? availableFrom;
+  final DateTime? availableUntil;
+  final int tripsCompleted;
+
   const Driver({
     required this.id,
     required this.name,
@@ -19,6 +28,13 @@ class Driver extends Equatable {
     required this.isVerified,
     required this.pricePerDay,
     required this.imageUrl,
+    this.serviceLocations = const [],
+    this.latitude = 0.0,
+    this.longitude = 0.0,
+    this.isAvailable = true,
+    this.availableFrom,
+    this.availableUntil,
+    this.tripsCompleted = 100,
   });
 
   Driver copyWith({
@@ -30,6 +46,13 @@ class Driver extends Equatable {
     bool? isVerified,
     double? pricePerDay,
     String? imageUrl,
+    List<String>? serviceLocations,
+    double? latitude,
+    double? longitude,
+    bool? isAvailable,
+    DateTime? Function()? availableFrom,
+    DateTime? Function()? availableUntil,
+    int? tripsCompleted,
   }) {
     return Driver(
       id: id ?? this.id,
@@ -40,6 +63,17 @@ class Driver extends Equatable {
       isVerified: isVerified ?? this.isVerified,
       pricePerDay: pricePerDay ?? this.pricePerDay,
       imageUrl: imageUrl ?? this.imageUrl,
+      serviceLocations: serviceLocations ?? this.serviceLocations,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      isAvailable: isAvailable ?? this.isAvailable,
+      availableFrom: availableFrom != null
+          ? availableFrom()
+          : this.availableFrom,
+      availableUntil: availableUntil != null
+          ? availableUntil()
+          : this.availableUntil,
+      tripsCompleted: tripsCompleted ?? this.tripsCompleted,
     );
   }
 
@@ -53,6 +87,23 @@ class Driver extends Equatable {
       isVerified: json['isVerified'] as bool,
       pricePerDay: (json['pricePerDay'] as num).toDouble(),
       imageUrl: json['imageUrl'] as String,
+      serviceLocations: json['serviceLocations'] != null
+          ? List<String>.from(json['serviceLocations'] as List)
+          : const [],
+      latitude: json['latitude'] != null
+          ? (json['latitude'] as num).toDouble()
+          : 0.0,
+      longitude: json['longitude'] != null
+          ? (json['longitude'] as num).toDouble()
+          : 0.0,
+      isAvailable: json['isAvailable'] as bool? ?? true,
+      availableFrom: json['availableFrom'] != null
+          ? DateTime.parse(json['availableFrom'] as String)
+          : null,
+      availableUntil: json['availableUntil'] != null
+          ? DateTime.parse(json['availableUntil'] as String)
+          : null,
+      tripsCompleted: json['tripsCompleted'] as int? ?? 100,
     );
   }
 
@@ -66,9 +117,32 @@ class Driver extends Equatable {
       'isVerified': isVerified,
       'pricePerDay': pricePerDay,
       'imageUrl': imageUrl,
+      'serviceLocations': serviceLocations,
+      'latitude': latitude,
+      'longitude': longitude,
+      'isAvailable': isAvailable,
+      'availableFrom': availableFrom?.toIso8601String(),
+      'availableUntil': availableUntil?.toIso8601String(),
+      'tripsCompleted': tripsCompleted,
     };
   }
 
   @override
-  List<Object?> get props => [id, name, rating, experienceYears, languages, isVerified, pricePerDay, imageUrl];
+  List<Object?> get props => [
+    id,
+    name,
+    rating,
+    experienceYears,
+    languages,
+    isVerified,
+    pricePerDay,
+    imageUrl,
+    serviceLocations,
+    latitude,
+    longitude,
+    isAvailable,
+    availableFrom,
+    availableUntil,
+    tripsCompleted,
+  ];
 }

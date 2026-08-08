@@ -2,7 +2,7 @@ class AppStrings {
   AppStrings._();
 
   static const String appName = "Premium Car Rental";
-  
+
   // Navigation steps
   static const String stepVehicle = "Vehicle";
   static const String stepPickup = "Pickup";

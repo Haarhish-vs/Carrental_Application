@@ -35,31 +35,27 @@ class AppScaffold extends ConsumerWidget {
             children: [
               Scaffold(
                 backgroundColor: AppColors.background,
-                appBar: appBar ??
+                appBar:
+                    appBar ??
                     (title != null
-                        ? AppBar(
-                            title: Text(title!),
-                            actions: actions,
-                          )
+                        ? AppBar(title: Text(title!), actions: actions)
                         : null),
                 bottomNavigationBar: bottomNavigationBar,
                 body: Column(
                   children: [
                     if (showProgress)
-                      BookingProgressIndicator(currentStep: flowState.currentStep),
-                    Expanded(
-                      child: SafeArea(
-                        top: false,
-                        bottom: false,
-                        child: body,
+                      BookingProgressIndicator(
+                        currentStep: flowState.currentStep,
                       ),
+                    Expanded(
+                      child: SafeArea(top: false, bottom: false, child: body),
                     ),
                   ],
                 ),
               ),
               if (flowState.isLoading)
                 Container(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   child: const Center(
                     child: Card(
                       elevation: 4,

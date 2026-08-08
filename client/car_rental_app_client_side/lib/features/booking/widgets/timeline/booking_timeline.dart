@@ -5,20 +5,12 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
-enum TripStatus {
-  confirmed,
-  active,
-  completed,
-  cancelled,
-}
+enum TripStatus { confirmed, active, completed, cancelled }
 
 class BookingTimeline extends StatelessWidget {
   final TripStatus status;
 
-  const BookingTimeline({
-    super.key,
-    required this.status,
-  });
+  const BookingTimeline({super.key, required this.status});
 
   @override
   Widget build(BuildContext context) {
@@ -26,9 +18,9 @@ class BookingTimeline extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: AppColors.error.withOpacity(0.08),
+          color: AppColors.error.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.error.withOpacity(0.2)),
+          border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
         ),
         child: Row(
           children: [
@@ -40,7 +32,9 @@ class BookingTimeline extends StatelessWidget {
                 children: [
                   Text(
                     "Reservation Cancelled",
-                    style: AppTextStyles.subtitle2.copyWith(color: AppColors.error),
+                    style: AppTextStyles.subtitle2.copyWith(
+                      color: AppColors.error,
+                    ),
                   ),
                   const Gap(2),
                   const Text(
@@ -111,7 +105,9 @@ class BookingTimeline extends StatelessWidget {
                         ? AppColors.accent
                         : (isActive ? AppColors.primary : Colors.white),
                     border: Border.all(
-                      color: isCompleted || isActive ? Colors.transparent : AppColors.slate300,
+                      color: isCompleted || isActive
+                          ? Colors.transparent
+                          : AppColors.slate300,
                       width: 2,
                     ),
                   ),
@@ -137,7 +133,11 @@ class BookingTimeline extends StatelessWidget {
                   Text(
                     step.title,
                     style: AppTextStyles.subtitle2.copyWith(
-                      color: isActive ? AppColors.primary : (isCompleted ? AppColors.slate800 : AppColors.slate400),
+                      color: isActive
+                          ? AppColors.primary
+                          : (isCompleted
+                                ? AppColors.slate800
+                                : AppColors.slate400),
                       fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
                     ),
                   ),

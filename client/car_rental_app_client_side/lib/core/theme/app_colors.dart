@@ -5,11 +5,14 @@ class AppColors {
   AppColors._();
 
   // Core Brand Colors
-  static const Color primary = Color(0xFF0F172A);      // Deep Slate
-  static const Color accent = Color(0xFF10B981);       // Emerald Green
-  static const Color cta = Color(0xFFF97316);          // Warm Orange
-  static const Color background = Color(0xFFF8FAFC);   // Cool Light Grey
-  static const Color card = Color(0xFFFFFFFF);         // Clean White
+  static const Color primary = Color(0xFF0F172A); // Deep Slate (Primary Text)
+  static const Color accent = Color(0xFF2563EB); // Primary Blue
+  static const Color darkBlue = Color(0xFF1E3A8A); // Dark Blue
+  static const Color lightBlue = Color(0xFFDBEAFE); // Light Blue
+  static const Color blueSurface = Color(0xFFEFF6FF); // Blue Surface
+  static const Color cta = Color(0xFF2563EB); // CTA Blue
+  static const Color background = Color(0xFFF8FAFC); // Cool Light Grey
+  static const Color card = Color(0xFFFFFFFF); // Clean White
 
   // Secondary & Text Colors
   static const Color slate50 = Color(0xFFF8FAFC);
@@ -24,10 +27,10 @@ class AppColors {
   static const Color slate900 = Color(0xFF0F172A);
 
   // Status Colors
-  static const Color success = Color(0xFF10B981);
-  static const Color error = Color(0xFFEF4444);
+  static const Color success = Color(0xFF16A34A);
+  static const Color error = Color(0xFFDC2626);
   static const Color warning = Color(0xFFF59E0B);
-  static const Color info = Color(0xFF3B82F6);
+  static const Color info = Color(0xFF2563EB);
 
   // Overlays & Shadows
   static const Color shadow = Color(0x0A0F172A); // Soft shadow

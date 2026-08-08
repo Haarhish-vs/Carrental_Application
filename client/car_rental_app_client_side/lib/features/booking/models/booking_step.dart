@@ -1,12 +1,4 @@
-enum BookingStep {
-  vehicle,
-  pickup,
-  driver,
-  extras,
-  summary,
-  payment,
-  success,
-}
+enum BookingStep { vehicle, pickup, driver, extras, summary, payment, success }
 
 extension BookingStepExtension on BookingStep {
   int get index => BookingStep.values.indexOf(this);

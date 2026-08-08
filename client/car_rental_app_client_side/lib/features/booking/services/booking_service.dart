@@ -20,36 +20,52 @@ class MockBookingServiceImpl implements BookingService {
 
   @override
   Future<List<Driver>> fetchDrivers() async {
-    final response = await _apiClient.getMockAsset<List<dynamic>>(AppAssets.driversJson);
+    final response = await _apiClient.getMockAsset<List<dynamic>>(
+      AppAssets.driversJson,
+    );
     if (response.success && response.data != null) {
-      return response.data!.map((item) => Driver.fromJson(item as Map<String, dynamic>)).toList();
+      return response.data!
+          .map((item) => Driver.fromJson(item as Map<String, dynamic>))
+          .toList();
     }
     return [];
   }
 
   @override
   Future<List<Service>> fetchServices() async {
-    final response = await _apiClient.getMockAsset<List<dynamic>>(AppAssets.servicesJson);
+    final response = await _apiClient.getMockAsset<List<dynamic>>(
+      AppAssets.servicesJson,
+    );
     if (response.success && response.data != null) {
-      return response.data!.map((item) => Service.fromJson(item as Map<String, dynamic>)).toList();
+      return response.data!
+          .map((item) => Service.fromJson(item as Map<String, dynamic>))
+          .toList();
     }
     return [];
   }
 
   @override
   Future<List<Coupon>> fetchCoupons() async {
-    final response = await _apiClient.getMockAsset<List<dynamic>>(AppAssets.couponsJson);
+    final response = await _apiClient.getMockAsset<List<dynamic>>(
+      AppAssets.couponsJson,
+    );
     if (response.success && response.data != null) {
-      return response.data!.map((item) => Coupon.fromJson(item as Map<String, dynamic>)).toList();
+      return response.data!
+          .map((item) => Coupon.fromJson(item as Map<String, dynamic>))
+          .toList();
     }
     return [];
   }
 
   @override
   Future<Coupon?> validateCoupon(String code, double bookingValue) async {
-    final response = await _apiClient.getMockAsset<List<dynamic>>(AppAssets.couponsJson);
+    final response = await _apiClient.getMockAsset<List<dynamic>>(
+      AppAssets.couponsJson,
+    );
     if (response.success && response.data != null) {
-      final coupons = response.data!.map((item) => Coupon.fromJson(item as Map<String, dynamic>)).toList();
+      final coupons = response.data!
+          .map((item) => Coupon.fromJson(item as Map<String, dynamic>))
+          .toList();
       for (final coupon in coupons) {
         if (coupon.code.toUpperCase() == code.toUpperCase()) {
           if (bookingValue >= coupon.minBookingValue) {
@@ -65,19 +81,22 @@ class MockBookingServiceImpl implements BookingService {
   @override
   Future<Map<String, dynamic>> submitBooking(BookingFlowState state) async {
     // Simulate API reservation call
-    final response = await _apiClient.post<Map<String, dynamic>>("/bookings", data: {
-      "vehicleId": state.vehicle?.id,
-      "pickupLocation": state.pickupLocation,
-      "returnLocation": state.returnLocation,
-      "pickupDateTime": state.pickupDateTime?.toIso8601String(),
-      "returnDateTime": state.returnDateTime?.toIso8601String(),
-      "rentalType": state.rentalType.toString(),
-      "driverId": state.driver?.id,
-      "serviceIds": state.selectedServices.map((e) => e.id).toList(),
-      "couponCode": state.coupon?.code,
-      "paymentMethod": state.paymentMethod?.toString(),
-    });
-    
+    final response = await _apiClient.post<Map<String, dynamic>>(
+      "/bookings",
+      data: {
+        "vehicleId": state.vehicle?.id,
+        "pickupLocation": state.pickupLocation?.toJson(),
+        "returnLocation": state.returnLocation?.toJson(),
+        "pickupDateTime": state.pickupDateTime?.toIso8601String(),
+        "returnDateTime": state.returnDateTime?.toIso8601String(),
+        "rentalType": state.rentalType.toString(),
+        "driverId": state.driver?.id,
+        "serviceIds": state.selectedServices.map((e) => e.id).toList(),
+        "couponCode": state.coupon?.code,
+        "paymentMethod": state.paymentMethod?.toString(),
+      },
+    );
+
     if (response.success && response.data != null) {
       return response.data!;
     }

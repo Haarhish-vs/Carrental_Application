@@ -9,6 +9,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/layout/app_scaffold.dart';
 import '../models/vehicle_model.dart';
 import '../providers/booking_provider.dart';
+import '../utils/currency_formatter.dart';
 
 class BookingScreen extends ConsumerStatefulWidget {
   const BookingScreen({super.key});
@@ -74,7 +75,9 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                         return _CategoryTile(
                           category: category,
                           isSelected: _selectedCategory == category.label,
-                          onTap: () => setState(() => _selectedCategory = category.label),
+                          onTap: () => setState(
+                            () => _selectedCategory = category.label,
+                          ),
                         );
                       },
                     ),
@@ -101,7 +104,10 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                           ),
                           child: const Text(
                             "See All",
-                            style: TextStyle(fontSize: 11, color: Color(0xFF2563EB)),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF2563EB),
+                            ),
                           ),
                         ),
                       ],
@@ -111,20 +117,19 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
                   sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        if (index.isOdd) return const Gap(16);
-                        final car = _cars[index ~/ 2];
-                        return _DashboardCarCard(
-                          vehicle: car,
-                          onBookNow: () {
-                            ref.read(bookingFlowProvider.notifier).setVehicle(car);
-                            context.push('/booking/car-details');
-                          },
-                        );
-                      },
-                      childCount: (_cars.length * 2) - 1,
-                    ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      if (index.isOdd) return const Gap(16);
+                      final car = _cars[index ~/ 2];
+                      return _DashboardCarCard(
+                        vehicle: car,
+                        onBookNow: () {
+                          ref
+                              .read(bookingFlowProvider.notifier)
+                              .setVehicle(car);
+                          context.push('/booking/car-details');
+                        },
+                      );
+                    }, childCount: (_cars.length * 2) - 1),
                   ),
                 ),
               ],
@@ -196,7 +201,11 @@ class _SearchBar extends StatelessWidget {
         decoration: InputDecoration(
           hintText: "Search cars, brands, or model",
           hintStyle: const TextStyle(fontSize: 11, color: AppColors.slate400),
-          prefixIcon: const Icon(Icons.search_rounded, size: 18, color: AppColors.slate400),
+          prefixIcon: const Icon(
+            Icons.search_rounded,
+            size: 18,
+            color: AppColors.slate400,
+          ),
           suffixIcon: Container(
             width: 34,
             margin: const EdgeInsets.all(8),
@@ -204,7 +213,11 @@ class _SearchBar extends StatelessWidget {
               color: const Color(0xFFEFF6FF),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.tune_rounded, color: Color(0xFF2563EB), size: 17),
+            child: const Icon(
+              Icons.tune_rounded,
+              color: Color(0xFF2563EB),
+              size: 17,
+            ),
           ),
           filled: true,
           fillColor: Colors.white,
@@ -248,7 +261,7 @@ class _CategoryTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.slate900.withOpacity(0.05),
+                    color: AppColors.slate900.withValues(alpha: 0.05),
                     blurRadius: 14,
                     offset: const Offset(0, 8),
                   ),
@@ -256,7 +269,9 @@ class _CategoryTile extends StatelessWidget {
               ),
               child: Icon(
                 category.icon,
-                color: isSelected ? const Color(0xFF2563EB) : AppColors.slate500,
+                color: isSelected
+                    ? const Color(0xFF2563EB)
+                    : AppColors.slate500,
                 size: 20,
               ),
             ),
@@ -282,10 +297,7 @@ class _DashboardCarCard extends StatelessWidget {
   final Vehicle vehicle;
   final VoidCallback onBookNow;
 
-  const _DashboardCarCard({
-    required this.vehicle,
-    required this.onBookNow,
-  });
+  const _DashboardCarCard({required this.vehicle, required this.onBookNow});
 
   @override
   Widget build(BuildContext context) {
@@ -295,7 +307,7 @@ class _DashboardCarCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: AppColors.slate900.withOpacity(0.08),
+            color: AppColors.slate900.withValues(alpha: 0.08),
             blurRadius: 24,
             offset: const Offset(0, 14),
           ),
@@ -307,7 +319,9 @@ class _DashboardCarCard extends StatelessWidget {
           Stack(
             children: [
               ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(18),
+                ),
                 child: Image.network(
                   vehicle.imageUrl,
                   height: 158,
@@ -320,7 +334,11 @@ class _DashboardCarCard extends StatelessWidget {
                         colors: [Color(0xFFE2E8F0), Color(0xFFF8FAFC)],
                       ),
                     ),
-                    child: const Icon(Icons.directions_car_rounded, size: 64, color: AppColors.slate400),
+                    child: const Icon(
+                      Icons.directions_car_rounded,
+                      size: 64,
+                      color: AppColors.slate400,
+                    ),
                   ),
                 ),
               ),
@@ -361,12 +379,16 @@ class _DashboardCarCard extends StatelessWidget {
                         children: [
                           const Text(
                             "Price",
-                            style: TextStyle(fontSize: 9, color: AppColors.slate400, fontWeight: FontWeight.w700),
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: AppColors.slate400,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                           const Gap(2),
                           Text.rich(
                             TextSpan(
-                              text: "₹${vehicle.pricePerDay.toStringAsFixed(0)}",
+                              text: formatCurrency(vehicle.pricePerDay),
                               style: AppTextStyles.subtitle1.copyWith(
                                 color: const Color(0xFF2563EB),
                                 fontSize: 15,
@@ -375,7 +397,11 @@ class _DashboardCarCard extends StatelessWidget {
                               children: const [
                                 TextSpan(
                                   text: "/day",
-                                  style: TextStyle(color: AppColors.slate500, fontSize: 10, fontWeight: FontWeight.w600),
+                                  style: TextStyle(
+                                    color: AppColors.slate500,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ],
                             ),
@@ -391,11 +417,17 @@ class _DashboardCarCard extends StatelessWidget {
                           backgroundColor: const Color(0xFF2563EB),
                           minimumSize: const Size(88, 34),
                           padding: const EdgeInsets.symmetric(horizontal: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         child: const Text(
                           "Book Now",
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 11,
+                          ),
                         ),
                       ),
                     ),
@@ -420,7 +452,7 @@ class _RatingPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.94),
+        color: Colors.white.withValues(alpha: 0.94),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -429,7 +461,11 @@ class _RatingPill extends StatelessWidget {
           const Gap(3),
           Text(
             rating.toStringAsFixed(1),
-            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.slate900),
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              color: AppColors.slate900,
+            ),
           ),
         ],
       ),
@@ -452,7 +488,11 @@ class _SpecPill extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(fontSize: 9, color: AppColors.slate500, fontWeight: FontWeight.w700),
+        style: const TextStyle(
+          fontSize: 9,
+          color: AppColors.slate500,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -466,19 +506,33 @@ class _DashboardBottomNav extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: AppColors.slate200.withOpacity(0.8))),
+        border: Border(
+          top: BorderSide(color: AppColors.slate200.withValues(alpha: 0.8)),
+        ),
       ),
-      child: SafeArea(
+      child: const SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 9, 18, 8),
+          padding: EdgeInsets.fromLTRB(18, 9, 18, 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
+            children: [
               _NavBtn(icon: Icons.home_rounded, label: "Home", isActive: true),
-              _NavBtn(icon: Icons.calendar_month_rounded, label: "Bookings", isActive: false),
-              _NavBtn(icon: Icons.account_balance_wallet_rounded, label: "Wallet", isActive: false),
-              _NavBtn(icon: Icons.person_rounded, label: "Profile", isActive: false),
+              _NavBtn(
+                icon: Icons.calendar_month_rounded,
+                label: "Bookings",
+                isActive: false,
+              ),
+              _NavBtn(
+                icon: Icons.account_balance_wallet_rounded,
+                label: "Wallet",
+                isActive: false,
+              ),
+              _NavBtn(
+                icon: Icons.person_rounded,
+                label: "Profile",
+                isActive: false,
+              ),
             ],
           ),
         ),

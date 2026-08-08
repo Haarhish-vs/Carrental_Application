@@ -10,7 +10,9 @@ class MockAnalyticsService implements AnalyticsService {
   @override
   void logEvent(String name, {Map<String, dynamic>? parameters}) {
     if (FeatureFlags.enableMockTelemetry) {
-      developer.log("ANALYTICS: Event logged: '$name' with parameters: $parameters");
+      developer.log(
+        "ANALYTICS: Event logged: '$name' with parameters: $parameters",
+      );
     }
   }
 

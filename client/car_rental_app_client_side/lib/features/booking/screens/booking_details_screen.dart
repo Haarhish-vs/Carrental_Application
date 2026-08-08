@@ -15,17 +15,16 @@ import '../models/booking_flow_state.dart';
 import '../providers/booking_provider.dart';
 import '../widgets/timeline/booking_timeline.dart';
 import '../utils/booking_price_calculator.dart';
+import '../utils/currency_formatter.dart';
 
 class BookingDetailsScreen extends ConsumerStatefulWidget {
   final String bookingId;
 
-  const BookingDetailsScreen({
-    super.key,
-    required this.bookingId,
-  });
+  const BookingDetailsScreen({super.key, required this.bookingId});
 
   @override
-  ConsumerState<BookingDetailsScreen> createState() => _BookingDetailsScreenState();
+  ConsumerState<BookingDetailsScreen> createState() =>
+      _BookingDetailsScreenState();
 }
 
 class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
@@ -36,7 +35,10 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text("Cancel Reservation", style: AppTextStyles.h3.copyWith(fontSize: 18)),
+          title: Text(
+            "Cancel Reservation",
+            style: AppTextStyles.h3.copyWith(fontSize: 18),
+          ),
           content: Text(
             "Are you sure you want to cancel this reservation? Full refund applies if cancelled 24 hours prior to release.",
             style: AppTextStyles.bodyMedium,
@@ -44,9 +46,12 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text(
+              child: const Text(
                 "Keep Booking",
-                style: TextStyle(color: AppColors.slate600, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: AppColors.slate600,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
             ElevatedButton(
@@ -61,7 +66,10 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
                 backgroundColor: AppColors.error,
                 minimumSize: const Size(100, 44),
               ),
-              child: const Text("Yes, Cancel", style: TextStyle(color: Colors.white)),
+              child: const Text(
+                "Yes, Cancel",
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         );
@@ -74,18 +82,27 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text("Contact Support", style: AppTextStyles.h3.copyWith(fontSize: 18)),
+          title: Text(
+            "Contact Support",
+            style: AppTextStyles.h3.copyWith(fontSize: 18),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.phone_outlined, color: AppColors.accent),
+                leading: const Icon(
+                  Icons.phone_outlined,
+                  color: AppColors.accent,
+                ),
                 title: const Text("+1 (800) 555-0199"),
                 subtitle: const Text("Toll-Free Support Line"),
                 onTap: () => Navigator.pop(context),
               ),
               ListTile(
-                leading: const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.accent),
+                leading: const Icon(
+                  Icons.chat_bubble_outline_rounded,
+                  color: AppColors.accent,
+                ),
                 title: const Text("Live Chat In-App"),
                 subtitle: const Text("Average wait: 2 mins"),
                 onTap: () => Navigator.pop(context),
@@ -148,27 +165,38 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
                   children: [
                     Text(
                       "Reservation Reference",
-                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.slate400, fontWeight: FontWeight.bold),
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.slate400,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const Gap(2),
                     Text(
                       widget.bookingId,
-                      style: AppTextStyles.h3.copyWith(fontSize: 18, color: AppColors.slate900),
+                      style: AppTextStyles.h3.copyWith(
+                        fontSize: 18,
+                        color: AppColors.slate900,
+                      ),
                     ),
                   ],
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: _status == TripStatus.cancelled
-                        ? AppColors.error.withOpacity(0.1)
-                        : AppColors.accent.withOpacity(0.12),
+                        ? AppColors.error.withValues(alpha: 0.1)
+                        : AppColors.accent.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     _status == TripStatus.cancelled ? "Cancelled" : "Confirmed",
                     style: TextStyle(
-                      color: _status == TripStatus.cancelled ? AppColors.error : AppColors.accent,
+                      color: _status == TripStatus.cancelled
+                          ? AppColors.error
+                          : AppColors.accent,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
@@ -190,7 +218,10 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Journey Status", style: AppTextStyles.subtitle1.copyWith(fontSize: 15)),
+                  Text(
+                    "Journey Status",
+                    style: AppTextStyles.subtitle1.copyWith(fontSize: 15),
+                  ),
                   const Gap(AppSpacing.md),
                   BookingTimeline(status: _status),
                 ],
@@ -224,11 +255,18 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(vehicle.name, style: AppTextStyles.subtitle1.copyWith(fontSize: 16)),
+                          Text(
+                            vehicle.name,
+                            style: AppTextStyles.subtitle1.copyWith(
+                              fontSize: 16,
+                            ),
+                          ),
                           const Gap(4),
                           Wrap(
                             spacing: 6,
-                            children: vehicle.specifications.take(2).map((spec) {
+                            children: vehicle.specifications.take(2).map((
+                              spec,
+                            ) {
                               return Text(
                                 spec,
                                 style: AppTextStyles.bodySmall.copyWith(
@@ -256,7 +294,9 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
                 border: Border.all(color: AppColors.slate200),
                 boxShadow: AppElevation.cardShadow,
               ),
-              child: flowState.rentalType == RentalType.withDriver && driver != null
+              child:
+                  flowState.rentalType == RentalType.withDriver &&
+                      driver != null
                   ? Row(
                       children: [
                         ClipRRect(
@@ -273,15 +313,26 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(driver.name, style: AppTextStyles.subtitle2.copyWith(color: AppColors.slate900)),
+                              Text(
+                                driver.name,
+                                style: AppTextStyles.subtitle2.copyWith(
+                                  color: AppColors.slate900,
+                                ),
+                              ),
                               const Gap(2),
                               Row(
                                 children: [
-                                  const Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 14),
+                                  const Icon(
+                                    Icons.star_rounded,
+                                    color: Color(0xFFFBBF24),
+                                    size: 14,
+                                  ),
                                   const Gap(2),
                                   Text(
                                     "${driver.rating} • Chauffeur assigned",
-                                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.slate500),
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: AppColors.slate500,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -290,7 +341,10 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
                         ),
                         IconButton(
                           onPressed: _showSupportDialog,
-                          icon: const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.primary),
+                          icon: const Icon(
+                            Icons.chat_bubble_outline_rounded,
+                            color: AppColors.primary,
+                          ),
                         ),
                       ],
                     )
@@ -299,18 +353,30 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
                         const CircleAvatar(
                           backgroundColor: AppColors.slate100,
                           radius: 20,
-                          child: Icon(Icons.vpn_key_outlined, color: AppColors.primary, size: 20),
+                          child: Icon(
+                            Icons.vpn_key_outlined,
+                            color: AppColors.primary,
+                            size: 20,
+                          ),
                         ),
                         const Gap(AppSpacing.md),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text("Self Drive Reservation", style: AppTextStyles.subtitle2.copyWith(color: AppColors.slate900)),
+                              Text(
+                                "Self Drive Reservation",
+                                style: AppTextStyles.subtitle2.copyWith(
+                                  color: AppColors.slate900,
+                                ),
+                              ),
                               const Gap(2),
                               Text(
                                 "No driver assigned. Pick up keys at the hub counter.",
-                                style: AppTextStyles.bodySmall.copyWith(color: AppColors.slate400, fontSize: 11),
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.slate400,
+                                  fontSize: 11,
+                                ),
                               ),
                             ],
                           ),
@@ -332,17 +398,20 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Schedules & Hub Coordinates", style: AppTextStyles.subtitle1.copyWith(fontSize: 15)),
+                  Text(
+                    "Schedules & Hub Coordinates",
+                    style: AppTextStyles.subtitle1.copyWith(fontSize: 15),
+                  ),
                   const Gap(AppSpacing.md),
                   _CoordinateRow(
                     label: "RELEASE POINT",
-                    location: flowState.pickupLocation ?? 'Pickup Hub',
+                    location: flowState.pickupLocation?.name ?? 'Pickup Hub',
                     time: _formatDateTime(flowState.pickupDateTime),
                   ),
                   const Divider(),
                   _CoordinateRow(
                     label: "RETURN POINT",
-                    location: flowState.returnLocation ?? 'Return Hub',
+                    location: flowState.returnLocation?.name ?? 'Return Hub',
                     time: _formatDateTime(flowState.returnDateTime),
                   ),
                 ],
@@ -364,7 +433,7 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
                 children: [
                   Text("Total Paid Amount", style: AppTextStyles.subtitle2),
                   Text(
-                    "₹${totalAmount.toStringAsFixed(2)}",
+                    formatCurrency(totalAmount),
                     style: AppTextStyles.h3.copyWith(color: AppColors.accent),
                   ),
                 ],
@@ -386,7 +455,10 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
                   children: [
                     const Icon(Icons.headset_mic_outlined, size: 18),
                     const Gap(8),
-                    Text("Contact Trip Support", style: AppTextStyles.buttonLarge),
+                    Text(
+                      "Contact Trip Support",
+                      style: AppTextStyles.buttonLarge,
+                    ),
                   ],
                 ),
               ),
@@ -447,7 +519,7 @@ class _CoordinateRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,
               color: AppColors.slate400,
@@ -457,12 +529,18 @@ class _CoordinateRow extends StatelessWidget {
           const Gap(4),
           Text(
             location,
-            style: AppTextStyles.subtitle2.copyWith(color: AppColors.slate800, fontSize: 13),
+            style: AppTextStyles.subtitle2.copyWith(
+              color: AppColors.slate800,
+              fontSize: 13,
+            ),
           ),
           const Gap(2),
           Text(
             time,
-            style: AppTextStyles.bodySmall.copyWith(color: AppColors.slate500, fontSize: 12),
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.slate500,
+              fontSize: 12,
+            ),
           ),
         ],
       ),

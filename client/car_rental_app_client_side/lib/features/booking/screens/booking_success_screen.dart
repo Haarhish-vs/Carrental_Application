@@ -19,7 +19,8 @@ class BookingSuccessScreen extends ConsumerStatefulWidget {
   const BookingSuccessScreen({super.key});
 
   @override
-  ConsumerState<BookingSuccessScreen> createState() => _BookingSuccessScreenState();
+  ConsumerState<BookingSuccessScreen> createState() =>
+      _BookingSuccessScreenState();
 }
 
 class _BookingSuccessScreenState extends ConsumerState<BookingSuccessScreen> {
@@ -59,7 +60,9 @@ class _BookingSuccessScreenState extends ConsumerState<BookingSuccessScreen> {
           ),
           backgroundColor: AppColors.accent,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           margin: const EdgeInsets.all(AppSpacing.md),
         ),
       );
@@ -99,7 +102,7 @@ class _BookingSuccessScreenState extends ConsumerState<BookingSuccessScreen> {
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: AppColors.accent.withOpacity(0.12),
+                      color: AppColors.accent.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -121,7 +124,9 @@ class _BookingSuccessScreenState extends ConsumerState<BookingSuccessScreen> {
               const Gap(8),
               Text(
                 "Your ride is reserved and will be ready at your selected hub.",
-                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.slate500),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.slate500,
+                ),
                 textAlign: TextAlign.center,
               ),
               const Gap(AppSpacing.xl),
@@ -151,7 +156,8 @@ class _BookingSuccessScreenState extends ConsumerState<BookingSuccessScreen> {
                     const Divider(),
                     _ReceiptRow(
                       label: "PICK-UP HUB",
-                      value: flowState.pickupLocation ?? 'Selected Location',
+                      value:
+                          flowState.pickupLocation?.name ?? 'Selected Location',
                     ),
                     const Divider(),
                     _ReceiptRow(
@@ -176,14 +182,20 @@ class _BookingSuccessScreenState extends ConsumerState<BookingSuccessScreen> {
                     ? const SizedBox(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
                       )
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Icon(Icons.file_download_outlined, size: 20),
                           const Gap(8),
-                          Text("Download PDF Invoice", style: AppTextStyles.buttonLarge),
+                          Text(
+                            "Download PDF Invoice",
+                            style: AppTextStyles.buttonLarge,
+                          ),
                         ],
                       ),
               ),
@@ -204,7 +216,9 @@ class _BookingSuccessScreenState extends ConsumerState<BookingSuccessScreen> {
                     const Gap(8),
                     Text(
                       "Track Reservation Status",
-                      style: AppTextStyles.buttonMedium.copyWith(color: AppColors.primary),
+                      style: AppTextStyles.buttonMedium.copyWith(
+                        color: AppColors.primary,
+                      ),
                     ),
                   ],
                 ),
@@ -215,7 +229,7 @@ class _BookingSuccessScreenState extends ConsumerState<BookingSuccessScreen> {
                   ref.read(bookingFlowProvider.notifier).reset();
                   context.go(AppRoutes.booking);
                 },
-                child: Text(
+                child: const Text(
                   "Return to Home",
                   style: TextStyle(
                     color: AppColors.slate500,
@@ -252,7 +266,7 @@ class _ReceiptRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppColors.slate400,
               fontSize: 11,
               fontWeight: FontWeight.bold,

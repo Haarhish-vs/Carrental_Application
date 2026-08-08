@@ -29,11 +29,13 @@ class _CouponScreenState extends ConsumerState<CouponScreen> {
 
   Future<void> _submitCoupon(String code) async {
     if (code.trim().isEmpty) return;
-    
+
     // Hide keyboard
     FocusScope.of(context).unfocus();
 
-    final success = await ref.read(bookingFlowProvider.notifier).applyCoupon(code.trim());
+    final success = await ref
+        .read(bookingFlowProvider.notifier)
+        .applyCoupon(code.trim());
     if (success) {
       setState(() {
         _showSuccessAnimation = true;
@@ -60,11 +62,16 @@ class _CouponScreenState extends ConsumerState<CouponScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Enter Promo Code", style: AppTextStyles.h3.copyWith(fontWeight: FontWeight.bold)),
+            Text(
+              "Enter Promo Code",
+              style: AppTextStyles.h3.copyWith(fontWeight: FontWeight.bold),
+            ),
             const Gap(AppSpacing.xs),
             Text(
               "Type or select an active coupon code to redeem discount savings.",
-              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.slate500),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.slate500,
+              ),
             ),
             const Gap(AppSpacing.lg),
 
@@ -79,13 +86,18 @@ class _CouponScreenState extends ConsumerState<CouponScreen> {
                     decoration: InputDecoration(
                       hintText: "E.g. DRIVE20",
                       errorText: flowState.errorMessage,
-                      prefixIcon: const Icon(Icons.tag_rounded, color: AppColors.slate400),
+                      prefixIcon: const Icon(
+                        Icons.tag_rounded,
+                        color: AppColors.slate400,
+                      ),
                       fillColor: Colors.white,
                     ),
                     onChanged: (_) {
                       // Clear errors while typing
                       if (flowState.errorMessage != null) {
-                        ref.read(bookingFlowProvider.notifier).applyCoupon(""); // reset error
+                        ref
+                            .read(bookingFlowProvider.notifier)
+                            .applyCoupon(""); // reset error
                       }
                     },
                     onSubmitted: (val) => _submitCoupon(val),
@@ -99,29 +111,36 @@ class _CouponScreenState extends ConsumerState<CouponScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.accent,
                     minimumSize: const Size(90, 54),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                   child: flowState.isLoading
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
                         )
                       : Text(
                           "Apply",
-                          style: AppTextStyles.buttonMedium.copyWith(color: Colors.white),
+                          style: AppTextStyles.buttonMedium.copyWith(
+                            color: Colors.white,
+                          ),
                         ),
                 ),
               ],
             ),
-            
+
             // Success State Badge
             if (_showSuccessAnimation) ...[
               const Gap(AppSpacing.md),
               Container(
                 padding: const EdgeInsets.all(AppSpacing.sm + 2),
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withOpacity(0.1),
+                  color: AppColors.accent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Row(
@@ -144,10 +163,12 @@ class _CouponScreenState extends ConsumerState<CouponScreen> {
             const Gap(AppSpacing.xl),
             const Divider(),
             const Gap(AppSpacing.md),
-            
+
             Text(
               "Available Special Deals",
-              style: AppTextStyles.subtitle1.copyWith(fontWeight: FontWeight.bold),
+              style: AppTextStyles.subtitle1.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const Gap(AppSpacing.md),
 
@@ -155,7 +176,10 @@ class _CouponScreenState extends ConsumerState<CouponScreen> {
             couponsAsync.when(
               data: (coupons) {
                 if (coupons.isEmpty) {
-                  return Text("No active coupons found.", style: AppTextStyles.bodyMedium);
+                  return Text(
+                    "No active coupons found.",
+                    style: AppTextStyles.bodyMedium,
+                  );
                 }
 
                 return ListView.builder(
@@ -173,7 +197,9 @@ class _CouponScreenState extends ConsumerState<CouponScreen> {
                         isApplied: isApplied,
                         onTap: () {
                           if (isApplied) {
-                            ref.read(bookingFlowProvider.notifier).removeCoupon();
+                            ref
+                                .read(bookingFlowProvider.notifier)
+                                .removeCoupon();
                             _codeController.clear();
                           } else {
                             _codeController.text = coupon.code;
@@ -191,7 +217,10 @@ class _CouponScreenState extends ConsumerState<CouponScreen> {
                   child: CircularProgressIndicator(),
                 ),
               ),
-              error: (err, stack) => Text("Error loading deals: $err", style: AppTextStyles.bodyMedium),
+              error: (err, stack) => Text(
+                "Error loading deals: $err",
+                style: AppTextStyles.bodyMedium,
+              ),
             ),
           ],
         ),

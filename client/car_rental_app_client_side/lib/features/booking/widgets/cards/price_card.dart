@@ -8,14 +8,12 @@ import '../../../../core/design_system/radius.dart';
 import '../../../../core/design_system/elevation.dart';
 import '../../models/booking_flow_state.dart';
 import '../../utils/booking_price_calculator.dart';
+import '../../utils/currency_formatter.dart';
 
 class PriceCard extends StatefulWidget {
   final BookingFlowState state;
 
-  const PriceCard({
-    super.key,
-    required this.state,
-  });
+  const PriceCard({super.key, required this.state});
 
   @override
   State<PriceCard> createState() => _PriceCardState();
@@ -27,7 +25,7 @@ class _PriceCardState extends State<PriceCard> {
   @override
   Widget build(BuildContext context) {
     final state = widget.state;
-    
+
     final baseCharge = BookingPriceCalculator.calculateBaseRentalCharge(state);
     final driverFee = BookingPriceCalculator.calculateDriverFee(state);
     final insurance = BookingPriceCalculator.calculateInsurance(state);
@@ -65,16 +63,24 @@ class _PriceCardState extends State<PriceCard> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.receipt_long_outlined, color: AppColors.primary, size: 20),
+                      const Icon(
+                        Icons.receipt_long_outlined,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
                       const Gap(10),
                       Text(
                         "Fare Breakdown",
-                        style: AppTextStyles.subtitle1.copyWith(color: AppColors.slate900),
+                        style: AppTextStyles.subtitle1.copyWith(
+                          color: AppColors.slate900,
+                        ),
                       ),
                     ],
                   ),
                   Icon(
-                    _isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                    _isExpanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
                     color: AppColors.slate600,
                   ),
                 ],
@@ -91,15 +97,13 @@ class _PriceCardState extends State<PriceCard> {
               child: Column(
                 children: [
                   _PriceRow(
-                    label: "Base Rental Fee (${state.rentalDurationDays} ${state.rentalDurationDays == 1 ? 'day' : 'days'})",
+                    label:
+                        "Base Rental Fee (${state.rentalDurationDays} ${state.rentalDurationDays == 1 ? 'day' : 'days'})",
                     value: baseCharge,
                   ),
                   if (state.rentalType == RentalType.withDriver) ...[
                     const Gap(AppSpacing.sm),
-                    _PriceRow(
-                      label: "Chauffeur Service Fee",
-                      value: driverFee,
-                    ),
+                    _PriceRow(label: "Chauffeur Service Fee", value: driverFee),
                   ],
                   if (insurance > 0) ...[
                     const Gap(AppSpacing.sm),
@@ -110,16 +114,10 @@ class _PriceCardState extends State<PriceCard> {
                   ],
                   if (services > 0) ...[
                     const Gap(AppSpacing.sm),
-                    _PriceRow(
-                      label: "Other Optional Add-ons",
-                      value: services,
-                    ),
+                    _PriceRow(label: "Other Optional Add-ons", value: services),
                   ],
                   const Gap(AppSpacing.sm),
-                  _PriceRow(
-                    label: "Taxes & Local Fees (18% GST)",
-                    value: tax,
-                  ),
+                  _PriceRow(label: "Taxes & Local Fees (18% GST)", value: tax),
                   const Gap(AppSpacing.sm),
                   _PriceRow(
                     label: "Refundable Security Deposit",
@@ -137,7 +135,9 @@ class _PriceCardState extends State<PriceCard> {
                 ],
               ),
             ),
-            crossFadeState: _isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            crossFadeState: _isExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
             duration: const Duration(milliseconds: 250),
           ),
 
@@ -159,19 +159,25 @@ class _PriceCardState extends State<PriceCard> {
                   children: [
                     Text(
                       "Grand Total Due",
-                      style: AppTextStyles.subtitle2.copyWith(color: AppColors.slate800, fontSize: 13),
+                      style: AppTextStyles.subtitle2.copyWith(
+                        color: AppColors.slate800,
+                        fontSize: 13,
+                      ),
                     ),
                     if (deposit > 0) ...[
                       const Gap(2),
                       Text(
-                        "Includes ₹${deposit.toStringAsFixed(0)} refundable deposit",
-                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.slate500, fontSize: 11),
+                        "Includes ${formatCurrency(deposit)} refundable deposit",
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.slate500,
+                          fontSize: 11,
+                        ),
                       ),
                     ],
                   ],
                 ),
                 Text(
-                  "₹${grandTotal.toStringAsFixed(2)}",
+                  formatCurrency(grandTotal),
                   style: AppTextStyles.h2.copyWith(
                     color: AppColors.accent,
                     fontSize: 20,
@@ -203,7 +209,7 @@ class _PriceRow extends StatelessWidget {
   Widget build(BuildContext context) {
     Color valueColor = AppColors.slate800;
     FontWeight valueWeight = FontWeight.w600;
-    
+
     if (isSecondary) {
       valueColor = AppColors.slate600;
       valueWeight = FontWeight.normal;
@@ -211,9 +217,9 @@ class _PriceRow extends StatelessWidget {
       valueColor = AppColors.accent;
     }
 
-    final formattedValue = value.isNegative 
-        ? "-₹${value.abs().toStringAsFixed(2)}" 
-        : "₹${value.toStringAsFixed(2)}";
+    final formattedValue = value.isNegative
+        ? "-${formatCurrency(value.abs())}"
+        : formatCurrency(value);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,

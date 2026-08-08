@@ -4,20 +4,20 @@
     "discountAmount": 0.0,
     "percentage": 20.0,
     "minBookingValue": 100.0,
-    "description": "Save 20% on bookings above $100"
+    "description": "Save 20% on bookings above ₹100"
   },
   {
     "code": "RENTAL50",
     "discountAmount": 50.0,
     "percentage": 0.0,
     "minBookingValue": 250.0,
-    "description": "Get a flat $50 off on booking values above $250"
+    "description": "Get a flat ₹50 off on booking values above ₹250"
   },
   {
     "code": "WELCOME10",
     "discountAmount": 10.0,
     "percentage": 0.0,
     "minBookingValue": 50.0,
-    "description": "Welcome bonus. Get $10 off your first rental above $50"
+    "description": "Welcome bonus. Get ₹10 off your first rental above ₹50"
   }
 ]

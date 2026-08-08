@@ -28,18 +28,26 @@ class ApiClient {
   }
 
   // Placeholder for real HTTP GET (to be plugged in with Dio by backend developers)
-  Future<ApiResponse<T>> get<T>(String path, {Map<String, dynamic>? queryParameters}) async {
-    throw UnimplementedError("Real API endpoints are not active. Switch Env features or use getMockAsset.");
+  Future<ApiResponse<T>> get<T>(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    throw UnimplementedError(
+      "Real API endpoints are not active. Switch Env features or use getMockAsset.",
+    );
   }
 
   // Placeholder for real HTTP POST
   Future<ApiResponse<T>> post<T>(String path, {dynamic data}) async {
     // Return mock success
     await Future.delayed(const Duration(milliseconds: 800));
-    return ApiResponse.success({
-      "id": "mock_tx_${DateTime.now().millisecondsSinceEpoch}",
-      "status": "success",
-      "timestamp": DateTime.now().toIso8601String()
-    } as T);
+    return ApiResponse.success(
+      {
+            "id": "mock_tx_${DateTime.now().millisecondsSinceEpoch}",
+            "status": "success",
+            "timestamp": DateTime.now().toIso8601String(),
+          }
+          as T,
+    );
   }
 }

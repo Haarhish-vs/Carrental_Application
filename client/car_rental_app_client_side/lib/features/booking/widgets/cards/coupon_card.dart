@@ -6,6 +6,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/design_system/radius.dart';
 import '../../models/coupon_model.dart';
+import '../../utils/currency_formatter.dart';
 
 class CouponCard extends StatelessWidget {
   final Coupon coupon;
@@ -39,8 +40,8 @@ class CouponCard extends StatelessWidget {
               children: [
                 // Voucher Icon
                 CircleAvatar(
-                  backgroundColor: isApplied 
-                      ? AppColors.accent.withOpacity(0.12) 
+                  backgroundColor: isApplied
+                      ? AppColors.accent.withValues(alpha: 0.12)
                       : AppColors.slate100,
                   radius: 20,
                   child: Icon(
@@ -59,11 +60,17 @@ class CouponCard extends StatelessWidget {
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.slate100,
                               borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: AppColors.slate300, width: 0.5),
+                              border: Border.all(
+                                color: AppColors.slate300,
+                                width: 0.5,
+                              ),
                             ),
                             child: Text(
                               coupon.code,
@@ -99,7 +106,7 @@ class CouponCard extends StatelessWidget {
                       ),
                       const Gap(2),
                       Text(
-                        "Min. Booking: ₹${coupon.minBookingValue.toStringAsFixed(0)}",
+                        "Min. Booking: ${formatCurrency(coupon.minBookingValue)}",
                         style: AppTextStyles.bodySmall.copyWith(
                           fontSize: 11,
                           color: AppColors.slate400,
@@ -111,7 +118,7 @@ class CouponCard extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // Checked indicator on top right corner
           if (isApplied)
             const Positioned(

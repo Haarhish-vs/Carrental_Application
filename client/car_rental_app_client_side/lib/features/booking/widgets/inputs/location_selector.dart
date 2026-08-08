@@ -66,13 +66,15 @@ class LocationSelector extends StatelessWidget {
                     hasValue ? selectedLocation! : placeholder,
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: hasValue ? AppColors.slate900 : AppColors.slate400,
-                      fontWeight: hasValue ? FontWeight.w600 : FontWeight.normal,
+                      fontWeight: hasValue
+                          ? FontWeight.w600
+                          : FontWeight.normal,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Icon(
+                const Icon(
                   Icons.expand_more_rounded,
                   color: AppColors.slate400,
                   size: 18,

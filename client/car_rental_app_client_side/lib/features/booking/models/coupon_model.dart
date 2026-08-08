@@ -52,5 +52,11 @@ class Coupon extends Equatable {
   }
 
   @override
-  List<Object?> get props => [code, discountAmount, percentage, minBookingValue, description];
+  List<Object?> get props => [
+    code,
+    discountAmount,
+    percentage,
+    minBookingValue,
+    description,
+  ];
 }

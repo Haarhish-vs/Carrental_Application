@@ -13,12 +13,14 @@ import '../models/booking_flow_state.dart';
 import '../providers/booking_provider.dart';
 import '../widgets/cards/payment_method_card.dart';
 import '../utils/booking_price_calculator.dart';
+import '../utils/currency_formatter.dart';
 
 class PaymentMethodScreen extends ConsumerStatefulWidget {
   const PaymentMethodScreen({super.key});
 
   @override
-  ConsumerState<PaymentMethodScreen> createState() => _PaymentMethodScreenState();
+  ConsumerState<PaymentMethodScreen> createState() =>
+      _PaymentMethodScreenState();
 }
 
 class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
@@ -41,21 +43,26 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
           ),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           margin: const EdgeInsets.all(AppSpacing.md),
         ),
       );
       return;
     }
 
-    final success = await ref.read(bookingFlowProvider.notifier).submitBooking();
+    final success = await ref
+        .read(bookingFlowProvider.notifier)
+        .submitBooking();
     if (success && mounted) {
       context.push(AppRoutes.bookingSuccess);
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            ref.read(bookingFlowProvider).errorMessage ?? "Payment failed. Please try again.",
+            ref.read(bookingFlowProvider).errorMessage ??
+                "Payment failed. Please try again.",
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
           backgroundColor: AppColors.error,
@@ -84,7 +91,12 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
         children: [
           // Header Text
           Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xs),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.xs,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -95,7 +107,9 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
                 const Gap(4),
                 Text(
                   "Select your preferred secure payment channel.",
-                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.slate500),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.slate500,
+                  ),
                 ),
               ],
             ),
@@ -117,7 +131,9 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
                     method: method,
                     isSelected: isSelected,
                     onTap: () {
-                      ref.read(bookingFlowProvider.notifier).setPaymentMethod(method);
+                      ref
+                          .read(bookingFlowProvider.notifier)
+                          .setPaymentMethod(method);
                     },
                   ),
                 );
@@ -128,9 +144,11 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
           // Sticky Footer with Total & CTA
           Container(
             padding: const EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: Colors.white,
-              border: Border(top: BorderSide(color: AppColors.slate200, width: 1)),
+              border: Border(
+                top: BorderSide(color: AppColors.slate200, width: 1),
+              ),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -141,7 +159,7 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           "Total Due",
                           style: TextStyle(
                             fontSize: 12,
@@ -151,8 +169,11 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
                         ),
                         const Gap(2),
                         Text(
-                          "₹${totalAmount.toStringAsFixed(2)}",
-                          style: AppTextStyles.h2.copyWith(color: AppColors.accent, fontSize: 22),
+                          formatCurrency(totalAmount),
+                          style: AppTextStyles.h2.copyWith(
+                            color: AppColors.accent,
+                            fontSize: 22,
+                          ),
                         ),
                       ],
                     ),
@@ -170,49 +191,55 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
                   children: [
                     Expanded(
                       flex: 1,
-                    child: OutlinedButton(
-                      onPressed: () {
-                        ref.read(bookingFlowProvider.notifier).prevStep();
-                        context.pop();
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        side: const BorderSide(color: AppColors.slate300, width: 1.5),
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.arrow_back, size: 18),
-                          Gap(4),
-                          Text("Back"),
-                        ],
+                      child: OutlinedButton(
+                        onPressed: () {
+                          ref.read(bookingFlowProvider.notifier).prevStep();
+                          context.pop();
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: const BorderSide(
+                            color: AppColors.slate300,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.arrow_back, size: 18),
+                            Gap(4),
+                            Text("Back"),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  const Gap(AppSpacing.md),
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton(
-                      onPressed: flowState.isLoading ? null : _submitPayment,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
+                    const Gap(AppSpacing.md),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton(
+                        onPressed: flowState.isLoading ? null : _submitPayment,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: flowState.isLoading
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text("Pay & Confirm"),
+                                  Gap(6),
+                                  Icon(Icons.lock_outline_rounded, size: 16),
+                                ],
+                              ),
                       ),
-                      child: flowState.isLoading
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                            )
-                          : const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text("Pay & Confirm"),
-                                Gap(6),
-                                Icon(Icons.lock_outline_rounded, size: 16),
-                              ],
-                            ),
-                    ),
                     ),
                   ],
                 ),

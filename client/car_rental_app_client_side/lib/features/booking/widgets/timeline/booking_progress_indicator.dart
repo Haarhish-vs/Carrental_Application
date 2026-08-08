@@ -6,10 +6,7 @@ import '../../models/booking_step.dart';
 class BookingProgressIndicator extends StatelessWidget {
   final BookingStep currentStep;
 
-  const BookingProgressIndicator({
-    super.key,
-    required this.currentStep,
-  });
+  const BookingProgressIndicator({super.key, required this.currentStep});
 
   @override
   Widget build(BuildContext context) {
@@ -35,34 +32,23 @@ class BookingProgressIndicator extends StatelessWidget {
         break;
     }
 
-    final milestones = [
-      'Vehicle',
-      'Pickup',
-      'Extras',
-      'Payment',
-      'Confirmed',
-    ];
+    final milestones = ['Vehicle', 'Pickup', 'Extras', 'Payment', 'Confirmed'];
 
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: AppSpacing.md,
       ),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(
-          bottom: BorderSide(
-            color: AppColors.slate200,
-            width: 1,
-          ),
-        ),
+        border: Border(bottom: BorderSide(color: AppColors.slate200, width: 1)),
       ),
       child: SafeArea(
         bottom: false,
         child: LayoutBuilder(
           builder: (context, constraints) {
             final double width = constraints.maxWidth;
-            final double dotSize = 24.0;
+            const double dotSize = 24.0;
             final int totalSteps = milestones.length;
 
             return Column(
@@ -75,10 +61,7 @@ class BookingProgressIndicator extends StatelessWidget {
                     Positioned(
                       left: dotSize / 2,
                       right: dotSize / 2,
-                      child: Container(
-                        height: 2,
-                        color: AppColors.slate200,
-                      ),
+                      child: Container(height: 2, color: AppColors.slate200),
                     ),
                     // Active Line
                     Positioned(
@@ -90,7 +73,9 @@ class BookingProgressIndicator extends StatelessWidget {
                           duration: const Duration(milliseconds: 300),
                           curve: Curves.easeInOut,
                           height: 2.5,
-                          width: (width - dotSize) * (activeMilestone / (totalSteps - 1)),
+                          width:
+                              (width - dotSize) *
+                              (activeMilestone / (totalSteps - 1)),
                           color: AppColors.accent,
                         ),
                       ),
@@ -120,10 +105,12 @@ class BookingProgressIndicator extends StatelessWidget {
                             boxShadow: isActive
                                 ? [
                                     BoxShadow(
-                                      color: AppColors.primary.withOpacity(0.15),
+                                      color: AppColors.primary.withValues(
+                                        alpha: 0.15,
+                                      ),
                                       blurRadius: 6,
                                       spreadRadius: 1,
-                                    )
+                                    ),
                                   ]
                                 : null,
                           ),
@@ -135,22 +122,22 @@ class BookingProgressIndicator extends StatelessWidget {
                                     color: Colors.white,
                                   )
                                 : (isActive
-                                    ? Container(
-                                        width: 8,
-                                        height: 8,
-                                        decoration: const BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : Text(
-                                        '${index + 1}',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.slate500,
-                                        ),
-                                      )),
+                                      ? Container(
+                                          width: 8,
+                                          height: 8,
+                                          decoration: const BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : Text(
+                                          '${index + 1}',
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.slate500,
+                                          ),
+                                        )),
                           ),
                         );
                       }),
@@ -172,10 +159,14 @@ class BookingProgressIndicator extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 11,
-                          fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                          fontWeight: isActive
+                              ? FontWeight.bold
+                              : FontWeight.w500,
                           color: isActive
                               ? AppColors.primary
-                              : (isCompleted ? AppColors.slate700 : AppColors.slate400),
+                              : (isCompleted
+                                    ? AppColors.slate700
+                                    : AppColors.slate400),
                         ),
                       ),
                     );

@@ -28,7 +28,8 @@ class CustomDatePicker extends StatelessWidget {
   Future<void> _selectDate(BuildContext context) async {
     final DateTime initialDate = selectedDate ?? DateTime.now();
     final DateTime startLimit = firstDate ?? DateTime.now();
-    final DateTime endLimit = lastDate ?? DateTime.now().add(const Duration(days: 365));
+    final DateTime endLimit =
+        lastDate ?? DateTime.now().add(const Duration(days: 365));
 
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -44,9 +45,7 @@ class CustomDatePicker extends StatelessWidget {
               onSurface: AppColors.slate800,
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.accent,
-              ),
+              style: TextButton.styleFrom(foregroundColor: AppColors.accent),
             ),
           ),
           child: child!,
@@ -62,7 +61,9 @@ class CustomDatePicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasValue = selectedDate != null;
-    final formattedValue = hasValue ? DateFormat('EEE, MMM d, yyyy').format(selectedDate!) : '';
+    final formattedValue = hasValue
+        ? DateFormat('EEE, MMM d, yyyy').format(selectedDate!)
+        : '';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,13 +105,15 @@ class CustomDatePicker extends StatelessWidget {
                     hasValue ? formattedValue : placeholder,
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: hasValue ? AppColors.slate900 : AppColors.slate400,
-                      fontWeight: hasValue ? FontWeight.w600 : FontWeight.normal,
+                      fontWeight: hasValue
+                          ? FontWeight.w600
+                          : FontWeight.normal,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Icon(
+                const Icon(
                   Icons.expand_more_rounded,
                   color: AppColors.slate400,
                   size: 18,

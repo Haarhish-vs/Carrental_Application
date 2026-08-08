@@ -7,6 +7,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/design_system/radius.dart';
 import '../../../../core/design_system/elevation.dart';
 import '../../models/vehicle_model.dart';
+import '../../utils/currency_formatter.dart';
 
 class VehicleBookingCard extends StatelessWidget {
   final Vehicle vehicle;
@@ -34,7 +35,9 @@ class VehicleBookingCard extends StatelessWidget {
             color: isSelected ? AppColors.accent : AppColors.slate200,
             width: isSelected ? 2.0 : 1.0,
           ),
-          boxShadow: isSelected ? AppElevation.selectShadow : AppElevation.cardShadow,
+          boxShadow: isSelected
+              ? AppElevation.selectShadow
+              : AppElevation.cardShadow,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,7 +59,11 @@ class VehicleBookingCard extends StatelessWidget {
                       height: 150,
                       width: double.infinity,
                       color: AppColors.slate100,
-                      child: const Icon(Icons.directions_car, size: 50, color: AppColors.slate400),
+                      child: const Icon(
+                        Icons.directions_car,
+                        size: 50,
+                        color: AppColors.slate400,
+                      ),
                     ),
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
@@ -76,15 +83,22 @@ class VehicleBookingCard extends StatelessWidget {
                   top: AppSpacing.sm,
                   right: AppSpacing.sm,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 16),
+                        const Icon(
+                          Icons.star_rounded,
+                          color: Color(0xFFFBBF24),
+                          size: 16,
+                        ),
                         const Gap(2),
                         Text(
                           vehicle.rating.toString(),
@@ -96,7 +110,7 @@ class VehicleBookingCard extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             // Vehicle Info
             Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
@@ -115,7 +129,7 @@ class VehicleBookingCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '₹${vehicle.pricePerDay.toStringAsFixed(0)}',
+                        formatCurrency(vehicle.pricePerDay),
                         style: AppTextStyles.h2.copyWith(
                           fontSize: 20,
                           color: AppColors.accent,
@@ -136,19 +150,24 @@ class VehicleBookingCard extends StatelessWidget {
                       ),
                       Text(
                         '/ day',
-                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.slate400),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.slate400,
+                        ),
                       ),
                     ],
                   ),
                   const Divider(height: AppSpacing.md),
-                  
+
                   // Spec Badges
                   Wrap(
                     spacing: AppSpacing.xs,
                     runSpacing: AppSpacing.xxs,
                     children: vehicle.specifications.map((spec) {
                       return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.slate100,
                           borderRadius: BorderRadius.circular(8),

@@ -65,14 +65,16 @@ class PaymentMethodCard extends StatelessWidget {
             color: isSelected ? AppColors.accent : AppColors.slate200,
             width: isSelected ? 2.0 : 1.0,
           ),
-          boxShadow: isSelected ? AppElevation.selectShadow : AppElevation.cardShadow,
+          boxShadow: isSelected
+              ? AppElevation.selectShadow
+              : AppElevation.cardShadow,
         ),
         child: Row(
           children: [
             // Icon
             CircleAvatar(
-              backgroundColor: isSelected 
-                  ? AppColors.accent.withOpacity(0.1) 
+              backgroundColor: isSelected
+                  ? AppColors.accent.withValues(alpha: 0.1)
                   : AppColors.slate100,
               radius: 20,
               child: Icon(
@@ -121,11 +123,7 @@ class PaymentMethodCard extends StatelessWidget {
                 ),
               ),
               child: isSelected
-                  ? const Icon(
-                      Icons.check,
-                      size: 12,
-                      color: Colors.white,
-                    )
+                  ? const Icon(Icons.check, size: 12, color: Colors.white)
                   : null,
             ),
           ],

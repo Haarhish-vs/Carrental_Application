@@ -12,7 +12,7 @@ class AppTheme {
       brightness: Brightness.light,
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.background,
-      
+
       // Color Scheme
       colorScheme: const ColorScheme.light(
         primary: AppColors.primary,
@@ -21,10 +21,9 @@ class AppTheme {
         onSecondary: Colors.white,
         tertiary: AppColors.cta,
         onTertiary: Colors.white,
-        background: AppColors.background,
-        onBackground: AppColors.slate900,
-        surface: AppColors.card,
+        surface: AppColors.background,
         onSurface: AppColors.slate900,
+        surfaceContainer: AppColors.card,
         error: AppColors.error,
         onError: Colors.white,
       ),
@@ -100,20 +99,14 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
 
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.accent,
-          textStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
       ),
 
@@ -182,10 +175,9 @@ class AppTheme {
         onSecondary: Colors.white,
         tertiary: AppColors.info,
         onTertiary: Colors.white,
-        background: AppColors.slate900,
-        onBackground: AppColors.slate50,
-        surface: AppColors.slate800,
+        surface: AppColors.slate900,
         onSurface: AppColors.slate50,
+        surfaceContainer: AppColors.slate800,
         error: AppColors.error,
         onError: Colors.white,
       ),

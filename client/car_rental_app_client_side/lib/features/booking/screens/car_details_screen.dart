@@ -13,6 +13,7 @@ import '../../../../core/design_system/elevation.dart';
 import '../../../../shared/widgets/layout/app_scaffold.dart';
 import '../models/vehicle_model.dart';
 import '../providers/booking_provider.dart';
+import '../utils/currency_formatter.dart';
 
 class CarDetailsScreen extends ConsumerStatefulWidget {
   const CarDetailsScreen({super.key});
@@ -25,14 +26,23 @@ class _CarDetailsScreenState extends ConsumerState<CarDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final flowState = ref.watch(bookingFlowProvider);
-    final vehicle = flowState.vehicle ?? const Vehicle(
-      id: "veh_bmw_x5",
-      name: "BMW X5 2023",
-      imageUrl: "https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=800",
-      pricePerDay: 120.0,
-      specifications: ["Petrol", "Automatic", "5 Seats", "Climate Control", "Built-in GPS"],
-      rating: 4.9,
-    );
+    final vehicle =
+        flowState.vehicle ??
+        const Vehicle(
+          id: "veh_bmw_x5",
+          name: "BMW X5 2023",
+          imageUrl:
+              "https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=800",
+          pricePerDay: 120.0,
+          specifications: [
+            "Petrol",
+            "Automatic",
+            "5 Seats",
+            "Climate Control",
+            "Built-in GPS",
+          ],
+          rating: 4.9,
+        );
 
     return AppScaffold(
       showProgress: false,
@@ -58,7 +68,11 @@ class _CarDetailsScreenState extends ConsumerState<CarDetailsScreen> {
                           height: 280,
                           width: double.infinity,
                           color: AppColors.slate100,
-                          child: const Icon(Icons.directions_car, size: 70, color: AppColors.slate400),
+                          child: const Icon(
+                            Icons.directions_car,
+                            size: 70,
+                            color: AppColors.slate400,
+                          ),
                         ),
                         loadingBuilder: (context, child, loadingProgress) {
                           if (loadingProgress == null) return child;
@@ -80,11 +94,32 @@ class _CarDetailsScreenState extends ConsumerState<CarDetailsScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
                             const Gap(4),
-                            Container(width: 6, height: 6, decoration: BoxDecoration(color: Colors.white.withOpacity(0.5), shape: BoxShape.circle)),
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
                             const Gap(4),
-                            Container(width: 6, height: 6, decoration: BoxDecoration(color: Colors.white.withOpacity(0.5), shape: BoxShape.circle)),
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -93,14 +128,21 @@ class _CarDetailsScreenState extends ConsumerState<CarDetailsScreen> {
                         bottom: AppSpacing.md,
                         left: AppSpacing.md,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: const Row(
                             children: [
-                              Icon(Icons.threed_rotation_rounded, size: 14, color: AppColors.primary),
+                              Icon(
+                                Icons.threed_rotation_rounded,
+                                size: 14,
+                                color: AppColors.primary,
+                              ),
                               Gap(6),
                               Text(
                                 "360 View",
@@ -116,7 +158,7 @@ class _CarDetailsScreenState extends ConsumerState<CarDetailsScreen> {
                       ),
                     ],
                   ),
-                  
+
                   // 2. Title & Rating details
                   Padding(
                     padding: const EdgeInsets.all(AppSpacing.md),
@@ -125,21 +167,32 @@ class _CarDetailsScreenState extends ConsumerState<CarDetailsScreen> {
                       children: [
                         Text(
                           vehicle.name,
-                          style: AppTextStyles.h2.copyWith(fontSize: 26, fontWeight: FontWeight.bold),
+                          style: AppTextStyles.h2.copyWith(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const Gap(6),
                         Row(
                           children: [
-                            const Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 16),
+                            const Icon(
+                              Icons.star_rounded,
+                              color: Color(0xFFFBBF24),
+                              size: 16,
+                            ),
                             const Gap(4),
                             Text(
                               "${vehicle.rating}",
-                              style: AppTextStyles.subtitle2.copyWith(fontSize: 14),
+                              style: AppTextStyles.subtitle2.copyWith(
+                                fontSize: 14,
+                              ),
                             ),
                             const Gap(8),
                             Text(
                               "- 120 reviews",
-                              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.slate400),
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.slate400,
+                              ),
                             ),
                           ],
                         ),
@@ -156,7 +209,9 @@ class _CarDetailsScreenState extends ConsumerState<CarDetailsScreen> {
                           child: Row(
                             children: [
                               const CircleAvatar(
-                                backgroundImage: NetworkImage(AppImages.profilePlaceholder),
+                                backgroundImage: NetworkImage(
+                                  AppImages.profilePlaceholder,
+                                ),
                                 radius: 20,
                               ),
                               const Gap(AppSpacing.md),
@@ -166,20 +221,27 @@ class _CarDetailsScreenState extends ConsumerState<CarDetailsScreen> {
                                   children: [
                                     Text(
                                       "Hosted by Michael",
-                                      style: AppTextStyles.subtitle2.copyWith(color: AppColors.slate900),
+                                      style: AppTextStyles.subtitle2.copyWith(
+                                        color: AppColors.slate900,
+                                      ),
                                     ),
                                     const Gap(2),
                                     Row(
                                       children: [
-                                        const Icon(Icons.check_circle_rounded, color: AppColors.accent, size: 12),
+                                        const Icon(
+                                          Icons.check_circle_rounded,
+                                          color: AppColors.accent,
+                                          size: 12,
+                                        ),
                                         const Gap(4),
                                         Text(
                                           "Verified Owner",
-                                          style: AppTextStyles.bodySmall.copyWith(
-                                            color: AppColors.accent,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 11,
-                                          ),
+                                          style: AppTextStyles.bodySmall
+                                              .copyWith(
+                                                color: AppColors.accent,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 11,
+                                              ),
                                         ),
                                       ],
                                     ),
@@ -194,7 +256,10 @@ class _CarDetailsScreenState extends ConsumerState<CarDetailsScreen> {
                         // 3. Specifications Grid
                         Text(
                           "Specifications",
-                          style: AppTextStyles.subtitle1.copyWith(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: AppTextStyles.subtitle1.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                         const Gap(AppSpacing.md),
                         GridView.count(
@@ -205,10 +270,26 @@ class _CarDetailsScreenState extends ConsumerState<CarDetailsScreen> {
                           crossAxisSpacing: AppSpacing.md,
                           mainAxisSpacing: AppSpacing.md,
                           children: const [
-                            _SpecCard(label: "Fuel Type", value: "Petrol", icon: Icons.local_gas_station_outlined),
-                            _SpecCard(label: "Transmission", value: "Automatic", icon: Icons.settings_input_component_outlined),
-                            _SpecCard(label: "Seats", value: "5 Seats", icon: Icons.airline_seat_recline_normal_rounded),
-                            _SpecCard(label: "AC", value: "Climate Control", icon: Icons.ac_unit_rounded),
+                            _SpecCard(
+                              label: "Fuel Type",
+                              value: "Petrol",
+                              icon: Icons.local_gas_station_outlined,
+                            ),
+                            _SpecCard(
+                              label: "Transmission",
+                              value: "Automatic",
+                              icon: Icons.settings_input_component_outlined,
+                            ),
+                            _SpecCard(
+                              label: "Seats",
+                              value: "5 Seats",
+                              icon: Icons.airline_seat_recline_normal_rounded,
+                            ),
+                            _SpecCard(
+                              label: "AC",
+                              value: "Climate Control",
+                              icon: Icons.ac_unit_rounded,
+                            ),
                           ],
                         ),
                         const Gap(AppSpacing.md),
@@ -223,12 +304,21 @@ class _CarDetailsScreenState extends ConsumerState<CarDetailsScreen> {
                         // 4. Included Amenities
                         Text(
                           "Included in your booking",
-                          style: AppTextStyles.subtitle1.copyWith(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: AppTextStyles.subtitle1.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                         const Gap(AppSpacing.md),
-                        const _AmenityRow(icon: Icons.speed_rounded, text: "Unlimited KM"),
+                        const _AmenityRow(
+                          icon: Icons.speed_rounded,
+                          text: "Unlimited KM",
+                        ),
                         const Gap(AppSpacing.sm),
-                        const _AmenityRow(icon: Icons.health_and_safety_outlined, text: "24/7 Roadside Assistance"),
+                        const _AmenityRow(
+                          icon: Icons.health_and_safety_outlined,
+                          text: "24/7 Roadside Assistance",
+                        ),
                       ],
                     ),
                   ),
@@ -272,10 +362,15 @@ class _CarDetailsScreenState extends ConsumerState<CarDetailsScreen> {
             left: 0,
             right: 0,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.md,
+              ),
               decoration: const BoxDecoration(
                 color: Colors.white,
-                border: Border(top: BorderSide(color: AppColors.slate200, width: 1)),
+                border: Border(
+                  top: BorderSide(color: AppColors.slate200, width: 1),
+                ),
               ),
               child: SafeArea(
                 top: false,
@@ -286,7 +381,7 @@ class _CarDetailsScreenState extends ConsumerState<CarDetailsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
+                        const Text(
                           "TOTAL PRICE",
                           style: TextStyle(
                             fontSize: 10,
@@ -298,12 +393,18 @@ class _CarDetailsScreenState extends ConsumerState<CarDetailsScreen> {
                         const Gap(2),
                         Text.rich(
                           TextSpan(
-                            text: "₹${vehicle.pricePerDay.toStringAsFixed(0)}",
-                            style: AppTextStyles.h2.copyWith(fontSize: 22, color: AppColors.primary),
+                            text: formatCurrency(vehicle.pricePerDay),
+                            style: AppTextStyles.h2.copyWith(
+                              fontSize: 22,
+                              color: AppColors.primary,
+                            ),
                             children: [
                               TextSpan(
                                 text: " / day",
-                                style: AppTextStyles.bodySmall.copyWith(color: AppColors.slate500, fontSize: 13),
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.slate500,
+                                  fontSize: 13,
+                                ),
                               ),
                             ],
                           ),
@@ -318,11 +419,15 @@ class _CarDetailsScreenState extends ConsumerState<CarDetailsScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         minimumSize: const Size(180, 52),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
                       child: Text(
                         "Reserve",
-                        style: AppTextStyles.buttonLarge.copyWith(color: Colors.white),
+                        style: AppTextStyles.buttonLarge.copyWith(
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ],
@@ -353,7 +458,10 @@ class _SpecCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: isFullWidth ? double.infinity : null,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 12,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: AppRadius.mdBorderRadius,
@@ -370,12 +478,19 @@ class _SpecCard extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: TextStyle(fontSize: 10, color: AppColors.slate400, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.slate400,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const Gap(2),
                 Text(
                   value,
-                  style: AppTextStyles.subtitle2.copyWith(color: AppColors.slate800, fontSize: 12),
+                  style: AppTextStyles.subtitle2.copyWith(
+                    color: AppColors.slate800,
+                    fontSize: 12,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -392,10 +507,7 @@ class _AmenityRow extends StatelessWidget {
   final IconData icon;
   final String text;
 
-  const _AmenityRow({
-    required this.icon,
-    required this.text,
-  });
+  const _AmenityRow({required this.icon, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -404,7 +516,7 @@ class _AmenityRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: AppColors.accent.withOpacity(0.08),
+            color: AppColors.accent.withValues(alpha: 0.08),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: AppColors.accent, size: 16),
@@ -412,7 +524,10 @@ class _AmenityRow extends StatelessWidget {
         const Gap(12),
         Text(
           text,
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.slate600, fontSize: 13),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.slate600,
+            fontSize: 13,
+          ),
         ),
       ],
     );
@@ -423,16 +538,13 @@ class _HeaderIconBtn extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
 
-  const _HeaderIconBtn({
-    required this.icon,
-    required this.onPressed,
-  });
+  const _HeaderIconBtn({required this.icon, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: Colors.white.withValues(alpha: 0.9),
         shape: BoxShape.circle,
         boxShadow: AppElevation.cardShadow,
       ),

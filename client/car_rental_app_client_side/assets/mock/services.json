@@ -30,7 +30,7 @@
   {
     "id": "srv_fastag",
     "name": "FastTag Toll Prepaid Pass",
-    "description": "Skip toll booth lines with prepaid digital toll pass loaded with $20 credit.",
+    "description": "Skip toll booth lines with prepaid digital toll pass loaded with ₹20 credit.",
     "price": 25.0,
     "isReoccurring": false
   },

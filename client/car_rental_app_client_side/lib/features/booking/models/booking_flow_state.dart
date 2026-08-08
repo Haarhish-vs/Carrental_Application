@@ -4,19 +4,11 @@ import 'driver_model.dart';
 import 'service_model.dart';
 import 'coupon_model.dart';
 import 'booking_step.dart';
+import 'location_model.dart';
 
-enum RentalType {
-  selfDrive,
-  withDriver,
-}
+enum RentalType { selfDrive, withDriver }
 
-enum PaymentMethod {
-  upi,
-  creditCard,
-  debitCard,
-  wallet,
-  netBanking,
-}
+enum PaymentMethod { upi, creditCard, debitCard, wallet, netBanking }
 
 extension PaymentMethodExtension on PaymentMethod {
   String get label {
@@ -37,8 +29,8 @@ extension PaymentMethodExtension on PaymentMethod {
 
 class BookingFlowState extends Equatable {
   final Vehicle? vehicle;
-  final String? pickupLocation;
-  final String? returnLocation;
+  final LocationModel? pickupLocation;
+  final LocationModel? returnLocation;
   final DateTime? pickupDateTime;
   final DateTime? returnDateTime;
   final RentalType rentalType;
@@ -47,7 +39,7 @@ class BookingFlowState extends Equatable {
   final Coupon? coupon;
   final PaymentMethod? paymentMethod;
   final BookingStep currentStep;
-  
+
   // Checkout & Status Details
   final String? bookingId;
   final bool isLoading;
@@ -72,8 +64,8 @@ class BookingFlowState extends Equatable {
 
   BookingFlowState copyWith({
     Vehicle? Function()? vehicle,
-    String? Function()? pickupLocation,
-    String? Function()? returnLocation,
+    LocationModel? Function()? pickupLocation,
+    LocationModel? Function()? returnLocation,
     DateTime? Function()? pickupDateTime,
     DateTime? Function()? returnDateTime,
     RentalType? rentalType,
@@ -88,15 +80,25 @@ class BookingFlowState extends Equatable {
   }) {
     return BookingFlowState(
       vehicle: vehicle != null ? vehicle() : this.vehicle,
-      pickupLocation: pickupLocation != null ? pickupLocation() : this.pickupLocation,
-      returnLocation: returnLocation != null ? returnLocation() : this.returnLocation,
-      pickupDateTime: pickupDateTime != null ? pickupDateTime() : this.pickupDateTime,
-      returnDateTime: returnDateTime != null ? returnDateTime() : this.returnDateTime,
+      pickupLocation: pickupLocation != null
+          ? pickupLocation()
+          : this.pickupLocation,
+      returnLocation: returnLocation != null
+          ? returnLocation()
+          : this.returnLocation,
+      pickupDateTime: pickupDateTime != null
+          ? pickupDateTime()
+          : this.pickupDateTime,
+      returnDateTime: returnDateTime != null
+          ? returnDateTime()
+          : this.returnDateTime,
       rentalType: rentalType ?? this.rentalType,
       driver: driver != null ? driver() : this.driver,
       selectedServices: selectedServices ?? this.selectedServices,
       coupon: coupon != null ? coupon() : this.coupon,
-      paymentMethod: paymentMethod != null ? paymentMethod() : this.paymentMethod,
+      paymentMethod: paymentMethod != null
+          ? paymentMethod()
+          : this.paymentMethod,
       currentStep: currentStep ?? this.currentStep,
       bookingId: bookingId != null ? bookingId() : this.bookingId,
       isLoading: isLoading ?? this.isLoading,
@@ -117,19 +119,19 @@ class BookingFlowState extends Equatable {
 
   @override
   List<Object?> get props => [
-        vehicle,
-        pickupLocation,
-        returnLocation,
-        pickupDateTime,
-        returnDateTime,
-        rentalType,
-        driver,
-        selectedServices,
-        coupon,
-        paymentMethod,
-        currentStep,
-        bookingId,
-        isLoading,
-        errorMessage,
-      ];
+    vehicle,
+    pickupLocation,
+    returnLocation,
+    pickupDateTime,
+    returnDateTime,
+    rentalType,
+    driver,
+    selectedServices,
+    coupon,
+    paymentMethod,
+    currentStep,
+    bookingId,
+    isLoading,
+    errorMessage,
+  ];
 }

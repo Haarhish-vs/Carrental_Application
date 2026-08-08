@@ -10,10 +10,7 @@ class AppRouter {
       initialLocation: AppRoutes.booking,
       debugLogDiagnostics: true,
       routes: [
-        GoRoute(
-          path: '/',
-          redirect: (_, __) => AppRoutes.booking,
-        ),
+        GoRoute(path: '/', redirect: (_, __) => AppRoutes.booking),
         ...BookingRoutes.routes,
       ],
     );
