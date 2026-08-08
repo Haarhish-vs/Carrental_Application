@@ -3,8 +3,8 @@ const authService = require('./auth.service');
 
 const sendOtp = async (req, res, next) => {
   try {
-    const { phoneNumber } = req.body;
-    const rawOtp = await authService.sendOtp(phoneNumber);
+    const { phoneNumber, isRegister } = req.body;
+    const rawOtp = await authService.sendOtp(phoneNumber, isRegister);
     
     // In development or test, we return the raw OTP in response so client tests can use it
     const responseData = {};

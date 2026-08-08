@@ -9,12 +9,31 @@ class AuthService {
    * Generates and sends OTP.
    * @param {string} phoneNumber - User phone number
    */
-  async sendOtp(phoneNumber) {
+  async sendOtp(phoneNumber, isRegister = false) {
     if (!phoneNumber) {
       const error = new Error('Phone number is required');
       error.statusCode = 400;
       throw error;
     }
+
+    if (isRegister) {
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('phone_number', phoneNumber)
+        .maybeSingle();
+
+      if (checkError) {
+        throw new Error(`Database error: ${checkError.message}`);
+      }
+
+      if (existingUser) {
+        const error = new Error('Phone number already registered. Please login.');
+        error.statusCode = 409;
+        throw error;
+      }
+    }
+
     return await otpService.generateOtp(phoneNumber);
   }
 
