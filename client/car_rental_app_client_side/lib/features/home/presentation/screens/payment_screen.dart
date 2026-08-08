@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/utils/razorpay_web.dart';
+import '../../../../core/utils/razorpay_checkout.dart';
 import '../../../owner/data/services/car_api_service.dart';
 import '../../models/car_model.dart';
 
