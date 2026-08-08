@@ -1,4 +1,4 @@
-﻿# 🚗 Rent-A-Car — P2P Car Rental Application
+# 🚗 Rent-A-Car — P2P Car Rental Application
 
 A full-stack, production-ready **Peer-to-Peer Car Rental Platform** built with **Flutter (mobile + web)** and **Node.js + Supabase (backend)**. Users can rent out their own cars or book available cars — all with phone-based OTP authentication, Cloudinary image storage, and real-time booking management.
 
@@ -183,7 +183,7 @@ Car_Rental_Application/
 ---
 
 ### 7. `CarApiService` — Service Class (NOT a widget)
-- `Dio` instance with base URL `https://carrental-application-1.onrender.com`
+- `Dio` instance with base URL `https://carrental-application-z49a.onrender.com`
 - **Interceptor:** auto-attaches `Authorization: Bearer <token>` to every request
 - **Retry:** 1× retry on timeout errors using `extra['isRetry']` flag
 - Methods: `uploadFiles()`, `uploadDocument()`, `getVehicles()`, `getMyBookings()`, `createBooking()`, `createVehicle()`, `uploadVehicleDocument()`
@@ -566,8 +566,8 @@ flutter build apk        # release APK for Android
 
 ## 🌐 Live Backend
 
-**Base URL:** `https://carrental-application-1.onrender.com`  
-**API Docs / Status:** `https://carrental-application-1.onrender.com/`
+**Base URL:** `https://carrental-application-z49a.onrender.com`  
+**API Docs / Status:** `https://carrental-application-z49a.onrender.com/`
 
 ---
 

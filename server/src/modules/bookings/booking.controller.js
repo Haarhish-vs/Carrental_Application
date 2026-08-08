@@ -3,8 +3,8 @@ const bookingService = require('./booking.service');
 
 const createBooking = async (req, res, next) => {
   try {
-    const { vehicleId, startDate, endDate } = req.body;
-    const booking = await bookingService.createBooking(req.user.id, { vehicleId, startDate, endDate });
+    const { vehicleId, startDate, endDate, totalPrice } = req.body;
+    const booking = await bookingService.createBooking(req.user.id, { vehicleId, startDate, endDate, totalPrice });
     return res.status(201).json({
       success: true,
       message: 'Booking request created successfully. Pending owner confirmation.',
