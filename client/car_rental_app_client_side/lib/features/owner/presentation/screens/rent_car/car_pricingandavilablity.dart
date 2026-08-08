@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:car_rental_app_client_side/core/theme/app_colors.dart';
 import 'package:car_rental_app_client_side/features/owner/data/services/car_api_service.dart';
 
 import 'car_images.dart';
@@ -94,8 +95,8 @@ class _CarPricingAndAvailabilityScreenState
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: const Color(0xFF1E5AA8),
-              surface: Colors.white,
+              primary: AppColors.primary,
+              surface: AppColors.surface,
             ),
           ),
           child: child ?? const SizedBox.shrink(),

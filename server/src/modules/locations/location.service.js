@@ -1,9 +1,6 @@
 // location.service.js
 
 const { supabase } = require('../../config/supabase');
-const env = require('../../config/env');
-
-const GOOGLE_MAPS_API_KEY = env.GOOGLE_MAPS_API_KEY;
 
 if (!GOOGLE_MAPS_API_KEY) {
   console.warn(
@@ -41,8 +38,19 @@ const MAX_SEARCH_RESULTS = 5;
  * @param {Object} options
  * @returns {Promise<Response>}
  */
-const fetchWithTimeout = async (url, options = {}) => {
-  const controller = new AbortController();
+const searchLocations = async (query) => {
+  if (!query) return [];
+
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=jsonv2&addressdetails=1&limit=10`;
+
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'CarRentalApp/1.0',
+      'Accept': 'application/json'
+    }
+  });
+
+  const data = await response.json();
 
   const timeoutId = setTimeout(() => {
     controller.abort();
@@ -621,14 +629,16 @@ const reverseGeocode = async (latitude, longitude) => {
     );
   }
 
-  if (!GOOGLE_MAPS_API_KEY) {
-    throw new Error(
-      'Location service is not configured. Google Maps API key is missing.'
-    );
-  }
+  const url = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=jsonv2&addressdetails=1`;
 
-  const lat = Number(latitude);
-  const lng = Number(longitude);
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'CarRentalApp/1.0',
+      'Accept': 'application/json'
+    }
+  });
+
+  const data = await response.json();
 
   if (lat < -90 || lat > 90) {
     throw new Error(
@@ -948,10 +958,7 @@ const saveRecentLocation = async (
     } = await supabase
       .from('recent_locations')
       .delete()
-      .eq(
-        'id',
-        existingRecords[0].id
-      );
+      .eq('id', existingRecords[0].id);
 
     if (deleteExistingError) {
       throw new Error(
@@ -977,33 +984,17 @@ const saveRecentLocation = async (
       );
     }
 
-    // Keep only the newest 9 before inserting
-    // the new location.
-    if (
-      allUserLocations &&
-      allUserLocations.length >= 10
-    ) {
-      const idsToDelete =
-        allUserLocations
-          .slice(9)
-          .map((location) => location.id);
+    if (allUserLocations && allUserLocations.length >= 10) {
+      // Delete the oldest ones to make space for the new one (keep 9 newest)
+      const idsToDelete = allUserLocations.slice(9).map(loc => loc.id);
 
-      if (idsToDelete.length > 0) {
-        const {
-          error: pruneError,
-        } = await supabase
-          .from('recent_locations')
-          .delete()
-          .in(
-            'id',
-            idsToDelete
-          );
+      const { error: pruneError } = await supabase
+        .from('recent_locations')
+        .delete()
+        .in('id', idsToDelete);
 
-        if (pruneError) {
-          throw new Error(
-            `Error pruning old locations: ${pruneError.message}`
-          );
-        }
+      if (pruneError) {
+        throw new Error(`Error pruning old locations: ${pruneError.message}`);
       }
     }
   }

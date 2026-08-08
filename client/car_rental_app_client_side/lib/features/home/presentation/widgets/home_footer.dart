@@ -48,14 +48,14 @@ class HomeFooter extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
-          Divider(color: Colors.white.withOpacity(0.15), height: 1),
+          Divider(color: Colors.white.withValues(alpha: 0.15), height: 1),
           const SizedBox(height: 14),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Version $appVersion', style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 11.5)),
+              Text('Version $appVersion', style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 11.5)),
               Text('© 2026 Car Rental Application',
-                  style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 11.5)),
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 11.5)),
             ],
           ),
         ],
@@ -76,7 +76,7 @@ class _FooterLink extends StatelessWidget {
       onTap: onTap,
       child: Text(
         label,
-        style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12.5, fontWeight: FontWeight.w500),
+        style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 12.5, fontWeight: FontWeight.w500),
       ),
     );
   }

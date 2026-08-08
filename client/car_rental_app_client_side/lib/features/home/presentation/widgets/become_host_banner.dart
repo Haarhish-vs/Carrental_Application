@@ -16,7 +16,7 @@ class BecomeHostBanner extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AppColors.primary, Color(0xFF0D47A1)],
+          colors: [AppColors.primary, AppColors.primaryDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -32,7 +32,7 @@ class BecomeHostBanner extends StatelessWidget {
                     style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 Text('Earn passive income by listing your car',
-                    style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12.5)),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12.5)),
                 const SizedBox(height: 14),
                 ElevatedButton(
                   onPressed: onHostTap,

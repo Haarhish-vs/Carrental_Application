@@ -12,7 +12,7 @@ class CarApiService {
   final Dio _dio;
 
   // Base URL for the Rent-A-Car backend
-  static String baseUrl = 'https://carrental-application-1.onrender.com';
+  static String baseUrl = 'https://carrental-application-z49a.onrender.com';
 
   // Static token storage that can be set from elsewhere in the app (e.g., login)
   static String? token;
@@ -47,6 +47,10 @@ class CarApiService {
           debugPrint(
             '❌ [API Error] Status: ${error.response?.statusCode} | Path: ${error.requestOptions.path} | Error: ${error.message}',
           );
+          if (error.response?.statusCode == 401) {
+            debugPrint('⚠️ [CarApiService] 401 Unauthorized. Clearing session...');
+            await AuthService.logout();
+          }
           // Implement simple retry functionality for network connection timeouts
           if (error.type == DioExceptionType.connectionTimeout ||
               error.type == DioExceptionType.sendTimeout ||
@@ -155,6 +159,42 @@ class CarApiService {
       return [];
     } on DioException catch (e) {
       debugPrint('Error fetching vehicles: ${e.message}');
+      return [];
+    }
+  }
+
+  /// Fetch the logged-in user's bookings.
+  Future<List<Map<String, dynamic>>> getMyBookings() async {
+    try {
+      final response = await _dio.get('/api/bookings/my-bookings');
+      if (response.statusCode == 200 && response.data != null) {
+        final success = response.data['success'] as bool? ?? false;
+        if (success && response.data['data'] != null) {
+          final list = response.data['data'] as List<dynamic>;
+          return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        }
+      }
+      return [];
+    } on DioException catch (e) {
+      debugPrint('Error fetching my bookings: ${e.message}');
+      return [];
+    }
+  }
+
+  /// Fetch the logged-in user's listed vehicles.
+  Future<List<Map<String, dynamic>>> getMyListings() async {
+    try {
+      final response = await _dio.get('/api/vehicles/my-listings');
+      if (response.statusCode == 200 && response.data != null) {
+        final success = response.data['success'] as bool? ?? false;
+        if (success && response.data['data'] != null) {
+          final list = response.data['data'] as List<dynamic>;
+          return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        }
+      }
+      return [];
+    } on DioException catch (e) {
+      debugPrint('Error fetching my listings: ${e.message}');
       return [];
     }
   }
@@ -293,6 +333,41 @@ class CarApiService {
       throw DioException(
         requestOptions: RequestOptions(path: '/api/vehicles/upload'),
         message: response.data?['message'] ?? 'Document upload failed',
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// Cancel a booking by its ID. Can be called by the renter or owner.
+  Future<void> cancelBooking(String bookingId, {String? reason}) async {
+    try {
+      final response = await _dio.patch(
+        '/api/bookings/$bookingId/cancel',
+        data: {'reason': reason ?? 'Cancelled by user'},
+      );
+      if (response.statusCode == 200) return;
+      throw DioException(
+        requestOptions: RequestOptions(path: '/api/bookings/$bookingId/cancel'),
+        message: response.data?['message'] ?? 'Failed to cancel booking',
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// Toggle a vehicle's availability (owner only).
+  /// Pass [isAvailable] = false to mark as unavailable, true to re-enable.
+  Future<void> toggleVehicleAvailability(String vehicleId, {required bool isAvailable}) async {
+    try {
+      final response = await _dio.patch(
+        '/api/vehicles/$vehicleId/availability',
+        data: {'isAvailable': isAvailable},
+      );
+      if (response.statusCode == 200) return;
+      throw DioException(
+        requestOptions: RequestOptions(path: '/api/vehicles/$vehicleId/availability'),
+        message: response.data?['message'] ?? 'Failed to update availability',
       );
     } on DioException catch (e) {
       throw _handleDioError(e);

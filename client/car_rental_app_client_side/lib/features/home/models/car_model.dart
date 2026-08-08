@@ -9,6 +9,7 @@ class CarModel {
   final double pricePerDay;
   final String city;
   final String status;
+  final bool isAvailable;
 
   const CarModel({
     required this.id,
@@ -21,6 +22,7 @@ class CarModel {
     required this.pricePerDay,
     required this.city,
     required this.status,
+    this.isAvailable = true,
   });
 
   factory CarModel.fromJson(Map<String, dynamic> json) {
@@ -50,6 +52,8 @@ class CarModel {
     final double rating = double.tryParse(json['rating']?.toString() ?? '') ?? 4.5;
     final String city = json['city']?.toString() ?? 'Unknown City';
     final String status = json['status']?.toString() ?? 'unknown';
+    final bool isAvailable = (json['is_available'] != false && json['isAvailable'] != false) &&
+        json['status']?.toString().toLowerCase() == 'active';
 
     return CarModel(
       id: id,
@@ -62,6 +66,7 @@ class CarModel {
       pricePerDay: pricePerDay,
       city: city,
       status: status,
+      isAvailable: isAvailable,
     );
   }
 }

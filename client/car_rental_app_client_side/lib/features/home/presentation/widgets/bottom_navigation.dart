@@ -7,16 +7,16 @@ import '../../../../core/theme/app_colors.dart';
 class BottomNavigation extends StatelessWidget {
   final int currentIndex;
   final VoidCallback onHomeTap;
-  final VoidCallback onTripsTap;
-  final VoidCallback onSupportTap;
+  final VoidCallback onBookingsTap;
+  final VoidCallback onMyCarTap;
   final VoidCallback onHostTap;
 
   const BottomNavigation({
     super.key,
     required this.currentIndex,
     required this.onHomeTap,
-    required this.onTripsTap,
-    required this.onSupportTap,
+    required this.onBookingsTap,
+    required this.onMyCarTap,
     required this.onHostTap,
   });
 
@@ -26,10 +26,10 @@ class BottomNavigation extends StatelessWidget {
         onHomeTap();
         break;
       case 1:
-        onTripsTap();
+        onBookingsTap();
         break;
       case 2:
-        onSupportTap();
+        onMyCarTap();
         break;
       case 3:
         onHostTap();
@@ -49,8 +49,8 @@ class BottomNavigation extends StatelessWidget {
       elevation: 10,
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
-        BottomNavigationBarItem(icon: Icon(Icons.map_outlined), label: 'Trips'),
-        BottomNavigationBarItem(icon: Icon(Icons.support_agent_outlined), label: 'Support'),
+        BottomNavigationBarItem(icon: Icon(Icons.list_alt_outlined), label: 'My Bookings'),
+        BottomNavigationBarItem(icon: Icon(Icons.directions_car_outlined), label: 'My Car'),
         BottomNavigationBarItem(icon: Icon(Icons.garage_outlined), label: 'Host'),
       ],
     );

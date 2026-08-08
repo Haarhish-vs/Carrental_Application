@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -68,7 +67,6 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
   }
 
   void _goBack() {
-    // Save state back to localDocuments before pop
     final updatedDocs = <String, XFile>{};
     if (_rcDocumentFile != null) updatedDocs['rc_book'] = _rcDocumentFile!;
     if (_insuranceDocumentFile != null) updatedDocs['insurance'] = _insuranceDocumentFile!;
@@ -80,7 +78,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
       registrationNumber: _registrationCertificateController.text.trim(),
     );
 
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(updatedDraft);
   }
 
   Future<XFile?> _pickDocument(String title) async {
@@ -103,14 +101,14 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                   'Upload $title',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF103B66),
+                        color: AppColors.textPrimary,
                       ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Choose camera, gallery, or file to upload your document scan or PDF.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFF57718A),
+                        color: AppColors.textSecondary,
                       ),
                 ),
                 const SizedBox(height: 20),
@@ -412,10 +410,10 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: hasFile ? const Color(0xFFEAF2FF) : const Color(0xFFF7FAFD),
+        color: hasFile ? AppColors.primaryLight : AppColors.inputFill,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: hasFile ? AppColors.primary : const Color(0xFFD7E2EF),
+          color: hasFile ? AppColors.primary : AppColors.border,
         ),
       ),
       child: Row(
@@ -424,7 +422,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: hasFile ? AppColors.primary : const Color(0xFFE0EBF8),
+              color: hasFile ? AppColors.primary : AppColors.primaryLight,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(
@@ -440,7 +438,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: const Color(0xFF103B66),
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.bold,
                       ),
                 ),
@@ -448,7 +446,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                 Text(
                   hasFile ? file.name : subtitle,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF57718A),
+                        color: AppColors.textSecondary,
                       ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -457,16 +455,16 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
           ),
           if (hasFile) ...[
             IconButton(
-              icon: const Icon(Icons.visibility_outlined, color: Color(0xFF57718A)),
+              icon: const Icon(Icons.visibility_outlined, color: AppColors.textSecondary),
               onPressed: onPreview,
             ),
             IconButton(
-              icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+              icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error),
               onPressed: onRemove,
             ),
           ] else
             IconButton(
-              icon: Icon(Icons.add_circle_outline_rounded, color: AppColors.primary),
+              icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary),
               onPressed: onPick,
             ),
         ],
@@ -619,7 +617,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
           if (_isLoading)
             Positioned.fill(
               child: Container(
-                color: Colors.black.withOpacity(0.4),
+                color: Colors.black.withValues(alpha: 0.4),
                 child: const Center(
                   child: Card(
                     shape: RoundedRectangleBorder(
@@ -631,12 +629,12 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           CircularProgressIndicator(),
-                          const SizedBox(height: 20),
+                          SizedBox(height: 20),
                           Text(
                             'Uploading Listing & Documents...',
                             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8),
                           Text(
                             'Please do not close the app.',
                             style: TextStyle(color: Colors.grey, fontSize: 12),

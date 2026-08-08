@@ -20,6 +20,7 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
   DateTime? _returnDate;
   double _totalAmount = 0.0;
   bool _processingPayment = false;
+  bool _paymentSuccess = false;
 
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/'
@@ -81,6 +82,46 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
     }
 
     if (!AuthService.isAuthenticated) {
+      final shouldLogin = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.lock_outline_rounded, color: AppColors.primary),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text('Authentication Required', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+              ),
+            ],
+          ),
+          content: const Text(
+            'Please log in or register to continue with your car booking.',
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              style: AppColors.primaryButtonStyle(verticalPadding: 12, borderRadius: 12),
+              child: const Text('Log In / Register'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldLogin != true || !mounted) return;
+
       final authSuccess = await Navigator.of(context).push<bool>(
         MaterialPageRoute(builder: (_) => const AuthScreen()),
       );
@@ -105,16 +146,28 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
 
       if (!mounted) return;
 
+      setState(() {
+        _paymentSuccess = true;
+      });
+
       await showDialog<void>(
         context: context,
         builder: (context) {
           return AlertDialog(
-            title: const Text('Payment Complete'),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            title: const Row(
+              children: [
+                Icon(Icons.check_circle_rounded, color: AppColors.success),
+                SizedBox(width: 8),
+                Text('Booking Confirmed!', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+              ],
+            ),
             content: Text(
-              'Your booking for ${widget.car.name} has been confirmed. Total paid: ₹${_totalAmount.toStringAsFixed(0)}.',
+              'Your booking for ${widget.car.name} is confirmed!\n\nTotal: ₹${_totalAmount.toStringAsFixed(0)}\n\nView details in My Bookings.',
             ),
             actions: [
-              TextButton(
+              FilledButton(
+                style: AppColors.primaryButtonStyle(verticalPadding: 12, borderRadius: 12),
                 onPressed: () => Navigator.of(context).pop(),
                 child: const Text('OK'),
               ),
@@ -122,17 +175,25 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
           );
         },
       );
+
+      if (!mounted) return;
+      Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
+        SnackBar(content: Text(error.toString()), backgroundColor: AppColors.error),
       );
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _processingPayment = false;
-      });
+      if (mounted) {
+        setState(() {
+          _processingPayment = false;
+        });
+      }
     }
+  }
+
+  void _redirectToHome() {
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   Widget _buildDetailTile(String title, String value) {
@@ -160,7 +221,7 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Car Details'),
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
       ),
@@ -181,7 +242,7 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Container(
                       height: 220,
-                      color: const Color(0xFFEAF2FF),
+                      color: AppColors.primaryLight,
                       child: const Icon(Icons.directions_car_rounded, size: 56, color: AppColors.primary),
                     ),
                   ),
@@ -191,7 +252,7 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                   height: 220,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEAF2FF),
+                    color: AppColors.primaryLight,
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: const Icon(Icons.directions_car_rounded, size: 56, color: AppColors.primary),
@@ -219,11 +280,9 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.cardBackground,
                   borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    const BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.03), blurRadius: 14, offset: Offset(0, 6)),
-                  ],
+                  border: Border.all(color: AppColors.border),
                 ),
                 child: Column(
                   children: [
@@ -244,10 +303,11 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                     child: ElevatedButton(
                       onPressed: () => _selectDate(isPickup: true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
+                        backgroundColor: AppColors.surface,
                         foregroundColor: AppColors.textPrimary,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppColors.border)),
+                        elevation: 0,
                       ),
                       child: Column(
                         children: [
@@ -266,10 +326,11 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                     child: ElevatedButton(
                       onPressed: _pickupDate == null ? null : () => _selectDate(isPickup: false),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
+                        backgroundColor: AppColors.surface,
                         foregroundColor: AppColors.textPrimary,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppColors.border)),
+                        elevation: 0,
                       ),
                       child: Column(
                         children: [
@@ -290,16 +351,14 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.cardBackground,
                   borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    const BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.03), blurRadius: 14, offset: Offset(0, 6)),
-                  ],
+                  border: Border.all(color: AppColors.border),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Total Summary', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                    const Text('Total Summary', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                     const SizedBox(height: 10),
                     _buildDetailTile('Days', _pickupDate != null && _returnDate != null && !_returnDate!.isBefore(_pickupDate!) ? '${_returnDate!.difference(_pickupDate!).inDays + 1}' : '0'),
                     _buildDetailTile('Total Amount', _totalAmount > 0 ? '₹${_totalAmount.toStringAsFixed(0)}' : '₹0'),
@@ -308,14 +367,15 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
               ),
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: _processingPayment ? null : _handlePayNow,
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 56),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
+                onPressed: _processingPayment
+                    ? null
+                    : (_paymentSuccess ? _redirectToHome : _handlePayNow),
+                style: AppColors.primaryButtonStyle(verticalPadding: 16),
                 child: _processingPayment
-                    ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Pay Now', style: TextStyle(fontSize: 16)),
+                    ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : (_paymentSuccess
+                        ? const Text('Done', style: TextStyle(fontSize: 16))
+                        : const Text('Book Now', style: TextStyle(fontSize: 16))),
               ),
               const SizedBox(height: 24),
             ],

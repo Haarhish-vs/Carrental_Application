@@ -1,0 +1,482 @@
+import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../auth/presentation/widgets/auth_required_view.dart';
+import '../../../auth/services/auth_service.dart';
+import '../../../owner/data/services/car_api_service.dart';
+
+class MyCarsScreen extends StatefulWidget {
+  const MyCarsScreen({super.key, required this.onListCarPressed});
+
+  final VoidCallback onListCarPressed;
+
+  @override
+  State<MyCarsScreen> createState() => _MyCarsScreenState();
+}
+
+class _MyCarsScreenState extends State<MyCarsScreen> {
+  final CarApiService _apiService = CarApiService();
+  late Future<List<Map<String, dynamic>>> _carsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    AuthService.authStateNotifier.addListener(_onAuthChanged);
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    AuthService.authStateNotifier.removeListener(_onAuthChanged);
+    super.dispose();
+  }
+
+  void _onAuthChanged() {
+    if (mounted) {
+      _refresh();
+    }
+  }
+
+  void _refresh() {
+    setState(() {
+      _carsFuture = _apiService.getMyListings();
+    });
+  }
+
+  Future<void> _toggleAvailability(String vehicleId, bool currentlyAvailable) async {
+    final targetAvailable = !currentlyAvailable;
+    final actionLabel = targetAvailable ? 'mark as available' : 'mark as unavailable';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(
+          targetAvailable ? 'Mark as Available' : 'Mark as Unavailable',
+          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          targetAvailable
+              ? 'This car will become visible and bookable by renters.'
+              : 'This car will be hidden from renters and cannot be booked until re-enabled.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: targetAvailable
+                ? AppColors.primaryButtonStyle(verticalPadding: 10, borderRadius: 12)
+                : AppColors.dangerButtonStyle(verticalPadding: 10, borderRadius: 12),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(actionLabel[0].toUpperCase() + actionLabel.substring(1)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await _apiService.toggleVehicleAvailability(vehicleId, isAvailable: targetAvailable);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(targetAvailable ? 'Car is now available for booking.' : 'Car is now marked as unavailable.'),
+          backgroundColor: targetAvailable ? AppColors.success : AppColors.warning,
+        ),
+      );
+      _refresh();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: AppColors.error),
+      );
+    }
+  }
+
+  // Parses ISO date string and returns a nicely formatted date
+  String _formatDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return '';
+    try {
+      final dt = DateTime.parse(dateStr).toLocal();
+      return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+    } catch (_) {
+      return dateStr;
+    }
+  }
+
+  // Determines the "until" date a car is booked (from activeBooking on car, if available)
+  String? _bookedUntil(Map<String, dynamic> car) {
+    final booking = car['activeBooking'] as Map<String, dynamic>?;
+    if (booking != null) {
+      return _formatDate(booking['end_date']?.toString());
+    }
+    // Fallback: if is_available is false and unavailable_until present
+    final until = car['unavailable_until']?.toString();
+    if (until != null && until.isNotEmpty) return _formatDate(until);
+    return null;
+  }
+
+  Widget _buildStatusBadge(bool isAvailable, String? bookedUntil) {
+    if (isAvailable) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.successLight,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Text(
+          'AVAILABLE',
+          style: TextStyle(
+            color: AppColors.success,
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.errorLight,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        bookedUntil != null ? 'BOOKED TILL $bookedUntil' : 'UNAVAILABLE',
+        style: const TextStyle(
+          color: AppColors.error,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSpecChip(IconData icon, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: AppColors.textSecondary),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCarCard(Map<String, dynamic> car) {
+    final brand = car['brand']?.toString() ?? '';
+    final model = car['model']?.toString() ?? '';
+    final name = [brand, model].where((s) => s.isNotEmpty).join(' ');
+    final city = car['city']?.toString() ?? 'Unknown City';
+    final price = double.tryParse(
+          car['price_per_day']?.toString() ?? car['dailyPrice']?.toString() ?? '',
+        ) ??
+        0.0;
+    final seats = car['seats']?.toString() ?? '4';
+    final transmission = car['transmission']?.toString() ?? 'Automatic';
+    final fuelType = (car['fuel_type'] ?? car['fuelType'])?.toString() ?? 'Petrol';
+    final isAvailable = car['is_available'] == true;
+    final bookedUntil = _bookedUntil(car);
+
+    final images = (car['images'] as List<dynamic>?) ?? [];
+    final imageUrl = images.isNotEmpty ? images.first.toString() : '';
+
+    return Card(
+      elevation: 0,
+      color: AppColors.cardBackground,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Car image
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                imageUrl.isNotEmpty
+                    ? Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => _placeholderImage(),
+                      )
+                    : _placeholderImage(),
+                // Overlay banner if unavailable
+                if (!isAvailable)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      color: Colors.black.withValues(alpha: 0.55),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.lock_outline, color: Colors.white, size: 14),
+                          const SizedBox(width: 6),
+                          Text(
+                            bookedUntil != null
+                                ? 'Not available until $bookedUntil'
+                                : 'Currently unavailable',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Name + badge
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        name.isNotEmpty ? name : 'My Car',
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    _buildStatusBadge(isAvailable, bookedUntil),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                // City
+                Row(
+                  children: [
+                    const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      city,
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    ),
+                  ],
+                ),
+                const Divider(height: 20, color: AppColors.divider),
+                // Specs
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildSpecChip(Icons.event_seat_outlined, '$seats Seats'),
+                    _buildSpecChip(Icons.settings_outlined, transmission),
+                    _buildSpecChip(Icons.local_gas_station_outlined, fuelType),
+                  ],
+                ),
+                const Divider(height: 20, color: AppColors.divider),
+                // Price
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'PRICE PER DAY',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '₹${price.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Toggle availability button
+                SizedBox(
+                  width: double.infinity,
+                  child: isAvailable
+                      ? OutlinedButton.icon(
+                          onPressed: () => _toggleAvailability(
+                            car['id']?.toString() ?? '',
+                            isAvailable,
+                          ),
+                          icon: const Icon(Icons.block_outlined, size: 16),
+                          label: const Text('Mark as Unavailable'),
+                          style: AppColors.outlinedButtonStyle(color: AppColors.error),
+                        )
+                      : FilledButton.icon(
+                          onPressed: () => _toggleAvailability(
+                            car['id']?.toString() ?? '',
+                            isAvailable,
+                          ),
+                          icon: const Icon(Icons.check_circle_outline, size: 16),
+                          label: const Text('Mark as Available'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.success,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _placeholderImage() {
+    return Container(
+      color: AppColors.primaryLight,
+      child: const Icon(
+        Icons.directions_car_rounded,
+        size: 48,
+        color: AppColors.primary,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!AuthService.isAuthenticated) {
+      return AuthRequiredView(
+        title: 'My Cars',
+        message: 'Log in or create an account to view your listed vehicles, track availability, and manage earnings.',
+        buttonText: 'Log In / Register',
+        onAuthenticated: _refresh,
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Header
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'My Cars',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
+                onPressed: _refresh,
+                tooltip: 'Refresh',
+              ),
+            ],
+          ),
+        ),
+        // List
+        Expanded(
+          child: FutureBuilder<List<Map<String, dynamic>>>(
+            future: _carsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+              }
+
+              if (snapshot.hasError) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Something went wrong',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          snapshot.error.toString(),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                        ),
+                        const SizedBox(height: 16),
+                        OutlinedButton(
+                          onPressed: _refresh,
+                          style: AppColors.outlinedButtonStyle(color: AppColors.primary),
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              final cars = snapshot.data ?? [];
+              if (cars.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.garage_outlined, size: 64, color: AppColors.textMuted),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'No Cars Listed Yet',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'List your first car and start earning today!',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                        ),
+                        const SizedBox(height: 24),
+                        FilledButton.icon(
+                          onPressed: widget.onListCarPressed,
+                          icon: const Icon(Icons.add_rounded),
+                          label: const Text('List a Car'),
+                          style: AppColors.primaryButtonStyle(verticalPadding: 12, borderRadius: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              return ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                itemCount: cars.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 16),
+                itemBuilder: (context, index) => _buildCarCard(cars[index]),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
