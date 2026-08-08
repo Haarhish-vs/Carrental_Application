@@ -1,0 +1,116 @@
+import 'package:flutter/material.dart';
+import 'package:car_rental_app_client_side/features/auth/presentation/screens/auth_screen.dart';
+
+class AuthRequiredView extends StatelessWidget {
+  const AuthRequiredView({
+    super.key,
+    required this.title,
+    required this.message,
+    this.buttonText = 'Log In / Register',
+    this.onAuthenticated,
+  });
+
+  final String title;
+  final String message;
+  final String buttonText;
+  final VoidCallback? onAuthenticated;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: Card(
+            elevation: 0,
+            color: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Lock Badge Icon (Matching Profile & Home style)
+                  Center(
+                    child: Container(
+                      width: 68,
+                      height: 68,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEAF2FF),
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      child: const Icon(
+                        Icons.lock_outline_rounded,
+                        size: 34,
+                        color: Color(0xFF1E5AA8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Title
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: const Color(0xFF103B66),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Subtitle / Description
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 14,
+                      height: 1.45,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Login / Register CTA
+                  FilledButton(
+                    onPressed: () async {
+                      final authSuccess = await Navigator.of(context).push<bool>(
+                        MaterialPageRoute(
+                          builder: (_) => const AuthScreen(),
+                        ),
+                      );
+
+                      if (authSuccess == true && onAuthenticated != null) {
+                        onAuthenticated!();
+                      }
+                    },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF1E5AA8),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      buttonText,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

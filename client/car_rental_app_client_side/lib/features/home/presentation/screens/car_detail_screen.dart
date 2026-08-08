@@ -82,6 +82,49 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
     }
 
     if (!AuthService.isAuthenticated) {
+      final shouldLogin = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF2FF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.lock_outline_rounded, color: Color(0xFF1E5AA8)),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text('Authentication Required', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+          content: const Text(
+            'Please log in or register to continue with your car booking.',
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF1E5AA8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Log In / Register'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldLogin != true || !mounted) return;
+
       final authSuccess = await Navigator.of(context).push<bool>(
         MaterialPageRoute(builder: (_) => const AuthScreen()),
       );

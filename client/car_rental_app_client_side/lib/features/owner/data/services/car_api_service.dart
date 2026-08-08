@@ -47,6 +47,10 @@ class CarApiService {
           debugPrint(
             '❌ [API Error] Status: ${error.response?.statusCode} | Path: ${error.requestOptions.path} | Error: ${error.message}',
           );
+          if (error.response?.statusCode == 401) {
+            debugPrint('⚠️ [CarApiService] 401 Unauthorized. Clearing session...');
+            await AuthService.logout();
+          }
           // Implement simple retry functionality for network connection timeouts
           if (error.type == DioExceptionType.connectionTimeout ||
               error.type == DioExceptionType.sendTimeout ||

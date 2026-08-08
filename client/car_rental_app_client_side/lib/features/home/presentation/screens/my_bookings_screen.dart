@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../auth/presentation/screens/auth_screen.dart';
+import '../../../auth/presentation/widgets/auth_required_view.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../../owner/data/services/car_api_service.dart';
 
@@ -20,7 +20,20 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   @override
   void initState() {
     super.initState();
+    AuthService.authStateNotifier.addListener(_onAuthChanged);
     _refreshBookings();
+  }
+
+  @override
+  void dispose() {
+    AuthService.authStateNotifier.removeListener(_onAuthChanged);
+    super.dispose();
+  }
+
+  void _onAuthChanged() {
+    if (mounted) {
+      _refreshBookings();
+    }
   }
 
   void _refreshBookings() {
@@ -154,56 +167,11 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   @override
   Widget build(BuildContext context) {
     if (!AuthService.isAuthenticated) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.lock_outline_rounded,
-                size: 64,
-                color: Color(0xFF8EA6BE),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Authentication Required',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Please register or log in to view your bookings.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: () async {
-                  final authSuccess = await Navigator.of(context).push<bool>(
-                    MaterialPageRoute(builder: (_) => const AuthScreen()),
-                  );
-                  if (authSuccess == true && mounted) {
-                    _refreshBookings();
-                  }
-                },
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text('Login / Register'),
-              ),
-            ],
-          ),
-        ),
+      return AuthRequiredView(
+        title: 'My Bookings',
+        message: 'Log in or create an account to view your booked cars, status, and receipts.',
+        buttonText: 'Log In / Register',
+        onAuthenticated: _refreshBookings,
       );
     }
 
