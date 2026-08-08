@@ -2,6 +2,7 @@ class CarModel {
   final String id;
   final String name;
   final String imageUrl;
+  final List<String> images;
   final String transmission;
   final String fuelType;
   final int seats;
@@ -15,6 +16,7 @@ class CarModel {
     required this.id,
     required this.name,
     required this.imageUrl,
+    required this.images,
     required this.transmission,
     required this.fuelType,
     required this.seats,
@@ -32,17 +34,28 @@ class CarModel {
     final String name = [brand, model].where((part) => part.isNotEmpty).join(' ').trim();
 
     String imageUrl = '';
-    final images = json['images'];
-    if (images is List && images.isNotEmpty) {
-      final firstImage = images.first;
-      if (firstImage is String) {
-        imageUrl = firstImage;
-      } else if (firstImage is Map<String, dynamic>) {
-        imageUrl = firstImage['url']?.toString() ?? firstImage['secure_url']?.toString() ?? '';
+    final List<String> imagesList = [];
+    final imagesJson = json['images'];
+    if (imagesJson is List) {
+      for (final item in imagesJson) {
+        if (item is String) {
+          imagesList.add(item);
+        } else if (item is Map<String, dynamic>) {
+          final url = item['url']?.toString() ?? item['secure_url']?.toString() ?? '';
+          if (url.isNotEmpty) {
+            imagesList.add(url);
+          }
+        }
       }
     }
-    if (imageUrl.isEmpty) {
-      imageUrl = json['imageUrl']?.toString() ?? json['image_url']?.toString() ?? '';
+    if (imagesList.isNotEmpty) {
+      imageUrl = imagesList.first;
+    } else {
+      final fallbackUrl = json['imageUrl']?.toString() ?? json['image_url']?.toString() ?? '';
+      if (fallbackUrl.isNotEmpty) {
+        imageUrl = fallbackUrl;
+        imagesList.add(fallbackUrl);
+      }
     }
 
     final String transmission = json['transmission']?.toString() ?? 'Automatic';
@@ -59,6 +72,7 @@ class CarModel {
       id: id,
       name: name.isNotEmpty ? name : 'Car',
       imageUrl: imageUrl,
+      images: imagesList,
       transmission: transmission,
       fuelType: fuelType,
       seats: seats,

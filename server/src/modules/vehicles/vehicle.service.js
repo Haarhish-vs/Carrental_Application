@@ -306,7 +306,12 @@ class VehicleService {
 
     let query = supabase
       .from('vehicles')
-      .select('*')
+      .select(`
+        *,
+        owner:users (
+          trust_score
+        )
+      `)
       .eq('is_available', true)
       .eq('status', 'active'); // Only show active, available cars on home screen
 
@@ -348,17 +353,31 @@ class VehicleService {
       throw new Error(`Failed to retrieve vehicles: ${error.message}`);
     }
 
-    if (data && excludedVehicleIds.length > 0) {
-      return data.filter(vehicle => !excludedVehicleIds.includes(vehicle.id));
+    let resultData = data || [];
+    if (resultData && excludedVehicleIds.length > 0) {
+      resultData = resultData.filter(vehicle => !excludedVehicleIds.includes(vehicle.id));
     }
 
-    return data;
+    if (resultData && resultData.length > 0) {
+      await Promise.all(resultData.map(async (vehicle) => {
+        const { count } = await supabase
+          .from('bookings')
+          .select('id', { count: 'exact', head: true })
+          .eq('vehicle_id', vehicle.id);
+        
+        vehicle.reviews_count = count || 0;
+        vehicle.rating = vehicle.owner && vehicle.owner.trust_score ? parseFloat((vehicle.owner.trust_score / 20).toFixed(1)) : 4.5;
+        
+        const desc = (vehicle.vehicle_description || '').toLowerCase();
+        vehicle.ac = !desc.includes('no ac') && !desc.includes('no air conditioning');
+        vehicle.navigation = !desc.includes('no gps') && !desc.includes('no navigation');
+      }));
+    }
+
+    return resultData;
   }
 
   /**
-   * Retrieve details of a single vehicle.
-   * Hide owner phone number unless current user has a confirmed/active booking for this vehicle.
-   */
   async getVehicleById(vehicleId, currentUserId = null) {
     const { data: vehicle, error: fetchError } = await supabase
       .from('vehicles')
@@ -370,6 +389,7 @@ class VehicleService {
           phone_number,
           trust_score,
           cancellation_count,
+          is_dl_verified,
           created_at
         )
       `)
@@ -381,6 +401,19 @@ class VehicleService {
       error.statusCode = 404;
       throw error;
     }
+
+    // Dynamic fields mapping
+    const { count } = await supabase
+      .from('bookings')
+      .select('id', { count: 'exact', head: true })
+      .eq('vehicle_id', vehicleId);
+    
+    vehicle.reviews_count = count || 0;
+    vehicle.rating = vehicle.owner && vehicle.owner.trust_score ? parseFloat((vehicle.owner.trust_score / 20).toFixed(1)) : 4.5;
+    
+    const desc = (vehicle.vehicle_description || '').toLowerCase();
+    vehicle.ac = !desc.includes('no ac') && !desc.includes('no air conditioning');
+    vehicle.navigation = !desc.includes('no gps') && !desc.includes('no navigation');
 
     // Expose owner phone number only if:
     // 1. Current user is the owner themselves

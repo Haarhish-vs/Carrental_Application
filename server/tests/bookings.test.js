@@ -75,21 +75,21 @@ describe('Bookings Module Tests', () => {
 
     it('should charge base price with 0% discount for bookings under 7 days', () => {
       const result = pricingService.calculatePricing(pricePerDay, depositAmount, '2026-08-04', '2026-08-06');
-      expect(result.days).toBe(3);
+      expect(result.days).toBe(2);
       expect(result.discountPercentage).toBe(0);
-      expect(result.totalPrice).toBe(300);
+      expect(result.totalPrice).toBe(200);
       expect(result.depositAmount).toBe(200);
     });
 
     it('should apply 5% discount for bookings between 7 and 29 days', () => {
-      const result = pricingService.calculatePricing(pricePerDay, depositAmount, '2026-08-04', '2026-08-10');
+      const result = pricingService.calculatePricing(pricePerDay, depositAmount, '2026-08-04', '2026-08-11');
       expect(result.days).toBe(7);
       expect(result.discountPercentage).toBe(5);
       expect(result.totalPrice).toBe(665);
     });
 
     it('should apply 10% discount for bookings 30 days and over', () => {
-      const result = pricingService.calculatePricing(pricePerDay, depositAmount, '2026-08-01', '2026-08-30');
+      const result = pricingService.calculatePricing(pricePerDay, depositAmount, '2026-08-01', '2026-08-31');
       expect(result.days).toBe(30);
       expect(result.discountPercentage).toBe(10);
       expect(result.totalPrice).toBe(2700);

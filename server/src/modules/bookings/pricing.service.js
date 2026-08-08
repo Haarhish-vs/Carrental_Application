@@ -20,7 +20,8 @@ class PricingService {
       throw new Error('End date must be on or after start date');
     }
 
-    return Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    return days < 1 ? 1 : days;
   }
 
   /**
