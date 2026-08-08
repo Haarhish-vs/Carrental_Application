@@ -21,6 +21,9 @@ import '../widgets/home_footer.dart';
 import '../widgets/bottom_navigation.dart';
 import '../widgets/home_drawer.dart';
 import 'car_detail_screen.dart';
+import '../../../location/presentation/screens/location_screen.dart';
+import '../../../location/presentation/location_flow.dart';
+import '../../../location/data/models/location_model.dart' as loc;
 
 const List<CategoryModel> _homeCategories = [
   CategoryModel(id: '1', label: 'Daily Rental', icon: Icons.calendar_today_outlined),
@@ -89,6 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _pickupTime;
   String? _returnDate;
   String? _returnTime;
+  loc.LocationModel? _selectedLocation;
 
   @override
   void initState() {
@@ -299,16 +303,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 returnDate: _returnDate,
                 returnTime: _returnTime,
 
-                onPickupLocationTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Location selection will be connected soon.',
-                      ),
-                    ),
-                  );
-                },
-
+                
+onPickupLocationTap: () async {
+  final selected = await LocationFlow.start(context);
+  if (selected != null) {
+    setState(() {
+      _selectedLocation = selected;
+      _pickupLocation = selected.name;
+    });
+  }
+},
                 onPickupDateTap: () => _pickDate(isPickup: true),
                 onPickupTimeTap: () => _pickTime(isPickup: true),
                 onReturnDateTap: () => _pickDate(isPickup: false),

@@ -6,7 +6,7 @@ const { protect } = require('../../shared/middlewares/auth.middleware');
 
 // Public location endpoints
 router.get('/search', locationController.searchLocations);
-router.post('/reverse-geocode', locationController.reverseGeocode);
+router.get('/reverse-geocode', locationController.reverseGeocode);
 router.get('/popular', locationController.getPopularLocations);
 
 // Authenticated recent location endpoints
