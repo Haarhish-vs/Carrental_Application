@@ -398,19 +398,31 @@ class _HomeScreenState extends State<HomeScreen> {
 
               return RecommendedCars(
                 cars: cars,
-                onCarTap: (car) {
-                  Navigator.of(context).push(
+                onCarTap: (car) async {
+                  await Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => CarDetailScreen(car: car),
                     ),
                   );
+                  // Refresh so booked cars disappear from list
+                  if (mounted) {
+                    setState(() {
+                      _vehiclesFuture = _fetchHomeVehicles();
+                    });
+                  }
                 },
-                onBookNow: (car) {
-                  Navigator.of(context).push(
+                onBookNow: (car) async {
+                  await Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => CarDetailScreen(car: car),
                     ),
                   );
+                  // Refresh so booked cars disappear from list
+                  if (mounted) {
+                    setState(() {
+                      _vehiclesFuture = _fetchHomeVehicles();
+                    });
+                  }
                 },
               );
             },

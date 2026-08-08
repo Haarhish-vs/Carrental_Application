@@ -12,9 +12,7 @@ class CarApiService {
   final Dio _dio;
 
   // Base URL for the Rent-A-Car backend
-  static String baseUrl = kDebugMode
-      ? 'http://localhost:5000'
-      : 'https://carrental-application-1.onrender.com';
+  static String baseUrl = 'https://carrental-application-z49a.onrender.com';
 
   // Static token storage that can be set from elsewhere in the app (e.g., login)
   static String? token;
@@ -222,6 +220,7 @@ class CarApiService {
     required String vehicleId,
     required String startDate,
     required String endDate,
+    double? totalPrice,
   }) async {
     try {
       final response = await _dio.post(
@@ -230,6 +229,7 @@ class CarApiService {
           'vehicleId': vehicleId,
           'startDate': startDate,
           'endDate': endDate,
+          if (totalPrice != null) 'totalPrice': totalPrice,
         },
       );
 

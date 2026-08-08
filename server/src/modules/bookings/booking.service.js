@@ -9,7 +9,7 @@ class BookingService {
   /**
    * Create a new booking request.
    */
-  async createBooking(renterId, { vehicleId, startDate, endDate }) {
+  async createBooking(renterId, { vehicleId, startDate, endDate, totalPrice }) {
     // 1. Run validation checks
     const vehicle = await bookingValidation.validateBookingCreation(vehicleId, renterId, startDate, endDate);
 
@@ -26,7 +26,7 @@ class BookingService {
         end_date: endDate,
         status: 'confirmed',
         payment_status: 'paid',
-        total_price: pricing.totalPrice,
+        total_price: totalPrice !== undefined ? totalPrice : pricing.totalPrice,
         deposit_amount: pricing.depositAmount
       })
       .select()

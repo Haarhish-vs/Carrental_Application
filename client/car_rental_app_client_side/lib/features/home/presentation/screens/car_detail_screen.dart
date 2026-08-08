@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../auth/presentation/screens/auth_screen.dart';
+import '../../../auth/services/auth_service.dart';
 import '../../models/car_model.dart';
 import 'reserve_screen.dart';
 
@@ -396,7 +398,17 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                     const SizedBox(width: 24),
                     Expanded(
                       child: FilledButton(
-                        onPressed: () {
+                        onPressed: () async {
+                          // Auth guard: must be logged in to reserve
+                          if (!AuthService.isAuthenticated) {
+                            final loggedIn = await Navigator.of(context).push<bool>(
+                              MaterialPageRoute(
+                                builder: (_) => const AuthScreen(initialMode: AuthMode.login),
+                              ),
+                            );
+                            if (loggedIn != true || !context.mounted) return;
+                          }
+                          if (!context.mounted) return;
                           Navigator.push(
                             context,
                             MaterialPageRoute(

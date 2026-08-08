@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../auth/presentation/screens/auth_screen.dart';
+import '../../../auth/services/auth_service.dart';
 import '../../models/car_model.dart';
 import 'payment_screen.dart';
 
@@ -37,12 +39,22 @@ class _ReserveScreenState extends State<ReserveScreen> {
 
   int get _rentalDays {
     if (_pickupDate == null || _returnDate == null) return 0;
-    if (_returnDate!.isBefore(_pickupDate!)) return 0;
-    return _returnDate!.difference(_pickupDate!).inDays + 1;
+    
+    // Normalize to midnight to calculate calendar days difference
+    final start = DateTime(_pickupDate!.year, _pickupDate!.month, _pickupDate!.day);
+    final end = DateTime(_returnDate!.year, _returnDate!.month, _returnDate!.day);
+    
+    if (end.isBefore(start)) return 0;
+    
+    final diff = end.difference(start).inDays;
+    // Same day = 1 day rental; each extra day = +1
+    return diff == 0 ? 1 : diff;
   }
 
   double get _totalAmount {
-    return _rentalDays * widget.car.pricePerDay;
+    final days = _rentalDays;
+    if (days <= 0) return 0;
+    return days * widget.car.pricePerDay;
   }
 
   String _formatDate(DateTime date) {
@@ -518,7 +530,18 @@ class _ReserveScreenState extends State<ReserveScreen> {
             Expanded(
               child: FilledButton(
                 onPressed: _rentalDays > 0
-                    ? () {
+                    ? () async {
+                        // Auth guard
+                        if (!AuthService.isAuthenticated) {
+                          final loggedIn = await Navigator.of(context).push<bool>(
+                            MaterialPageRoute(
+                              builder: (_) => const AuthScreen(initialMode: AuthMode.login),
+                            ),
+                          );
+                          if (loggedIn != true || !context.mounted) return;
+                        }
+                        if (!context.mounted) return;
+
                         final pickupDateTime = DateTime(
                           _pickupDate!.year,
                           _pickupDate!.month,

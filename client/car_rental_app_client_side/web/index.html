@@ -31,8 +31,32 @@
 
   <title>car_rental_app_client_side</title>
   <link rel="manifest" href="manifest.json">
-  <!-- Google Maps API for Web -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCTgsVNLNoWDq0_fRS5wkuT6S9b1JVm8NQ"></script>
+
+  <!-- Razorpay Checkout -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script>
+    function openRazorpay(keyId, amount, currency, name, description, onSuccess, onFailure) {
+      var options = {
+        key: keyId,
+        amount: amount,
+        currency: currency,
+        name: name,
+        description: description,
+        handler: function(response) {
+          onSuccess(response.razorpay_payment_id);
+        },
+        modal: {
+          ondismiss: function() {
+            onFailure('Payment cancelled by user');
+          }
+        },
+        prefill: {},
+        theme: { color: '#072654' }
+      };
+      var rzp = new Razorpay(options);
+      rzp.open();
+    }
+  </script>
 </head>
 <body>
   <!--

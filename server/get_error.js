@@ -2,7 +2,7 @@ const axios = require('axios');
 
 async function run() {
   try {
-    const res = await axios.get('https://carrental-application-1.onrender.com/api/vehicles');
+    const res = await axios.get('https://carrental-application-z49a.onrender.com/api/vehicles');
     console.log('Vehicles Success:', res.data);
   } catch (err) {
     if (err.response) {

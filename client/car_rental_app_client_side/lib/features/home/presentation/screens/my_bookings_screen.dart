@@ -298,9 +298,21 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                   final fuelType = car['fuel_type'] ?? 'Petrol';
                   final city = car['city'] ?? 'Default City';
 
+                  final rawStart = DateTime.tryParse(booking['start_date'] ?? '') ?? DateTime.now();
+                  final rawEnd = DateTime.tryParse(booking['end_date'] ?? '') ?? DateTime.now();
+                  
+                  // Calculate days matching what Razorpay charged
+                  final startCal = DateTime(rawStart.year, rawStart.month, rawStart.day);
+                  final endCal = DateTime(rawEnd.year, rawEnd.month, rawEnd.day);
+                  final diff = endCal.difference(startCal).inDays;
+                  final computedDays = diff <= 0 ? 1 : diff; // Match frontend payment logic
+                  
+                  // For display, we ignore DB total_price and calculate it to match gateway
+                  final pricePerDay = (car['price_per_day'] ?? 0).toDouble();
+                  final displayPrice = computedDays * pricePerDay;
+
                   final startDate = _formatBookingDate(booking['start_date']);
                   final endDate = _formatBookingDate(booking['end_date']);
-                  final totalPrice = booking['total_price'] ?? 0.0;
                   final depositAmount = booking['deposit_amount'] ?? 0.0;
 
                   return Card(
@@ -420,7 +432,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        '₹${totalPrice.toStringAsFixed(0)}',
+                                        '₹${displayPrice.toStringAsFixed(0)}',
                                         style: const TextStyle(
                                           color: AppColors.primary,
                                           fontSize: 15,

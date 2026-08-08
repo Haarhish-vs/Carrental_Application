@@ -23,7 +23,7 @@ void main() {
     pickupLocation: '123 Indiranagar, Bengaluru, Karnataka, 560038',
     availabilityFrom: '2026-08-10',
     availabilityTo: '2026-08-20',
-    selectedPhotos: ['https://carrental-application-1.onrender.com/uploads/sample.jpg'],
+    selectedPhotos: ['https://carrental-application-z49a.onrender.com/uploads/sample.jpg'],
     selectedDocuments: [],
   );
 
