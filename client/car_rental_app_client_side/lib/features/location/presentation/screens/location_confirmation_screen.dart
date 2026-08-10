@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/models/location_model.dart';
 
@@ -39,15 +40,30 @@ class LocationConfirmationScreen extends StatelessWidget {
                   bottomLeft: Radius.circular(24),
                   bottomRight: Radius.circular(24),
                 ),
-                child: GoogleMap(
-                  initialCameraPosition: CameraPosition(target: position, zoom: 15),
-                  markers: {Marker(markerId: const MarkerId('selected'), position: position)},
-                  zoomControlsEnabled: false,
-                  scrollGesturesEnabled: false,
-                  rotateGesturesEnabled: false,
-                  tiltGesturesEnabled: false,
-                  zoomGesturesEnabled: false,
-                  myLocationButtonEnabled: false,
+                child: FlutterMap(
+                  options: MapOptions(
+                    initialCenter: position,
+                    initialZoom: 15.0,
+                    interactionOptions: const InteractionOptions(
+                      flags: InteractiveFlag.none,
+                    ),
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.example.car_rental_app_client_side',
+                    ),
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: position,
+                          width: 40,
+                          height: 40,
+                          child: const Icon(Icons.location_on, color: AppColors.primary, size: 40),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),

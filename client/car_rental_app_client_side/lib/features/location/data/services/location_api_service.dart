@@ -45,13 +45,59 @@ class LocationApiService {
   }
 
   Future<List<LocationModel>> searchLocations(String query) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.search}')
-        .replace(queryParameters: {'q': query});
-    final response = await _client.get(uri);
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return [];
 
-    final data = _decodeEnvelope(response, 'Failed to search locations');
-    final list = (data as List<dynamic>?) ?? [];
-    return list.map((item) => LocationModel.fromJson(item as Map<String, dynamic>)).toList();
+    // 1. Try backend search
+    try {
+      final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.search}')
+          .replace(queryParameters: {'q': trimmed});
+      final response = await _client.get(uri);
+      final data = _decodeEnvelope(response, 'Failed to search locations');
+      final list = (data as List<dynamic>?) ?? [];
+      final results = list.map((item) => LocationModel.fromJson(item as Map<String, dynamic>)).toList();
+      if (results.isNotEmpty) return results;
+    } catch (_) {
+      // Fall through to OpenStreetMap search
+    }
+
+    // 2. OpenStreetMap Nominatim Search Fallback
+    try {
+      final osmUri = Uri.parse(
+        'https://nominatim.openstreetmap.org/search?q=${Uri.encodeComponent(trimmed)}&format=json&addressdetails=1&limit=5&countrycodes=in',
+      );
+      final osmRes = await _client.get(
+        osmUri,
+        headers: {'User-Agent': 'CarRentalApplication/1.0 (Flutter Client)'},
+      );
+      if (osmRes.statusCode == 200) {
+        final List<dynamic> rawList = jsonDecode(osmRes.body) as List<dynamic>;
+        return rawList.map((item) {
+          final map = item as Map<String, dynamic>;
+          final addressObj = (map['address'] as Map<String, dynamic>?) ?? {};
+          final city = addressObj['city'] ?? addressObj['town'] ?? addressObj['state_district'] ?? addressObj['village'] ?? addressObj['county'] ?? '';
+          final state = addressObj['state'] ?? '';
+          final country = addressObj['country'] ?? 'India';
+          final name = map['name'] != null && (map['name'] as String).isNotEmpty
+              ? map['name'] as String
+              : (map['display_name'] as String? ?? '').split(',').first.trim();
+
+          return LocationModel(
+            id: '',
+            placeId: 'osm_${map['place_id'] ?? ''}',
+            name: name.isNotEmpty ? name : (city.isNotEmpty ? city : trimmed),
+            address: map['display_name'] as String? ?? '',
+            latitude: double.tryParse(map['lat']?.toString() ?? '') ?? 0.0,
+            longitude: double.tryParse(map['lon']?.toString() ?? '') ?? 0.0,
+            city: city,
+            state: state,
+            country: country,
+          );
+        }).toList();
+      }
+    } catch (_) {}
+
+    return [];
   }
 
   Future<List<LocationModel>> fetchRecentLocations() async {
@@ -104,46 +150,97 @@ class LocationApiService {
   }
 
   Future<LocationModel> reverseGeocode(double latitude, double longitude) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.reverseGeocode}');
-    
-    http.Response response;
+    // 1. Try backend reverse-geocode
     try {
-      // 1. Try POST first (standard for deployed backend)
-      response = await _client.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'latitude': latitude,
-          'longitude': longitude,
-          'lat': latitude,
-          'lng': longitude,
-        }),
-      );
+      final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.reverseGeocode}');
+      http.Response response;
+      try {
+        response = await _client.post(
+          uri,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'latitude': latitude,
+            'longitude': longitude,
+            'lat': latitude,
+            'lng': longitude,
+          }),
+        );
+      } catch (_) {
+        final getUri = uri.replace(queryParameters: {'lat': '$latitude', 'lng': '$longitude'});
+        response = await _client.get(getUri);
+      }
+
+      if (response.statusCode == 404 || response.statusCode == 405) {
+        final getUri = uri.replace(queryParameters: {'lat': '$latitude', 'lng': '$longitude'});
+        response = await _client.get(getUri);
+      }
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        if (body['success'] == true && body['data'] != null) {
+          final candidate = LocationModel.fromJson(
+            body['data'] as Map<String, dynamic>,
+            defaultLat: latitude,
+            defaultLng: longitude,
+          );
+          // Only return candidate if it resolved to an actual street/area rather than a fallback placeholder
+          if (candidate.name != 'Selected Location' && !candidate.address.startsWith('Location at ')) {
+            return candidate;
+          }
+        }
+      }
     } catch (_) {
-      // If network POST failure, try GET
-      final getUri = uri.replace(queryParameters: {'lat': '$latitude', 'lng': '$longitude'});
-      response = await _client.get(getUri);
+      // Fallback to direct OpenStreetMap Nominatim
     }
 
-    // 2. If POST returned 404 or 405 Method Not Allowed, fallback to GET
-    if (response.statusCode == 404 || response.statusCode == 405) {
-      final getUri = uri.replace(queryParameters: {'lat': '$latitude', 'lng': '$longitude'});
-      response = await _client.get(getUri);
-    }
-
-    final data = _decodeEnvelope(response, 'Failed to reverse geocode');
-
-    if (data == null) {
-      throw LocationApiException(
-        'No address found for this location',
-        statusCode: response.statusCode,
+    // 2. Direct OpenStreetMap Nominatim reverse geocoding (Real street address, 100% Free)
+    try {
+      final osmUri = Uri.parse(
+        'https://nominatim.openstreetmap.org/reverse?lat=$latitude&lon=$longitude&format=json',
       );
-    }
+      final osmRes = await _client.get(
+        osmUri,
+        headers: {'User-Agent': 'CarRentalApplication/1.0 (Flutter Client)'},
+      );
+      if (osmRes.statusCode == 200) {
+        final osmData = jsonDecode(osmRes.body) as Map<String, dynamic>;
+        final addressObj = (osmData['address'] as Map<String, dynamic>?) ?? {};
+        final suburb = addressObj['suburb'] ?? addressObj['neighbourhood'] ?? addressObj['road'] ?? '';
+        final city = addressObj['city'] ?? addressObj['town'] ?? addressObj['state_district'] ?? addressObj['village'] ?? addressObj['county'] ?? '';
+        final state = addressObj['state'] ?? '';
+        final country = addressObj['country'] ?? 'India';
+        final displayName = osmData['display_name'] as String? ?? '';
+        
+        final name = (osmData['name'] != null && (osmData['name'] as String).isNotEmpty)
+            ? osmData['name'] as String
+            : (suburb.isNotEmpty
+                ? suburb
+                : (displayName.isNotEmpty ? displayName.split(',').first.trim() : (city.isNotEmpty ? city : 'Selected Location')));
 
-    return LocationModel.fromJson(
-      data as Map<String, dynamic>,
-      defaultLat: latitude,
-      defaultLng: longitude,
+        return LocationModel(
+          id: '',
+          placeId: 'osm_${osmData['place_id'] ?? '${latitude}_$longitude'}',
+          name: name,
+          address: displayName.isNotEmpty ? displayName : 'Location at ${latitude.toStringAsFixed(4)}°, ${longitude.toStringAsFixed(4)}°',
+          latitude: latitude,
+          longitude: longitude,
+          city: city,
+          state: state,
+          country: country,
+        );
+      }
+    } catch (_) {}
+
+    return LocationModel(
+      id: '',
+      placeId: 'pin_${latitude}_$longitude',
+      name: 'Selected Location',
+      address: 'Location at ${latitude.toStringAsFixed(4)}°, ${longitude.toStringAsFixed(4)}°',
+      latitude: latitude,
+      longitude: longitude,
+      city: '',
+      state: '',
+      country: 'India',
     );
   }
 
