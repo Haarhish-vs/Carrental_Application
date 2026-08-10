@@ -250,6 +250,18 @@ const uploadDocumentFile = async (req, res, next) => {
   }
 };
 
+const getFilterOptions = async (req, res, next) => {
+  try {
+    const options = await vehicleService.getFilterOptions();
+    return res.status(200).json({
+      success: true,
+      data: options
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getVehicles,
   getVehicleById,
@@ -261,5 +273,6 @@ module.exports = {
   deleteVehicle,
   verifyDocumentAdmin,
   uploadMedia,
-  uploadDocumentFile
+  uploadDocumentFile,
+  getFilterOptions
 };
