@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:car_rental_app_client_side/core/config/api_config.dart';
 import 'package:car_rental_app_client_side/features/auth/services/auth_service.dart';
 
 class CarApiService {
@@ -11,8 +12,8 @@ class CarApiService {
 
   final Dio _dio;
 
-  // Base URL for the Rent-A-Car backend
-  static String baseUrl = 'https://carrental-application-z49a.onrender.com';
+  // Base URL for the Rent-A-Car backend (configured via ApiConfig)
+  static String baseUrl = ApiConfig.baseUrl;
 
   // Static token storage that can be set from elsewhere in the app (e.g., login)
   static String? token;
@@ -494,6 +495,32 @@ class CarApiService {
         requestOptions: RequestOptions(path: '/api/bookings/$bookingId/complete'),
         message: response.data?['message'] ?? 'Failed to complete booking',
       );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// Fetch dynamic filter options from database
+  Future<Map<String, dynamic>> getFilterOptions() async {
+    try {
+      final response = await _dio.get('/api/cars/filter-options');
+      if (response.statusCode == 200 && response.data != null) {
+        return Map<String, dynamic>.from(response.data as Map);
+      }
+      return {};
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// Search available vehicles by location, date/time range, filters, and sort
+  Future<Map<String, dynamic>> searchCars(Map<String, dynamic> payload) async {
+    try {
+      final response = await _dio.post('/api/cars/search', data: payload);
+      if (response.statusCode == 200 && response.data != null) {
+        return Map<String, dynamic>.from(response.data as Map);
+      }
+      throw Exception('Failed to search cars');
     } on DioException catch (e) {
       throw _handleDioError(e);
     }
