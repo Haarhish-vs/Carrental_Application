@@ -5,6 +5,7 @@ import '../../../auth/services/auth_service.dart';
 import '../../../owner/data/services/car_api_service.dart';
 import '../../models/car_model.dart';
 import 'payment_screen.dart';
+import 'booking_tracking_screen.dart';
 
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key, required this.onExplorePressed});
@@ -326,23 +327,42 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                   final endDate = _formatBookingDate(booking['end_date']);
                   final depositAmount = booking['deposit_amount'] ?? 0.0;
 
-                  return Card(
-                    elevation: 0,
-                    color: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AspectRatio(
-                          aspectRatio: 16 / 9,
-                          child: imageUrl.isNotEmpty
-                              ? Image.network(
-                                  imageUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
+                  return InkWell(
+                    onTap: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => BookingTrackingScreen(booking: booking),
+                        ),
+                      );
+                      _refreshBookings();
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Card(
+                      elevation: 0,
+                      color: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AspectRatio(
+                            aspectRatio: 16 / 9,
+                            child: imageUrl.isNotEmpty
+                                ? Image.network(
+                                    imageUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      color: const Color(0xFFEAF2FF),
+                                      child: const Icon(
+                                        Icons.directions_car_rounded,
+                                        size: 48,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  )
+                                : Container(
                                     color: const Color(0xFFEAF2FF),
                                     child: const Icon(
                                       Icons.directions_car_rounded,
@@ -350,195 +370,187 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                       color: AppColors.primary,
                                     ),
                                   ),
-                                )
-                              : Container(
-                                  color: const Color(0xFFEAF2FF),
-                                  child: const Icon(
-                                    Icons.directions_car_rounded,
-                                    size: 48,
-                                    color: AppColors.primary,
-                                  ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        '$brand $model',
+                                        style: const TextStyle(
+                                          color: Color(0xFF103B66),
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    _buildStatusChip(
+                                      booking['status'] ?? 'pending',
+                                      booking['payment_status'] ?? 'unpaid',
+                                    ),
+                                  ],
                                 ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      '$brand $model',
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      city,
                                       style: const TextStyle(
-                                        color: Color(0xFF103B66),
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.textSecondary,
+                                        fontSize: 12,
                                       ),
                                     ),
-                                  ),
-                                  _buildStatusChip(
-                                    booking['status'] ?? 'pending',
-                                    booking['payment_status'] ?? 'unpaid',
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    city,
-                                    style: const TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const Divider(height: 24, color: AppColors.divider),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  _buildSpecChip(Icons.event_seat_outlined, '$seats Seats'),
-                                  _buildSpecChip(Icons.settings_outlined, transmission),
-                                  _buildSpecChip(Icons.local_gas_station_outlined, fuelType),
-                                ],
-                              ),
-                              const Divider(height: 24, color: AppColors.divider),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'BOOKING PERIOD',
-                                        style: TextStyle(
-                                          color: AppColors.textSecondary,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '$startDate - $endDate',
-                                        style: const TextStyle(
-                                          color: AppColors.textPrimary,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      const Text(
-                                        'TOTAL AMOUNT',
-                                        style: TextStyle(
-                                          color: AppColors.textSecondary,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '₹${displayPrice.toStringAsFixed(0)}',
-                                        style: const TextStyle(
-                                          color: AppColors.primary,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Deposit: ₹${depositAmount.toStringAsFixed(0)}',
-                                    style: const TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 11.5,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Payment: ${booking['payment_status'] ?? 'unpaid'}',
-                                    style: TextStyle(
-                                      color: (booking['payment_status'] == 'paid')
-                                          ? AppColors.success
-                                          : Colors.orange,
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              // Pay Now button for confirmed & unpaid bookings
-                              if (booking['status'] == 'confirmed' &&
-                                  booking['payment_status'] == 'unpaid') ...[
-                                const SizedBox(height: 12),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: FilledButton.icon(
-                                    onPressed: () async {
-                                      final carModel = CarModel.fromJson(car);
-                                      await Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (_) => PaymentScreen(
-                                            car: carModel,
-                                            pickupDateTime: rawStart,
-                                            returnDateTime: rawEnd,
-                                            days: computedDays,
-                                            totalAmount: displayPrice,
-                                            bookingId: booking['id']?.toString(),
+                                  ],
+                                ),
+                                const Divider(height: 24, color: AppColors.divider),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    _buildSpecChip(Icons.event_seat_outlined, '$seats Seats'),
+                                    _buildSpecChip(Icons.settings_outlined, transmission),
+                                    _buildSpecChip(Icons.local_gas_station_outlined, fuelType),
+                                  ],
+                                ),
+                                const Divider(height: 24, color: AppColors.divider),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'BOOKING PERIOD',
+                                          style: TextStyle(
+                                            color: AppColors.textSecondary,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                      );
-                                      _refreshBookings();
-                                    },
-                                    icon: const Icon(Icons.payment_rounded, size: 16),
-                                    label: const Text('Pay Now'),
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: AppColors.primary,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '$startDate - $endDate',
+                                          style: const TextStyle(
+                                            color: AppColors.textPrimary,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: [
+                                        const Text(
+                                          'TOTAL AMOUNT',
+                                          style: TextStyle(
+                                            color: AppColors.textSecondary,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '₹${displayPrice.toStringAsFixed(0)}',
+                                          style: const TextStyle(
+                                            color: AppColors.primary,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Deposit: ₹${depositAmount.toStringAsFixed(0)}',
+                                      style: const TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 11.5,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Payment: ${booking['payment_status'] ?? 'unpaid'}',
+                                      style: TextStyle(
+                                        color: (booking['payment_status'] == 'paid')
+                                            ? AppColors.success
+                                            : Colors.orange,
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                // Pay Now button for confirmed & unpaid bookings
+                                if (booking['status'] == 'confirmed' &&
+                                    booking['payment_status'] == 'unpaid') ...[
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: FilledButton.icon(
+                                      onPressed: () async {
+                                        final carModel = CarModel.fromJson(car);
+                                        await Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (_) => PaymentScreen(
+                                              car: carModel,
+                                              pickupDateTime: rawStart,
+                                              returnDateTime: rawEnd,
+                                              days: computedDays,
+                                              totalAmount: displayPrice,
+                                              bookingId: booking['id']?.toString(),
+                                            ),
+                                          ),
+                                        );
+                                        _refreshBookings();
+                                      },
+                                      icon: const Icon(Icons.payment_rounded, size: 16),
+                                      label: const Text('Pay Now'),
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: AppColors.primary,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              ],
-                              // Cancel button for cancellable bookings
-                              if (_isCancellable(booking['status'] ?? '')) ...[
-                                const SizedBox(height: 12),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: OutlinedButton.icon(
-                                    onPressed: () => _cancelBooking(
-                                      booking['id']?.toString() ?? '',
-                                    ),
-                                    icon: const Icon(Icons.cancel_outlined, size: 16),
-                                    label: const Text('Cancel Booking'),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: Colors.red,
-                                      side: const BorderSide(color: Colors.red),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                ],
+                                // Cancel button for cancellable bookings
+                                if (_isCancellable(booking['status'] ?? '')) ...[
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      onPressed: () => _cancelBooking(
+                                        booking['id']?.toString() ?? '',
+                                      ),
+                                      icon: const Icon(Icons.cancel_outlined, size: 16),
+                                      label: const Text('Cancel Booking'),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: Colors.red,
+                                        side: const BorderSide(color: Colors.red),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 },

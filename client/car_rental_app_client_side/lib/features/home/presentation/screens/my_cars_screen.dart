@@ -3,6 +3,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/widgets/auth_required_view.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../../owner/data/services/car_api_service.dart';
+import 'booking_tracking_screen.dart';
 
 class MyCarsScreen extends StatefulWidget {
   const MyCarsScreen({super.key, required this.onListCarPressed});
@@ -518,138 +519,149 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
       statusLabel = 'CANCELLED';
     }
 
-    return Card(
-      elevation: 0,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    vehicleName,
-                    style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.bold, color: Color(0xFF103B66)),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    statusLabel,
-                    style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.textSecondary),
-                const SizedBox(width: 6),
-                Text(
-                  '$startDate - $endDate',
-                  style: const TextStyle(fontSize: 12.5, color: AppColors.textPrimary, fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Total: ₹${price.toStringAsFixed(0)}',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                ),
-                Text(
-                  'Payment: ${paymentStatus.toUpperCase()}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: paymentStatus == 'paid' ? AppColors.success : Colors.orange,
-                  ),
-                ),
-              ],
-            ),
-            const Divider(height: 24, color: AppColors.divider),
-            
-            // Action Buttons
-            if (status == 'pending') ...[
+    return InkWell(
+      onTap: () async {
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => BookingTrackingScreen(booking: request),
+          ),
+        );
+        _refresh();
+      },
+      borderRadius: BorderRadius.circular(18),
+      child: Card(
+        elevation: 0,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => _handleDecline(bookingId),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        side: const BorderSide(color: Colors.red),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      child: const Text('Decline', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: Text(
+                      vehicleName,
+                      style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.bold, color: Color(0xFF103B66)),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () => _handleAccept(bookingId),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.success,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      child: const Text('Accept', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      statusLabel,
+                      style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
               ),
-            ] else if (status == 'confirmed' && paymentStatus == 'paid') ...[
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => _handleStartTrip(bookingId),
-                  icon: const Icon(Icons.play_arrow_rounded, size: 16),
-                  label: const Text('Start Trip'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.textSecondary),
+                  const SizedBox(width: 6),
+                  Text(
+                    '$startDate - $endDate',
+                    style: const TextStyle(fontSize: 12.5, color: AppColors.textPrimary, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Total: ₹${price.toStringAsFixed(0)}',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  ),
+                  Text(
+                    'Payment: ${paymentStatus.toUpperCase()}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: paymentStatus == 'paid' ? AppColors.success : Colors.orange,
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(height: 24, color: AppColors.divider),
+              
+              // Action Buttons
+              if (status == 'pending') ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => _handleDecline(bookingId),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: const Text('Decline', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () => _handleAccept(bookingId),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.success,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: const Text('Accept', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ] else if (status == 'confirmed' && paymentStatus == 'paid') ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () => _handleStartTrip(bookingId),
+                    icon: const Icon(Icons.play_arrow_rounded, size: 16),
+                    label: const Text('Start Trip'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
                   ),
                 ),
-              ),
-            ] else if (status == 'active') ...[
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => _handleCompleteTrip(bookingId),
-                  icon: const Icon(Icons.check, size: 16),
-                  label: const Text('Complete Trip'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.success,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ] else if (status == 'active') ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () => _handleCompleteTrip(bookingId),
+                    icon: const Icon(Icons.check, size: 16),
+                    label: const Text('Complete Trip'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.success,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
                   ),
                 ),
-              ),
-            ] else if (status == 'confirmed' && paymentStatus == 'unpaid') ...[
-              const Center(
-                child: Text(
-                  'Waiting for renter to complete payment.',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontStyle: FontStyle.italic),
+              ] else if (status == 'confirmed' && paymentStatus == 'unpaid') ...[
+                const Center(
+                  child: Text(
+                    'Waiting for renter to complete payment.',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontStyle: FontStyle.italic),
+                  ),
                 ),
-              ),
-            ] else ...[
-              const Center(
-                child: Text(
-                  'No further actions available.',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ] else ...[
+                const Center(
+                  child: Text(
+                    'No further actions available.',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
                 ),
-              ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
