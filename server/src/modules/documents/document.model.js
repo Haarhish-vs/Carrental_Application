@@ -9,6 +9,7 @@ const upsertDocumentRecord = async ({ vehicleId, documentType, storagePath, publ
     document_type: documentType,
     storage_path: storagePath,
     public_url: publicUrl,
+    document_url: publicUrl,
     ocr_text: ocrText,
     extracted_fields: extractedFields,
     status,
