@@ -2,6 +2,16 @@ const { supabase } = require('../config/supabase');
 
 class SupabaseStorageService {
   async uploadFile({ bucket, storagePath, fileBuffer, contentType }) {
+    const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+    if (!bucketError && buckets) {
+      const hasBucket = buckets.some(b => b.name === bucket);
+      if (!hasBucket) {
+        await supabase.storage.createBucket(bucket, {
+          public: true,
+        });
+      }
+    }
+
     const { data, error } = await supabase.storage.from(bucket).upload(storagePath, fileBuffer, {
       contentType,
       upsert: true,
