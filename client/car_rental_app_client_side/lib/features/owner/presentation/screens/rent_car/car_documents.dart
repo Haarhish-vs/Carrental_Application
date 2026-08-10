@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:dio/dio.dart';
 import 'package:car_rental_app_client_side/core/config/api_config.dart';
 import 'package:car_rental_app_client_side/core/theme/app_colors.dart';
 import 'package:car_rental_app_client_side/features/owner/data/models/vehicle_model.dart';
@@ -510,9 +511,16 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      _showValidationError(
-        "Submission failed: ${e.toString().replaceAll('Exception:', '').trim()}",
-      );
+      String errorMsg = e.toString().replaceAll('Exception:', '').trim();
+      if (e is DioException) {
+        final resData = e.response?.data;
+        if (resData is Map && resData.containsKey('message')) {
+          errorMsg = resData['message'].toString();
+        } else if (e.response?.statusMessage != null) {
+          errorMsg = "${e.response?.statusCode}: ${e.response?.statusMessage}";
+        }
+      }
+      _showValidationError("Submission failed: $errorMsg");
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
