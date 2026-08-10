@@ -126,7 +126,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
             endDate: returnStr,
             totalPrice: total,
           );
-        }
       } catch (dbError) {
         // Log but don't show to user — payment already succeeded
         debugPrint(

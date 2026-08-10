@@ -152,32 +152,33 @@ class LocationApiService {
 
     http.Response response;
     try {
-      // 1. Try POST first (standard for deployed backend)
-      response = await _client.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'latitude': latitude,
-          'longitude': longitude,
-          'lat': latitude,
-          'lng': longitude,
-        }),
-      );
-    } catch (_) {
-      // If network POST failure, try GET
-      final getUri = uri.replace(
-        queryParameters: {'lat': '$latitude', 'lng': '$longitude'},
-      );
-      response = await _client.get(getUri);
-    }
+      try {
+        // 1. Try POST first (standard for deployed backend)
+        response = await _client.post(
+          uri,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'latitude': latitude,
+            'longitude': longitude,
+            'lat': latitude,
+            'lng': longitude,
+          }),
+        );
+      } catch (_) {
+        // If network POST failure, try GET
+        final getUri = uri.replace(
+          queryParameters: {'lat': '$latitude', 'lng': '$longitude'},
+        );
+        response = await _client.get(getUri);
+      }
 
-    // 2. If POST returned 404 or 405 Method Not Allowed, fallback to GET
-    if (response.statusCode == 404 || response.statusCode == 405) {
-      final getUri = uri.replace(
-        queryParameters: {'lat': '$latitude', 'lng': '$longitude'},
-      );
-      response = await _client.get(getUri);
-    }
+      // 2. If POST returned 404 or 405 Method Not Allowed, fallback to GET
+      if (response.statusCode == 404 || response.statusCode == 405) {
+        final getUri = uri.replace(
+          queryParameters: {'lat': '$latitude', 'lng': '$longitude'},
+        );
+        response = await _client.get(getUri);
+      }
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
