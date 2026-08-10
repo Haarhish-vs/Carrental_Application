@@ -261,9 +261,9 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
           final startCal = DateTime(rawStart.year, rawStart.month, rawStart.day);
           final endCal = DateTime(rawEnd.year, rawEnd.month, rawEnd.day);
           final diff = endCal.difference(startCal).inDays;
-          final computedDays = diff <= 0 ? 1 : diff;
-          final pricePerDay = (vehicle['price_per_day'] ?? 0).toDouble();
-          final displayPrice = computedDays * pricePerDay;
+          final int computedDays = diff <= 0 ? 1 : diff;
+          final double pricePerDay = (vehicle['price_per_day'] ?? 0).toDouble();
+          final double displayPrice = computedDays * pricePerDay;
 
           final status = booking['status']?.toString().toLowerCase() ?? 'pending';
           final paymentStatus = booking['payment_status']?.toString().toLowerCase() ?? 'unpaid';
