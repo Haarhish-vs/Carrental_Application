@@ -243,7 +243,7 @@ class VehicleService {
    * Retrieve owner's listings.
    */
   async getMyListings(userId) {
-    const { data, error } = await supabase
+    const { data: vehicles, error } = await supabase
       .from('vehicles')
       .select('*')
       .eq('owner_id', userId)
@@ -253,7 +253,25 @@ class VehicleService {
       throw new Error(`Failed to retrieve listings: ${error.message}`);
     }
 
-    return data;
+    if (vehicles && vehicles.length > 0) {
+      for (const vehicle of vehicles) {
+        const { data: bookings, error: bookingError } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('vehicle_id', vehicle.id)
+          .in('status', ['pending', 'confirmed', 'active'])
+          .order('end_date', { ascending: false })
+          .limit(1);
+
+        if (!bookingError && bookings && bookings.length > 0) {
+          vehicle.activeBooking = bookings[0];
+        } else {
+          vehicle.activeBooking = null;
+        }
+      }
+    }
+
+    return vehicles;
   }
 
   /**

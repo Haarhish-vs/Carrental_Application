@@ -344,12 +344,14 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                           ),
                         )
                       : FilledButton.icon(
-                          onPressed: () => _toggleAvailability(
-                            car,
-                            isAvailable,
-                          ),
+                          onPressed: bookedUntil != null
+                              ? null
+                              : () => _toggleAvailability(
+                                  car,
+                                  isAvailable,
+                                ),
                           icon: const Icon(Icons.check_circle_outline, size: 16),
-                          label: const Text('Mark as Available'),
+                          label: Text(bookedUntil != null ? 'Unavailable (Booked)' : 'Mark as Available'),
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.success,
                             shape: RoundedRectangleBorder(
