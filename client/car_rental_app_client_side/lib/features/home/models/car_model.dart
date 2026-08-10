@@ -11,6 +11,7 @@ class CarModel {
   final String city;
   final String status;
   final bool isAvailable;
+  final String ownerId;
 
   const CarModel({
     required this.id,
@@ -25,6 +26,7 @@ class CarModel {
     required this.city,
     required this.status,
     this.isAvailable = true,
+    required this.ownerId,
   });
 
   factory CarModel.fromJson(Map<String, dynamic> json) {
@@ -67,6 +69,7 @@ class CarModel {
     final String status = json['status']?.toString() ?? 'unknown';
     final bool isAvailable = (json['is_available'] != false && json['isAvailable'] != false) &&
         json['status']?.toString().toLowerCase() == 'active';
+    final String ownerId = json['owner_id']?.toString() ?? json['ownerId']?.toString() ?? '';
 
     return CarModel(
       id: id,
@@ -81,6 +84,7 @@ class CarModel {
       city: city,
       status: status,
       isAvailable: isAvailable,
+      ownerId: ownerId,
     );
   }
 }

@@ -412,6 +412,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                 },
                 onBookNow: (car) async {
+                  if (AuthService.isAuthenticated &&
+                      AuthService.currentUser != null &&
+                      AuthService.currentUser!['id'] == car.ownerId) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('You cannot book your own vehicle'),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                    return;
+                  }
                   await Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => CarDetailScreen(car: car),

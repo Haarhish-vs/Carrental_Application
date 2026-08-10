@@ -12,6 +12,7 @@ class PaymentScreen extends StatefulWidget {
     required this.returnDateTime,
     required this.days,
     required this.totalAmount,
+    this.bookingId,
   });
 
   final CarModel car;
@@ -19,6 +20,7 @@ class PaymentScreen extends StatefulWidget {
   final DateTime returnDateTime;
   final int days;
   final double totalAmount;
+  final String? bookingId;
 
   @override
   State<PaymentScreen> createState() => _PaymentScreenState();
@@ -79,25 +81,29 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
       // Save booking to database (best-effort — don't block on DB error)
       try {
-        final pickupStr = widget.pickupDateTime.toIso8601String().split('T')[0];
-        final startCal = DateTime(widget.pickupDateTime.year, widget.pickupDateTime.month, widget.pickupDateTime.day);
-        final endCal = DateTime(widget.returnDateTime.year, widget.returnDateTime.month, widget.returnDateTime.day);
-        
-        // For same-day booking, send next day as endDate to satisfy backend constraint
-        final returnDt = endCal.difference(startCal).inDays == 0
-            ? widget.pickupDateTime.add(const Duration(days: 1))
-            : widget.returnDateTime;
-        final returnStr = returnDt.toIso8601String().split('T')[0];
+        if (widget.bookingId != null) {
+          await _carApiService.confirmBookingPayment(widget.bookingId!);
+        } else {
+          final pickupStr = widget.pickupDateTime.toIso8601String().split('T')[0];
+          final startCal = DateTime(widget.pickupDateTime.year, widget.pickupDateTime.month, widget.pickupDateTime.day);
+          final endCal = DateTime(widget.returnDateTime.year, widget.returnDateTime.month, widget.returnDateTime.day);
+          
+          // For same-day booking, send next day as endDate to satisfy backend constraint
+          final returnDt = endCal.difference(startCal).inDays == 0
+              ? widget.pickupDateTime.add(const Duration(days: 1))
+              : widget.returnDateTime;
+          final returnStr = returnDt.toIso8601String().split('T')[0];
 
-        await _carApiService.createBooking(
-          vehicleId: widget.car.id,
-          startDate: pickupStr,
-          endDate: returnStr,
-          totalPrice: total,
-        );
+          await _carApiService.createBooking(
+            vehicleId: widget.car.id,
+            startDate: pickupStr,
+            endDate: returnStr,
+            totalPrice: total,
+          );
+        }
       } catch (dbError) {
         // Log but don't show to user — payment already succeeded
-        debugPrint('⚠️ DB booking save failed (payment already done): $dbError');
+        debugPrint('⚠️ DB booking save/update failed (payment already done): $dbError');
       }
 
       if (!mounted) return;

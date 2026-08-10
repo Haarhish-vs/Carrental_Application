@@ -408,6 +408,19 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                             );
                             if (loggedIn != true || !context.mounted) return;
                           }
+
+                          if (AuthService.isAuthenticated &&
+                              AuthService.currentUser != null &&
+                              AuthService.currentUser!['id'] == widget.car.ownerId) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('You cannot book your own vehicle'),
+                                backgroundColor: Colors.redAccent,
+                              ),
+                            );
+                            return;
+                          }
+
                           if (!context.mounted) return;
                           Navigator.push(
                             context,

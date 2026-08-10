@@ -24,8 +24,8 @@ class BookingService {
         renter_id: renterId,
         start_date: startDate,
         end_date: endDate,
-        status: 'confirmed',
-        payment_status: 'paid',
+        status: 'pending',
+        payment_status: 'unpaid',
         total_price: totalPrice !== undefined ? totalPrice : pricing.totalPrice,
         deposit_amount: pricing.depositAmount
       })
@@ -186,7 +186,39 @@ class BookingService {
       .from('bookings')
       .update({
         status: 'confirmed',
-        payment_status: 'paid', // Simulate successful payment upon owner confirmation
+        payment_status: 'unpaid', // Keep unpaid until renter pays
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', bookingId)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+    return data;
+  }
+
+  /**
+   * Confirm booking payment (Renter only).
+   */
+  async confirmPayment(bookingId, userId) {
+    const booking = await this.getBookingById(bookingId, userId);
+
+    if (booking.renter_id !== userId) {
+      const error = new Error('Only the renter can make payment for this booking');
+      error.statusCode = 403;
+      throw error;
+    }
+
+    if (booking.status !== 'confirmed') {
+      const error = new Error('Booking must be confirmed by the owner before payment can be made');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const { data, error: updateError } = await supabase
+      .from('bookings')
+      .update({
+        payment_status: 'paid',
         updated_at: new Date().toISOString()
       })
       .eq('id', bookingId)

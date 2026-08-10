@@ -4,6 +4,7 @@ import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../models/car_model.dart';
 import 'payment_screen.dart';
+import '../../../owner/data/services/car_api_service.dart';
 
 class ReserveScreen extends StatefulWidget {
   const ReserveScreen({
@@ -22,6 +23,7 @@ class ReserveScreen extends StatefulWidget {
 }
 
 class _ReserveScreenState extends State<ReserveScreen> {
+  final CarApiService _apiService = CarApiService();
   final PageController _pageController = PageController();
   int _currentImageIndex = 0;
 
@@ -557,18 +559,79 @@ class _ReserveScreenState extends State<ReserveScreen> {
                           _returnTime?.minute ?? 0,
                         );
 
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PaymentScreen(
-                              car: widget.car,
-                              pickupDateTime: pickupDateTime,
-                              returnDateTime: returnDateTime,
-                              days: _rentalDays,
-                              totalAmount: _totalAmount,
-                            ),
+                        // Show loading indicator
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => const Center(
+                            child: CircularProgressIndicator(),
                           ),
                         );
+
+                        try {
+                          final pickupStr = pickupDateTime.toIso8601String().split('T')[0];
+                          final startCal = DateTime(pickupDateTime.year, pickupDateTime.month, pickupDateTime.day);
+                          final endCal = DateTime(returnDateTime.year, returnDateTime.month, returnDateTime.day);
+                          
+                          final returnDt = endCal.difference(startCal).inDays == 0
+                              ? pickupDateTime.add(const Duration(days: 1))
+                              : returnDateTime;
+                          final returnStr = returnDt.toIso8601String().split('T')[0];
+
+                          await _apiService.createBooking(
+                            vehicleId: widget.car.id,
+                            startDate: pickupStr,
+                            endDate: returnStr,
+                            totalPrice: _totalAmount,
+                          );
+
+                          // Pop loading indicator
+                          if (context.mounted) Navigator.pop(context);
+
+                          // Show success dialog
+                          if (context.mounted) {
+                            await showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (ctx) => AlertDialog(
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                title: const Row(
+                                  children: [
+                                    Icon(Icons.check_circle_rounded, color: AppColors.success, size: 28),
+                                    SizedBox(width: 12),
+                                    Text('Request Sent!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                                content: const Text(
+                                  'Your reservation request has been submitted to the vehicle owner. '
+                                  'Once the owner accepts your request, you can proceed to pay and finalize your booking.',
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(ctx); // Close dialog
+                                      Navigator.pop(context); // Pop reserve screen
+                                    },
+                                    child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          // Pop loading indicator
+                          if (context.mounted) Navigator.pop(context);
+
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
                       }
                     : null,
                 style: FilledButton.styleFrom(
@@ -579,7 +642,7 @@ class _ReserveScreenState extends State<ReserveScreen> {
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Pay Now', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text('Request to Book', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     SizedBox(width: 8),
                     Icon(Icons.arrow_forward, size: 16),
                   ],
