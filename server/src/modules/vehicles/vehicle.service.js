@@ -186,6 +186,8 @@ class VehicleService {
       throw error;
     }
 
+    const isAvailableBool = isAvailable === true || isAvailable === 'true';
+
     const { data: vehicle, error: fetchError } = await supabase
       .from('vehicles')
       .select('owner_id')
@@ -204,7 +206,7 @@ class VehicleService {
       throw error;
     }
 
-    if (isAvailable) {
+    if (isAvailableBool) {
       const { data: bookings, error: bookingError } = await supabase
         .from('bookings')
         .select('id')
@@ -224,7 +226,7 @@ class VehicleService {
 
     const { data: updatedVehicle, error: updateError } = await supabase
       .from('vehicles')
-      .update({ is_available: !!isAvailable, updated_at: new Date().toISOString() })
+      .update({ is_available: isAvailableBool, updated_at: new Date().toISOString() })
       .eq('id', vehicleId)
       .select()
       .single();
