@@ -4,6 +4,7 @@ ALTER TABLE public.vehicle_documents ADD COLUMN IF NOT EXISTS storage_path TEXT;
 ALTER TABLE public.vehicle_documents ADD COLUMN IF NOT EXISTS ocr_text TEXT;
 ALTER TABLE public.vehicle_documents ADD COLUMN IF NOT EXISTS extracted_fields JSONB;
 ALTER TABLE public.vehicle_documents ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'uploaded';
+ALTER TABLE public.vehicle_documents ADD COLUMN IF NOT EXISTS public_url TEXT;
 
 -- Create verification_reports table if it doesn't exist
 CREATE TABLE IF NOT EXISTS public.verification_reports (
