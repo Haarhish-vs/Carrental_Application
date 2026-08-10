@@ -3,6 +3,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/widgets/auth_required_view.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../../owner/data/services/car_api_service.dart';
+import 'booking_tracking_screen.dart';
 
 class MyCarsScreen extends StatefulWidget {
   const MyCarsScreen({super.key, required this.onListCarPressed});
@@ -16,6 +17,7 @@ class MyCarsScreen extends StatefulWidget {
 class _MyCarsScreenState extends State<MyCarsScreen> {
   final CarApiService _apiService = CarApiService();
   late Future<List<Map<String, dynamic>>> _carsFuture;
+  late Future<List<Map<String, dynamic>>> _requestsFuture;
 
   @override
   void initState() {
@@ -39,6 +41,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
   void _refresh() {
     setState(() {
       _carsFuture = _apiService.getMyListings();
+      _requestsFuture = _apiService.getMyVehicleBookings();
     });
   }
 
@@ -340,7 +343,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                   child: isAvailable
                       ? OutlinedButton.icon(
                           onPressed: () => _toggleAvailability(
-                            car['id']?.toString() ?? '',
+                            car,
                             isAvailable,
                           ),
                           icon: const Icon(Icons.block_outlined, size: 16),
@@ -401,23 +404,79 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
         onAuthenticated: _refresh,
       );
     }
+  }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Header
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'My Cars',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF103B66),
-                ),
+  Future<void> _handleDecline(String bookingId) async {
+    try {
+      await _apiService.declineBooking(bookingId);
+      _refresh();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Booking request declined.'), backgroundColor: Colors.orange),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _handleStartTrip(String bookingId) async {
+    try {
+      await _apiService.startBooking(bookingId);
+      _refresh();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Trip started successfully!'), backgroundColor: AppColors.primary),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _handleCompleteTrip(String bookingId) async {
+    try {
+      await _apiService.completeBooking(bookingId);
+      _refresh();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Trip completed successfully!'), backgroundColor: AppColors.success),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Widget _buildRequestsTab() {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _requestsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 12),
+                  const Text('Something went wrong', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 8),
+                  Text(snapshot.error.toString(), textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                  const SizedBox(height: 16),
+                  OutlinedButton(onPressed: _refresh, child: const Text('Retry')),
+                ],
               ),
               IconButton(
                 icon: const Icon(
@@ -427,7 +486,60 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                 onPressed: _refresh,
                 tooltip: 'Refresh',
               ),
-            ],
+            ),
+          );
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          itemCount: requests.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 16),
+          itemBuilder: (context, index) => _buildRequestCard(requests[index]),
+        );
+      },
+    );
+  }
+
+  Widget _buildRequestCard(Map<String, dynamic> request) {
+    final bookingId = request['id']?.toString() ?? '';
+    final vehicle = request['vehicle'] as Map<String, dynamic>? ?? {};
+    final brand = vehicle['brand']?.toString() ?? 'Vehicle';
+    final model = vehicle['model']?.toString() ?? '';
+    final vehicleName = '$brand $model';
+    final price = (request['total_price'] ?? 0).toDouble();
+
+    final startDate = _formatDate(request['start_date']);
+    final endDate = _formatDate(request['end_date']);
+
+    final status = request['status']?.toString().toLowerCase() ?? 'pending';
+    final paymentStatus = request['payment_status']?.toString().toLowerCase() ?? 'unpaid';
+
+    Color statusColor = Colors.orange;
+    String statusLabel = 'PENDING ACCEPTANCE';
+    if (status == 'confirmed') {
+      if (paymentStatus == 'unpaid') {
+        statusColor = AppColors.primary;
+        statusLabel = 'AWAITING PAYMENT';
+      } else {
+        statusColor = AppColors.success;
+        statusLabel = 'PAID & CONFIRMED';
+      }
+    } else if (status == 'active') {
+      statusColor = AppColors.primary;
+      statusLabel = 'ACTIVE TRIP';
+    } else if (status == 'completed') {
+      statusColor = AppColors.textSecondary;
+      statusLabel = 'COMPLETED';
+    } else if (status == 'cancelled') {
+      statusColor = Colors.red;
+      statusLabel = 'CANCELLED';
+    }
+
+    return InkWell(
+      onTap: () async {
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => BookingTrackingScreen(booking: request),
           ),
         ),
         // List
@@ -525,7 +637,34 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                             ),
                           ),
                         ),
-                      ],
+                        child: const Text('Accept', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ] else if (status == 'confirmed' && paymentStatus == 'paid') ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () => _handleStartTrip(bookingId),
+                    icon: const Icon(Icons.play_arrow_rounded, size: 16),
+                    label: const Text('Start Trip'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+              ] else if (status == 'active') ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () => _handleCompleteTrip(bookingId),
+                    icon: const Icon(Icons.check, size: 16),
+                    label: const Text('Complete Trip'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.success,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
                 );
@@ -543,7 +682,144 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
             },
           ),
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildVehiclesTab() {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _carsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 12),
+                  const Text('Something went wrong', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 8),
+                  Text(snapshot.error.toString(), textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                  const SizedBox(height: 16),
+                  OutlinedButton(onPressed: _refresh, child: const Text('Retry')),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final cars = snapshot.data ?? [];
+        if (cars.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.garage_outlined, size: 64, color: Color(0xFF8EA6BE)),
+                  const SizedBox(height: 16),
+                  const Text('No Cars Listed Yet', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                  const SizedBox(height: 8),
+                  const Text('List your first car and start earning today!', textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    onPressed: widget.onListCarPressed,
+                    icon: const Icon(Icons.add_rounded),
+                    label: const Text('List a Car'),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          itemCount: cars.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 16),
+          itemBuilder: (context, index) => _buildCarCard(cars[index]),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!AuthService.isAuthenticated) {
+      return AuthRequiredView(
+        title: 'My Cars',
+        message: 'Log in or create an account to view your listed vehicles, track availability, and manage earnings.',
+        buttonText: 'Log In / Register',
+        onAuthenticated: _refresh,
+      );
+    }
+
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'My Cars',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF103B66),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
+                  onPressed: _refresh,
+                  tooltip: 'Refresh',
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          // TabBar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: TabBar(
+              labelColor: AppColors.primary,
+              unselectedLabelColor: AppColors.textSecondary,
+              indicatorColor: AppColors.primary,
+              indicatorWeight: 3,
+              labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.5),
+              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 14.5),
+              tabs: const [
+                Tab(text: 'My Vehicles'),
+                Tab(text: 'Rental Requests'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          // TabBarView
+          Expanded(
+            child: TabBarView(
+              children: [
+                _buildVehiclesTab(),
+                _buildRequestsTab(),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

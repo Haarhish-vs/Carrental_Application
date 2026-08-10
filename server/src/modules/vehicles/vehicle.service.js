@@ -1,5 +1,6 @@
 // vehicle.service.js
 const { supabase } = require('../../config/supabase');
+const bookingService = require('../bookings/booking.service');
 
 class VehicleService {
   /**
@@ -186,6 +187,8 @@ class VehicleService {
       throw error;
     }
 
+    const isAvailableBool = isAvailable === true || isAvailable === 'true';
+
     const { data: vehicle, error: fetchError } = await supabase
       .from('vehicles')
       .select('owner_id')
@@ -204,9 +207,27 @@ class VehicleService {
       throw error;
     }
 
+    if (isAvailableBool) {
+      const { data: bookings, error: bookingError } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('vehicle_id', vehicleId)
+        .in('status', ['pending', 'confirmed', 'active']);
+
+      if (bookingError) {
+        throw new Error(`Failed to check active bookings: ${bookingError.message}`);
+      }
+
+      if (bookings && bookings.length > 0) {
+        const error = new Error('Cannot mark vehicle as available while there is a pending, confirmed, or active booking.');
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
     const { data: updatedVehicle, error: updateError } = await supabase
       .from('vehicles')
-      .update({ is_available: !!isAvailable, updated_at: new Date().toISOString() })
+      .update({ is_available: isAvailableBool, updated_at: new Date().toISOString() })
       .eq('id', vehicleId)
       .select()
       .single();
@@ -222,7 +243,7 @@ class VehicleService {
    * Retrieve owner's listings.
    */
   async getMyListings(userId) {
-    const { data, error } = await supabase
+    const { data: vehicles, error } = await supabase
       .from('vehicles')
       .select('*')
       .eq('owner_id', userId)
@@ -232,7 +253,25 @@ class VehicleService {
       throw new Error(`Failed to retrieve listings: ${error.message}`);
     }
 
-    return data;
+    if (vehicles && vehicles.length > 0) {
+      for (const vehicle of vehicles) {
+        const { data: bookings, error: bookingError } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('vehicle_id', vehicle.id)
+          .in('status', ['pending', 'confirmed', 'active'])
+          .order('end_date', { ascending: false })
+          .limit(1);
+
+        if (!bookingError && bookings && bookings.length > 0) {
+          vehicle.activeBooking = bookings[0];
+        } else {
+          vehicle.activeBooking = null;
+        }
+      }
+    }
+
+    return vehicles;
   }
 
   /**
@@ -273,6 +312,7 @@ class VehicleService {
    * Public browsing for active/available vehicles.
    */
   async getVehicles(filters = {}) {
+    await bookingService._autoTransitionBookings();
     // 1. Get dates to check for availability exclusion
     const startStr = filters.startDate || filters.start_date;
     const endStr = filters.endDate || filters.end_date;

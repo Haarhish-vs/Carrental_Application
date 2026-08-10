@@ -12,6 +12,7 @@ class PaymentScreen extends StatefulWidget {
     required this.returnDateTime,
     required this.days,
     required this.totalAmount,
+    this.bookingId,
   });
 
   final CarModel car;
@@ -19,6 +20,7 @@ class PaymentScreen extends StatefulWidget {
   final DateTime returnDateTime;
   final int days;
   final double totalAmount;
+  final String? bookingId;
 
   @override
   State<PaymentScreen> createState() => _PaymentScreenState();
@@ -118,12 +120,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
             : widget.returnDateTime;
         final returnStr = returnDt.toIso8601String().split('T')[0];
 
-        await _carApiService.createBooking(
-          vehicleId: widget.car.id,
-          startDate: pickupStr,
-          endDate: returnStr,
-          totalPrice: total,
-        );
+          await _carApiService.createBooking(
+            vehicleId: widget.car.id,
+            startDate: pickupStr,
+            endDate: returnStr,
+            totalPrice: total,
+          );
+        }
       } catch (dbError) {
         // Log but don't show to user — payment already succeeded
         debugPrint(

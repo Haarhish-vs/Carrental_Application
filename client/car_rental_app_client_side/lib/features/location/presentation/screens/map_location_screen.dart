@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/models/location_model.dart';
@@ -16,25 +18,14 @@ class MapLocationScreen extends StatefulWidget {
 class _MapLocationScreenState extends State<MapLocationScreen> {
   static const LatLng _defaultCenter = LatLng(11.0168, 76.9558); // Coimbatore
 
-  GoogleMapController? _mapController;
+  final MapController _mapController = MapController();
   LatLng _centerPoint = _defaultCenter;
-  bool _isCameraMoving = false;
+  bool _isLocating = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _resolveCenter());
-  }
-
-  void _onCameraMove(CameraPosition position) {
-    _isCameraMoving = true;
-    _centerPoint = position.target;
-  }
-
-  void _onCameraIdle() {
-    if (!_isCameraMoving) return;
-    _isCameraMoving = false;
-    _resolveCenter();
   }
 
   Future<void> _resolveCenter() async {
@@ -43,6 +34,24 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
       _centerPoint.latitude,
       _centerPoint.longitude,
     );
+  }
+
+  Future<void> _moveToCurrentLocation() async {
+    setState(() => _isLocating = true);
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+        final pos = await Geolocator.getCurrentPosition();
+        final newCenter = LatLng(pos.latitude, pos.longitude);
+        _centerPoint = newCenter;
+        _mapController.move(newCenter, 15.0);
+        await _resolveCenter();
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _isLocating = false);
   }
 
   Future<void> _handleConfirm(LocationModel resolved) async {
@@ -62,6 +71,7 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
 
   @override
   void dispose() {
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -111,6 +121,19 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
                       color: AppColors.primary,
                     ),
                   ),
+                ),
+              ),
+              Positioned(
+                right: 16,
+                bottom: 230,
+                child: FloatingActionButton.small(
+                  heroTag: 'my_location_fab',
+                  backgroundColor: Colors.white,
+                  foregroundColor: AppColors.primary,
+                  onPressed: _isLocating ? null : _moveToCurrentLocation,
+                  child: _isLocating
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
+                      : const Icon(Icons.my_location_rounded, size: 20),
                 ),
               ),
               Positioned(

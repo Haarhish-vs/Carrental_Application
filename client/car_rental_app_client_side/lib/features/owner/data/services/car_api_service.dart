@@ -199,6 +199,22 @@ class CarApiService {
     }
   }
 
+  /// Fetch a single booking by its ID.
+  Future<Map<String, dynamic>> getBookingById(String bookingId) async {
+    try {
+      final response = await _dio.get('/api/bookings/$bookingId');
+      if (response.statusCode == 200 && response.data != null) {
+        final success = response.data['success'] as bool? ?? false;
+        if (success && response.data['data'] != null) {
+          return Map<String, dynamic>.from(response.data['data'] as Map);
+        }
+      }
+      throw Exception('Failed to fetch booking details');
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
   /// Fetch the logged-in user's listed vehicles.
   Future<List<Map<String, dynamic>>> getMyListings() async {
     try {
@@ -393,6 +409,97 @@ class CarApiService {
           path: '/api/vehicles/$vehicleId/availability',
         ),
         message: response.data?['message'] ?? 'Failed to update availability',
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// Fetch incoming bookings for the owner's listed vehicles.
+  Future<List<Map<String, dynamic>>> getMyVehicleBookings() async {
+    try {
+      final response = await _dio.get('/api/bookings/my-vehicle-bookings');
+      if (response.statusCode == 200 && response.data != null) {
+        final success = response.data['success'] as bool? ?? false;
+        if (success && response.data['data'] != null) {
+          final list = response.data['data'] as List<dynamic>;
+          return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        }
+      }
+      return [];
+    } on DioException catch (e) {
+      debugPrint('Error fetching vehicle bookings: ${e.message}');
+      return [];
+    }
+  }
+
+  /// Confirm a booking request (Owner accepts).
+  Future<void> confirmBooking(String bookingId) async {
+    try {
+      final response = await _dio.patch('/api/bookings/$bookingId/confirm');
+      if (response.statusCode == 200) return;
+      throw DioException(
+        requestOptions: RequestOptions(path: '/api/bookings/$bookingId/confirm'),
+        message: response.data?['message'] ?? 'Failed to confirm booking',
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// Decline / cancel a booking request.
+  Future<void> declineBooking(String bookingId, {String? reason}) async {
+    try {
+      final response = await _dio.patch(
+        '/api/bookings/$bookingId/cancel',
+        data: {'reason': reason ?? 'Declined by owner'},
+      );
+      if (response.statusCode == 200) return;
+      throw DioException(
+        requestOptions: RequestOptions(path: '/api/bookings/$bookingId/cancel'),
+        message: response.data?['message'] ?? 'Failed to decline booking',
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// Confirm a booking payment (Renter pays).
+  Future<void> confirmBookingPayment(String bookingId) async {
+    try {
+      final response = await _dio.patch('/api/bookings/$bookingId/pay');
+      if (response.statusCode == 200) return;
+      throw DioException(
+        requestOptions: RequestOptions(path: '/api/bookings/$bookingId/pay'),
+        message: response.data?['message'] ?? 'Failed to confirm booking payment',
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// Start a booking trip.
+  Future<void> startBooking(String bookingId) async {
+    try {
+      final response = await _dio.patch('/api/bookings/$bookingId/start');
+      if (response.statusCode == 200) return;
+      throw DioException(
+        requestOptions: RequestOptions(path: '/api/bookings/$bookingId/start'),
+        message: response.data?['message'] ?? 'Failed to start booking',
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// Complete a booking trip.
+  Future<void> completeBooking(String bookingId) async {
+    try {
+      final response = await _dio.patch('/api/bookings/$bookingId/complete');
+      if (response.statusCode == 200) return;
+      throw DioException(
+        requestOptions: RequestOptions(path: '/api/bookings/$bookingId/complete'),
+        message: response.data?['message'] ?? 'Failed to complete booking',
       );
     } on DioException catch (e) {
       throw _handleDioError(e);
