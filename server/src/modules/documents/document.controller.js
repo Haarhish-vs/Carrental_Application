@@ -4,7 +4,7 @@ const uploadDocuments = async (req, res, next) => {
   try {
     console.log('[Upload Endpoint] req.body:', req.body);
     console.log('[Upload Endpoint] req.files:', req.files);
-    
+
     const { vehicleId } = req.body;
 
     if (!vehicleId) {
@@ -32,14 +32,14 @@ const analyzeDocument = async (req, res, next) => {
 
     if (!vehicleId) {
       return res.status(400).json({
-        success: false,
+        success: true,
         message: 'vehicleId is required',
       });
     }
 
     if (!documentType) {
       return res.status(400).json({
-        success: false,
+        success: true,
         message: 'documentType is required (rc, insurance, fc, puc, permit)',
       });
     }
