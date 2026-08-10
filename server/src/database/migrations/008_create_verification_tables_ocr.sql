@@ -6,6 +6,13 @@ ALTER TABLE public.vehicle_documents ADD COLUMN IF NOT EXISTS extracted_fields J
 ALTER TABLE public.vehicle_documents ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'uploaded';
 ALTER TABLE public.vehicle_documents ADD COLUMN IF NOT EXISTS public_url TEXT;
 
+-- Drop the existing check constraint on document_type
+ALTER TABLE public.vehicle_documents DROP CONSTRAINT IF EXISTS vehicle_documents_document_type_check;
+
+-- Recreate check constraint to support all OCR document types
+ALTER TABLE public.vehicle_documents ADD CONSTRAINT vehicle_documents_document_type_check 
+CHECK (document_type IN ('rc', 'insurance', 'fc', 'puc', 'permit', 'rc_book', 'driving_license', 'pollution_certificate'));
+
 -- Create verification_reports table if it doesn't exist
 CREATE TABLE IF NOT EXISTS public.verification_reports (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
