@@ -99,15 +99,9 @@ class LocationProvider extends ChangeNotifier {
 
     try {
       final fetched = await _repository.getRecentLocations();
-      // Merge fetched with any in-memory locations so newly picked locations aren't lost
-      final Map<String, LocationModel> merged = {};
-      for (final loc in recentLocations) {
-        merged[loc.placeId.isNotEmpty ? loc.placeId : '${loc.latitude},${loc.longitude}'] = loc;
+      if (fetched.isNotEmpty) {
+        recentLocations = fetched;
       }
-      for (final loc in fetched) {
-        merged[loc.placeId.isNotEmpty ? loc.placeId : '${loc.latitude},${loc.longitude}'] = loc;
-      }
-      recentLocations = merged.values.toList();
       recentStatus = LocationLoadStatus.success;
     } on LocationApiException catch (e) {
       recentError = e.message;

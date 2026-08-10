@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../../core/config/api_config.dart';
+import '../../../auth/services/auth_service.dart';
 import '../models/location_model.dart';
 
 class LocationApiEndpoints {
@@ -23,6 +24,18 @@ class LocationApiService {
   final http.Client _client;
 
   LocationApiService({http.Client? client}) : _client = client ?? http.Client();
+
+  Map<String, String> _getAuthHeaders({bool jsonContent = false}) {
+    final headers = <String, String>{};
+    if (jsonContent) {
+      headers['Content-Type'] = 'application/json';
+    }
+    final token = AuthService.currentToken;
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
+  }
 
   /// Decodes a backend response, unwraps the `{success, data}` envelope,
   /// and throws a [LocationApiException] with the backend's own message
@@ -101,8 +114,14 @@ class LocationApiService {
   }
 
   Future<List<LocationModel>> fetchRecentLocations() async {
+    // If user is not logged in (Guest), do not query the shared backend database
+    final token = AuthService.currentToken;
+    if (token == null || token.isEmpty) {
+      return [];
+    }
+
     final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.recent}');
-    final response = await _client.get(uri);
+    final response = await _client.get(uri, headers: _getAuthHeaders());
 
     final data = _decodeEnvelope(response, 'Failed to fetch recent locations');
     final list = (data as List<dynamic>?) ?? [];
@@ -112,10 +131,16 @@ class LocationApiService {
   /// Saves a location the user selected (from search, current location,
   /// or map) into the backend's recent-locations list.
   Future<void> saveRecentLocation(LocationModel location) async {
+    // If user is not logged in (Guest), do not save to shared backend database
+    final token = AuthService.currentToken;
+    if (token == null || token.isEmpty) {
+      return;
+    }
+
     final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.recent}');
     final response = await _client.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: _getAuthHeaders(jsonContent: true),
       body: jsonEncode(location.toJson()),
     );
 
@@ -123,8 +148,13 @@ class LocationApiService {
   }
 
   Future<void> deleteRecentLocation(String id) async {
+    final token = AuthService.currentToken;
+    if (token == null || token.isEmpty) {
+      return;
+    }
+
     final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.recent}/$id');
-    final response = await _client.delete(uri);
+    final response = await _client.delete(uri, headers: _getAuthHeaders());
 
     if (response.statusCode != 200 && response.statusCode != 204) {
       // DELETE responses may have no body at all on 204, so don't try to
