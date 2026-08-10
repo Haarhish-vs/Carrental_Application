@@ -7,6 +7,11 @@ const { protect } = require('../../shared/middlewares/auth.middleware');
 // Public endpoints (no token check, but controller checks optionally for detail view)
 router.get('/', vehicleController.getVehicles);
 
+// Dynamic search & filter endpoints
+router.get('/filter-options', vehicleController.getFilterOptions);
+router.post('/search', vehicleController.searchVehicles);
+router.get('/search', vehicleController.searchVehicles);
+
 const upload = require('../../shared/middlewares/upload.middleware');
 
 // Static / collection endpoints - MUST be defined before /:id parameter routes to prevent routing collisions
