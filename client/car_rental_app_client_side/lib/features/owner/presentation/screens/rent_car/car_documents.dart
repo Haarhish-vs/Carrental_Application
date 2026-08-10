@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:car_rental_app_client_side/core/config/api_config.dart';
@@ -179,14 +180,24 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
             ? 'application/pdf'
             : 'image/${ext == 'png' ? 'png' : 'jpeg'}';
 
-        if (pickedFile.path != null) {
-          xfile = XFile(pickedFile.path!, mimeType: mimeType);
-        } else if (pickedFile.bytes != null) {
-          xfile = XFile.fromData(
-            pickedFile.bytes!,
-            name: pickedFile.name,
-            mimeType: mimeType,
-          );
+        if (kIsWeb) {
+          if (pickedFile.bytes != null) {
+            xfile = XFile.fromData(
+              pickedFile.bytes!,
+              name: pickedFile.name,
+              mimeType: mimeType,
+            );
+          }
+        } else {
+          if (pickedFile.path != null) {
+            xfile = XFile(pickedFile.path!, mimeType: mimeType);
+          } else if (pickedFile.bytes != null) {
+            xfile = XFile.fromData(
+              pickedFile.bytes!,
+              name: pickedFile.name,
+              mimeType: mimeType,
+            );
+          }
         }
 
         if (xfile == null) {
@@ -281,16 +292,28 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                       final pickedFile = result.files.first;
                       XFile? xfile;
 
-                      if (pickedFile.path != null) {
-                        xfile = XFile(pickedFile.path!);
-                      } else if (pickedFile.bytes != null) {
-                        xfile = XFile.fromData(
-                          pickedFile.bytes!,
-                          name: pickedFile.name,
-                          mimeType: pickedFile.extension == 'pdf'
-                              ? 'application/pdf'
-                              : 'image/${pickedFile.extension ?? 'jpeg'}',
-                        );
+                      if (kIsWeb) {
+                        if (pickedFile.bytes != null) {
+                          xfile = XFile.fromData(
+                            pickedFile.bytes!,
+                            name: pickedFile.name,
+                            mimeType: pickedFile.extension == 'pdf'
+                                ? 'application/pdf'
+                                : 'image/${pickedFile.extension ?? 'jpeg'}',
+                          );
+                        }
+                      } else {
+                        if (pickedFile.path != null) {
+                          xfile = XFile(pickedFile.path!);
+                        } else if (pickedFile.bytes != null) {
+                          xfile = XFile.fromData(
+                            pickedFile.bytes!,
+                            name: pickedFile.name,
+                            mimeType: pickedFile.extension == 'pdf'
+                                ? 'application/pdf'
+                                : 'image/${pickedFile.extension ?? 'jpeg'}',
+                          );
+                        }
                       }
 
                       if (context.mounted) {
