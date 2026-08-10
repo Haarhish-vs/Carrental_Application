@@ -12,7 +12,9 @@ Future<String> openRazorpayCheckout({
 
   final amountInPaise = (amountInRupees * 100).round();
 
-  razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, (PaymentSuccessResponse response) {
+  razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, (
+    PaymentSuccessResponse response,
+  ) {
     completer.complete(response.paymentId ?? 'success_no_id');
     razorpay.clear();
   });
@@ -22,8 +24,12 @@ Future<String> openRazorpayCheckout({
     razorpay.clear();
   });
 
-  razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, (ExternalWalletResponse response) {
-    completer.completeError(Exception('External wallet selected: ${response.walletName}'));
+  razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, (
+    ExternalWalletResponse response,
+  ) {
+    completer.completeError(
+      Exception('External wallet selected: ${response.walletName}'),
+    );
     razorpay.clear();
   });
 

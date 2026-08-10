@@ -29,14 +29,22 @@ class RecentLocationsList extends StatelessWidget {
           children: [
             const Text(
               'Recent Locations',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
             ),
             if (onSeeAllTap != null)
               InkWell(
                 onTap: onSeeAllTap,
                 child: const Text(
                   'See all',
-                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.primary),
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
                 ),
               ),
           ],

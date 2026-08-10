@@ -28,7 +28,8 @@ class LocationProvider extends ChangeNotifier {
   final LocationRepository _repository;
   Timer? _debounce;
 
-  LocationProvider({required LocationRepository repository}) : _repository = repository;
+  LocationProvider({required LocationRepository repository})
+    : _repository = repository;
 
   // ---------------------------------------------------------------------
   // Search
@@ -52,7 +53,10 @@ class LocationProvider extends ChangeNotifier {
       return;
     }
 
-    _debounce = Timer(const Duration(milliseconds: 500), () => _performSearch(trimmed));
+    _debounce = Timer(
+      const Duration(milliseconds: 500),
+      () => _performSearch(trimmed),
+    );
   }
 
   Future<void> _performSearch(String query) async {
@@ -99,9 +103,21 @@ class LocationProvider extends ChangeNotifier {
 
     try {
       final fetched = await _repository.getRecentLocations();
-      if (fetched.isNotEmpty) {
-        recentLocations = fetched;
+      // Merge fetched with any in-memory locations so newly picked locations aren't lost
+      final Map<String, LocationModel> merged = {};
+      for (final loc in recentLocations) {
+        merged[loc.placeId.isNotEmpty
+                ? loc.placeId
+                : '${loc.latitude},${loc.longitude}'] =
+            loc;
       }
+      for (final loc in fetched) {
+        merged[loc.placeId.isNotEmpty
+                ? loc.placeId
+                : '${loc.latitude},${loc.longitude}'] =
+            loc;
+      }
+      recentLocations = merged.values.toList();
       recentStatus = LocationLoadStatus.success;
     } on LocationApiException catch (e) {
       recentError = e.message;
@@ -119,11 +135,15 @@ class LocationProvider extends ChangeNotifier {
   /// a dropped map pin) — callers do not need to worry about dedup.
   Future<void> saveRecentLocation(LocationModel location) async {
     // 1. Immediately update UI state so it shows up in Recent Locations instantly
-    final key = location.placeId.isNotEmpty ? location.placeId : '${location.latitude},${location.longitude}';
+    final key = location.placeId.isNotEmpty
+        ? location.placeId
+        : '${location.latitude},${location.longitude}';
     recentLocations = [
       location,
       ...recentLocations.where((existing) {
-        final existingKey = existing.placeId.isNotEmpty ? existing.placeId : '${existing.latitude},${existing.longitude}';
+        final existingKey = existing.placeId.isNotEmpty
+            ? existing.placeId
+            : '${existing.latitude},${existing.longitude}';
         return existingKey != key;
       }),
     ];
@@ -141,7 +161,9 @@ class LocationProvider extends ChangeNotifier {
 
   Future<void> deleteRecentLocation(String id) async {
     final previous = recentLocations;
-    recentLocations = recentLocations.where((location) => location.id != id).toList();
+    recentLocations = recentLocations
+        .where((location) => location.id != id)
+        .toList();
     notifyListeners();
 
     try {
@@ -191,7 +213,8 @@ class LocationProvider extends ChangeNotifier {
   LocationModel? currentLocation;
   LocationLoadStatus currentLocationStatus = LocationLoadStatus.idle;
   String? currentLocationError;
-  CurrentLocationErrorType currentLocationErrorType = CurrentLocationErrorType.none;
+  CurrentLocationErrorType currentLocationErrorType =
+      CurrentLocationErrorType.none;
 
   /// Runs the full flow: service check -> permission check/request ->
   /// GPS fix -> backend reverse geocode -> [currentLocation] populated.
@@ -227,7 +250,8 @@ class LocationProvider extends ChangeNotifier {
       }
 
       if (permission == LocationPermission.deniedForever) {
-        currentLocationErrorType = CurrentLocationErrorType.permissionDeniedForever;
+        currentLocationErrorType =
+            CurrentLocationErrorType.permissionDeniedForever;
         currentLocationError = 'Location permission is permanently denied.';
         currentLocationStatus = LocationLoadStatus.error;
         notifyListeners();
@@ -239,11 +263,15 @@ class LocationProvider extends ChangeNotifier {
       );
 
       try {
-        final resolved = await _repository.reverseGeocode(position.latitude, position.longitude);
+        final resolved = await _repository.reverseGeocode(
+          position.latitude,
+          position.longitude,
+        );
         currentLocation = resolved;
         currentLocationStatus = LocationLoadStatus.success;
       } on LocationApiException catch (e) {
-        currentLocationErrorType = CurrentLocationErrorType.reverseGeocodeFailed;
+        currentLocationErrorType =
+            CurrentLocationErrorType.reverseGeocodeFailed;
         currentLocationError = e.message;
         currentLocationStatus = LocationLoadStatus.error;
       }
@@ -277,7 +305,10 @@ class LocationProvider extends ChangeNotifier {
   /// idle). Resolves and stores the address so the map screen's bottom
   /// sheet can always show the current center's address before the
   /// user taps Confirm.
-  Future<LocationModel?> reverseGeocode(double latitude, double longitude) async {
+  Future<LocationModel?> reverseGeocode(
+    double latitude,
+    double longitude,
+  ) async {
     mapReverseGeocodeStatus = LocationLoadStatus.loading;
     mapReverseGeocodeError = null;
     notifyListeners();

@@ -12,21 +12,9 @@ class StatsSection extends StatelessWidget {
         value: '5000+',
         label: 'Cars',
       ),
-      (
-        icon: Icons.person_rounded,
-        value: '1200+',
-        label: 'Hosts',
-      ),
-      (
-        icon: Icons.location_city_rounded,
-        value: '100+',
-        label: 'Cities',
-      ),
-      (
-        icon: Icons.support_agent_rounded,
-        value: '24×7',
-        label: 'Support',
-      ),
+      (icon: Icons.person_rounded, value: '1200+', label: 'Hosts'),
+      (icon: Icons.location_city_rounded, value: '100+', label: 'Cities'),
+      (icon: Icons.support_agent_rounded, value: '24×7', label: 'Support'),
     ];
 
     return Padding(
@@ -71,11 +59,7 @@ class StatsSection extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      stat.icon,
-                      color: AppColors.primary,
-                      size: 30,
-                    ),
+                    Icon(stat.icon, color: AppColors.primary, size: 30),
                     const SizedBox(height: 10),
                     Text(
                       stat.value,

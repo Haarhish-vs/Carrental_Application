@@ -170,7 +170,10 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         const SizedBox(width: 4),
         Text(
           label,
-          style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+          style: const TextStyle(
+            fontSize: 11.5,
+            color: AppColors.textSecondary,
+          ),
         ),
       ],
     );
@@ -181,7 +184,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     if (!AuthService.isAuthenticated) {
       return AuthRequiredView(
         title: 'My Bookings',
-        message: 'Log in or create an account to view your booked cars, status, and receipts.',
+        message:
+            'Log in or create an account to view your booked cars, status, and receipts.',
         buttonText: 'Log In / Register',
         onAuthenticated: _refreshBookings,
       );
@@ -204,7 +208,10 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
+                icon: const Icon(
+                  Icons.refresh_rounded,
+                  color: AppColors.primary,
+                ),
                 onPressed: _refreshBookings,
                 tooltip: 'Refresh',
               ),
@@ -216,9 +223,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
             future: _bookingsFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: CircularProgressIndicator(),
-                );
+                return const Center(child: CircularProgressIndicator());
               }
 
               if (snapshot.hasError) {
@@ -228,17 +233,27 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                        const Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: Colors.red,
+                        ),
                         const SizedBox(height: 12),
                         const Text(
                           'Something went wrong',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           snapshot.error.toString(),
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
@@ -281,7 +296,10 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                         FilledButton(
                           onPressed: widget.onExplorePressed,
                           style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -295,14 +313,19 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
               }
 
               return ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
                 itemCount: bookings.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 16),
                 itemBuilder: (context, index) {
                   final booking = bookings[index];
                   final car = booking['vehicle'] as Map<String, dynamic>? ?? {};
                   final images = (car['images'] as List<dynamic>?) ?? [];
-                  final imageUrl = images.isNotEmpty ? images.first.toString() : '';
+                  final imageUrl = images.isNotEmpty
+                      ? images.first.toString()
+                      : '';
                   final brand = car['brand'] ?? 'Vehicle';
                   final model = car['model'] ?? '';
                   final seats = car['seats'] ?? 5;
@@ -310,15 +333,29 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                   final fuelType = car['fuel_type'] ?? 'Petrol';
                   final city = car['city'] ?? 'Default City';
 
-                  final rawStart = DateTime.tryParse(booking['start_date'] ?? '') ?? DateTime.now();
-                  final rawEnd = DateTime.tryParse(booking['end_date'] ?? '') ?? DateTime.now();
-                  
+                  final rawStart =
+                      DateTime.tryParse(booking['start_date'] ?? '') ??
+                      DateTime.now();
+                  final rawEnd =
+                      DateTime.tryParse(booking['end_date'] ?? '') ??
+                      DateTime.now();
+
                   // Calculate days matching what Razorpay charged
-                  final startCal = DateTime(rawStart.year, rawStart.month, rawStart.day);
-                  final endCal = DateTime(rawEnd.year, rawEnd.month, rawEnd.day);
+                  final startCal = DateTime(
+                    rawStart.year,
+                    rawStart.month,
+                    rawStart.day,
+                  );
+                  final endCal = DateTime(
+                    rawEnd.year,
+                    rawEnd.month,
+                    rawEnd.day,
+                  );
                   final diff = endCal.difference(startCal).inDays;
-                  final int computedDays = diff <= 0 ? 1 : diff; // Match frontend payment logic
-                  
+                  final computedDays = diff <= 0
+                      ? 1
+                      : diff; // Match frontend payment logic
+
                   // For display, we ignore DB total_price and calculate it to match gateway
                   final double pricePerDay = (car['price_per_day'] ?? 0).toDouble();
                   final double displayPrice = computedDays * pricePerDay;
@@ -395,65 +432,88 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      city,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      '$brand $model',
                                       style: const TextStyle(
                                         color: AppColors.textSecondary,
                                         fontSize: 12,
                                       ),
                                     ),
-                                  ],
-                                ),
-                                const Divider(height: 24, color: AppColors.divider),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    _buildSpecChip(Icons.event_seat_outlined, '$seats Seats'),
-                                    _buildSpecChip(Icons.settings_outlined, transmission),
-                                    _buildSpecChip(Icons.local_gas_station_outlined, fuelType),
-                                  ],
-                                ),
-                                const Divider(height: 24, color: AppColors.divider),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          'BOOKING PERIOD',
-                                          style: TextStyle(
-                                            color: AppColors.textSecondary,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          '$startDate - $endDate',
-                                          style: const TextStyle(
-                                            color: AppColors.textPrimary,
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
+                                  ),
+                                  _buildStatusChip(
+                                    booking['status'] ?? 'pending',
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.location_on_outlined,
+                                    size: 14,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    city,
+                                    style: const TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 12,
                                     ),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: [
-                                        const Text(
-                                          'TOTAL AMOUNT',
-                                          style: TextStyle(
-                                            color: AppColors.textSecondary,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                  ),
+                                ],
+                              ),
+                              const Divider(
+                                height: 24,
+                                color: AppColors.divider,
+                              ),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  _buildSpecChip(
+                                    Icons.event_seat_outlined,
+                                    '$seats Seats',
+                                  ),
+                                  _buildSpecChip(
+                                    Icons.settings_outlined,
+                                    transmission,
+                                  ),
+                                  _buildSpecChip(
+                                    Icons.local_gas_station_outlined,
+                                    fuelType,
+                                  ),
+                                ],
+                              ),
+                              const Divider(
+                                height: 24,
+                                color: AppColors.divider,
+                              ),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'BOOKING PERIOD',
+                                        style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
@@ -522,26 +582,54 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                           borderRadius: BorderRadius.circular(12),
                                         ),
                                       ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Deposit: ₹${depositAmount.toStringAsFixed(0)}',
+                                    style: const TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 11.5,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Payment: ${booking['payment_status'] ?? 'unpaid'}',
+                                    style: TextStyle(
+                                      color:
+                                          (booking['payment_status'] == 'paid')
+                                          ? AppColors.success
+                                          : Colors.orange,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ],
-                                // Cancel button for cancellable bookings
-                                if (_isCancellable(booking['status'] ?? '')) ...[
-                                  const SizedBox(height: 12),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: OutlinedButton.icon(
-                                      onPressed: () => _cancelBooking(
-                                        booking['id']?.toString() ?? '',
-                                      ),
-                                      icon: const Icon(Icons.cancel_outlined, size: 16),
-                                      label: const Text('Cancel Booking'),
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: Colors.red,
-                                        side: const BorderSide(color: Colors.red),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
+                              ),
+                              // Cancel button for cancellable bookings
+                              if (_isCancellable(booking['status'] ?? '')) ...[
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton.icon(
+                                    onPressed: () => _cancelBooking(
+                                      booking['id']?.toString() ?? '',
+                                    ),
+                                    icon: const Icon(
+                                      Icons.cancel_outlined,
+                                      size: 16,
+                                    ),
+                                    label: const Text('Cancel Booking'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.red,
+                                      side: const BorderSide(color: Colors.red),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
                                     ),
                                   ),

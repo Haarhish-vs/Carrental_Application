@@ -24,14 +24,26 @@ class LocationModel {
     required this.country,
   });
 
-  factory LocationModel.fromJson(Map<String, dynamic> json, {double? defaultLat, double? defaultLng}) {
+  factory LocationModel.fromJson(
+    Map<String, dynamic> json, {
+    double? defaultLat,
+    double? defaultLng,
+  }) {
     return LocationModel(
       id: json['id'] as String?,
       placeId: (json['placeId'] ?? json['place_id'] ?? '') as String,
-      name: (json['name'] ?? json['formattedAddress']?.toString().split(',').first ?? json['address'] ?? json['city'] ?? 'Selected Location') as String,
+      name:
+          (json['name'] ??
+                  json['formattedAddress']?.toString().split(',').first ??
+                  json['address'] ??
+                  json['city'] ??
+                  'Selected Location')
+              as String,
       address: (json['address'] ?? json['formattedAddress'] ?? '') as String,
-      latitude: (json['latitude'] ?? json['lat'] ?? defaultLat ?? 0.0 as num).toDouble(),
-      longitude: (json['longitude'] ?? json['lng'] ?? defaultLng ?? 0.0 as num).toDouble(),
+      latitude: (json['latitude'] ?? json['lat'] ?? defaultLat ?? 0.0 as num)
+          .toDouble(),
+      longitude: (json['longitude'] ?? json['lng'] ?? defaultLng ?? 0.0 as num)
+          .toDouble(),
       city: (json['city'] ?? '') as String,
       state: (json['state'] ?? '') as String,
       country: (json['country'] ?? '') as String,
@@ -39,8 +51,12 @@ class LocationModel {
   }
 
   Map<String, dynamic> toJson() {
-    final effectivePlaceId = placeId.isNotEmpty ? placeId : 'pin_${latitude}_$longitude';
-    final effectiveName = name.isNotEmpty ? name : (address.isNotEmpty ? address : 'Selected Location');
+    final effectivePlaceId = placeId.isNotEmpty
+        ? placeId
+        : 'pin_${latitude}_$longitude';
+    final effectiveName = name.isNotEmpty
+        ? name
+        : (address.isNotEmpty ? address : 'Selected Location');
     final effectiveAddress = address.isNotEmpty ? address : effectiveName;
     return {
       if (id != null) 'id': id,
@@ -82,7 +98,10 @@ class LocationModel {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is LocationModel && other.placeId == placeId && other.latitude == latitude && other.longitude == longitude;
+      other is LocationModel &&
+          other.placeId == placeId &&
+          other.latitude == latitude &&
+          other.longitude == longitude;
 
   @override
   int get hashCode => Object.hash(placeId, latitude, longitude);

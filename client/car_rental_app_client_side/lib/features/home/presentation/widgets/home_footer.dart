@@ -33,8 +33,14 @@ class HomeFooter extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Car Rental Application',
-              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          const Text(
+            'Car Rental Application',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 14),
           Wrap(
             spacing: 18,
@@ -53,9 +59,20 @@ class HomeFooter extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Version $appVersion', style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 11.5)),
-              Text('© 2026 Car Rental Application',
-                  style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 11.5)),
+              Text(
+                'Version $appVersion',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.6),
+                  fontSize: 11.5,
+                ),
+              ),
+              Text(
+                '© 2026 Car Rental Application',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.6),
+                  fontSize: 11.5,
+                ),
+              ),
             ],
           ),
         ],
@@ -76,7 +93,11 @@ class _FooterLink extends StatelessWidget {
       onTap: onTap,
       child: Text(
         label,
-        style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12.5, fontWeight: FontWeight.w500),
+        style: TextStyle(
+          color: Colors.white.withOpacity(0.85),
+          fontSize: 12.5,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }

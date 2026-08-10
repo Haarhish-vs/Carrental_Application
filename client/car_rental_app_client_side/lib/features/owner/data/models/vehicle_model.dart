@@ -15,7 +15,8 @@ class VehicleModel {
       'brand': draft.brand,
       'model': draft.model,
       'variant': draft.variant,
-      'manufacturingYear': int.tryParse(draft.manufacturingYear) ?? DateTime.now().year,
+      'manufacturingYear':
+          int.tryParse(draft.manufacturingYear) ?? DateTime.now().year,
       'registrationNumber': draft.registrationNumber,
       'rc_number': draft.registrationNumber,
       'fuelType': draft.fuelType,
