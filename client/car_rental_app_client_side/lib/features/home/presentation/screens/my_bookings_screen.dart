@@ -316,11 +316,11 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                   final startCal = DateTime(rawStart.year, rawStart.month, rawStart.day);
                   final endCal = DateTime(rawEnd.year, rawEnd.month, rawEnd.day);
                   final diff = endCal.difference(startCal).inDays;
-                  final computedDays = diff <= 0 ? 1 : diff; // Match frontend payment logic
+                  final int computedDays = diff <= 0 ? 1 : diff; // Match frontend payment logic
                   
                   // For display, we ignore DB total_price and calculate it to match gateway
-                  final pricePerDay = (car['price_per_day'] ?? 0).toDouble();
-                  final displayPrice = computedDays * pricePerDay;
+                  final double pricePerDay = (car['price_per_day'] ?? 0).toDouble();
+                  final double displayPrice = computedDays * pricePerDay;
 
                   final startDate = _formatBookingDate(booking['start_date']);
                   final endDate = _formatBookingDate(booking['end_date']);
