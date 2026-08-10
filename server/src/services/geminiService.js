@@ -1,11 +1,11 @@
 class GeminiService {
   async analyzeDocuments({ vehicleId, documents, validationResults, crossValidationResults }) {
-    const failedDocs = validationResults.filter((item) => item.status === 'failed');
+    const failedRequiredDocs = validationResults.filter((item) => item.documentType === 'rc' && item.status === 'failed');
     const fallback = {
-      overallStatus: failedDocs.length > 0 ? 'failed' : 'passed',
+      overallStatus: failedRequiredDocs.length > 0 ? 'FAILED' : 'VERIFIED',
       score: validationResults.reduce((acc, item) => acc + item.score, 0) / Math.max(1, validationResults.length),
-      summary: `Vehicle ${vehicleId} document verification completed with ${documents.length} documents reviewed. ${failedDocs.length} documents failed validation.`,
-      recommendation: failedDocs.length > 0 ? 'Review failed documents and upload clearer copies. Check expiry dates and missing fields.' : 'All documents are valid. Vehicle is ready for rental.',
+      summary: `Vehicle ${vehicleId} document verification completed. ${failedRequiredDocs.length > 0 ? 'RC Book validation failed.' : 'RC Book validation passed.'}`,
+      recommendation: failedRequiredDocs.length > 0 ? 'Please upload a clearer copy of the RC Book and verify the registration details.' : 'The RC Book is valid. Vehicle is ready for rental.',
     };
 
     const apiKey = process.env.GEMINI_API_KEY;
@@ -19,7 +19,9 @@ class GeminiService {
           {
             parts: [
               {
-                text: `You are a vehicle document verification expert. Analyze these vehicle document verification results and return a concise JSON object with fields: overallStatus (passed/failed), score (0-100), summary (brief overview), recommendation (actionable advice).
+                text: `You are a vehicle document verification expert. Analyze these vehicle document verification results and return a concise JSON object with fields: overallStatus (VERIFIED/FAILED), score (0-100), summary (brief overview), recommendation (actionable advice).
+                
+Note: Only the 'rc' (Registration Certificate) document is strictly required. Other documents (insurance, fc, puc, permit) are optional. Even if optional documents are missing or have minor validation issues, overallStatus should be 'VERIFIED' as long as the 'rc' document is valid.
 
 Vehicle ID: ${vehicleId}
 Documents: ${JSON.stringify(documents, null, 2)}
@@ -28,10 +30,9 @@ Cross-Validation Results: ${JSON.stringify(crossValidationResults, null, 2)}
 
 Consider:
 1. Individual document validation status and scores
-2. Missing required fields
+2. Missing required fields for 'rc'
 3. Expiry dates (expired, expiring soon, valid)
-4. Cross-validation consistency (vehicle number, owner name, engine number, chassis number should match across documents)
-5. Overall document completeness
+4. Cross-validation consistency (vehicle number, owner name, engine number, chassis number should match across documents, if other documents exist)
 
 Return ONLY valid JSON without markdown formatting.`,
               },
