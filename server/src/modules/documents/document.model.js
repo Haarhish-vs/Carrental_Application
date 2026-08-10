@@ -3,10 +3,43 @@ const { supabase } = require('../../config/supabase');
 const TABLE_DOCUMENTS = 'vehicle_documents';
 const TABLE_REPORTS = 'verification_reports';
 
+const mapToDbDocType = (docType) => {
+  const map = {
+    'rc': 'rc_book',
+    'rc_book': 'rc_book',
+    'insurance': 'insurance',
+    'fc': 'fc',
+    'puc': 'pollution_certificate',
+    'pollution_certificate': 'pollution_certificate',
+    'permit': 'fc',
+  };
+  return map[docType] || docType;
+};
+
+const mapFromDbRecord = (record) => {
+  if (!record) return record;
+  let ocrType = record.document_type;
+  if (record.document_type === 'rc_book') {
+    ocrType = 'rc';
+  } else if (record.document_type === 'pollution_certificate') {
+    ocrType = 'puc';
+  } else if (record.document_type === 'fc') {
+    if (record.storage_path && record.storage_path.includes('/permit')) {
+      ocrType = 'permit';
+    } else {
+      ocrType = 'fc';
+    }
+  }
+  return {
+    ...record,
+    document_type: ocrType,
+  };
+};
+
 const upsertDocumentRecord = async ({ vehicleId, documentType, storagePath, publicUrl, ocrText = null, status = 'uploaded', extractedFields = null }) => {
   const { data, error } = await supabase.from(TABLE_DOCUMENTS).insert({
     vehicle_id: vehicleId,
-    document_type: documentType,
+    document_type: mapToDbDocType(documentType),
     storage_path: storagePath,
     public_url: publicUrl,
     document_url: publicUrl,
@@ -17,7 +50,7 @@ const upsertDocumentRecord = async ({ vehicleId, documentType, storagePath, publ
   }).select().single();
 
   if (error) throw error;
-  return data;
+  return mapFromDbRecord(data);
 };
 
 const getLatestDocumentRecord = async (vehicleId, documentType) => {
@@ -25,13 +58,13 @@ const getLatestDocumentRecord = async (vehicleId, documentType) => {
     .from(TABLE_DOCUMENTS)
     .select('*')
     .eq('vehicle_id', vehicleId)
-    .eq('document_type', documentType)
+    .eq('document_type', mapToDbDocType(documentType))
     .order('uploaded_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 
   if (error) throw error;
-  return data;
+  return mapFromDbRecord(data);
 };
 
 const getVehicleDocuments = async (vehicleId) => {
@@ -42,7 +75,7 @@ const getVehicleDocuments = async (vehicleId) => {
     .order('uploaded_at', { ascending: true });
 
   if (error) throw error;
-  return data || [];
+  return (data || []).map(mapFromDbRecord);
 };
 
 const updateDocumentRecord = async (id, updates) => {
@@ -54,7 +87,7 @@ const updateDocumentRecord = async (id, updates) => {
     .single();
 
   if (error) throw error;
-  return data;
+  return mapFromDbRecord(data);
 };
 
 const updateAllDocumentStatuses = async (vehicleId, status) => {
@@ -65,7 +98,7 @@ const updateAllDocumentStatuses = async (vehicleId, status) => {
     .select();
 
   if (error) throw error;
-  return data;
+  return (data || []).map(mapFromDbRecord);
 };
 
 const getDocumentById = async (documentId) => {
@@ -76,7 +109,7 @@ const getDocumentById = async (documentId) => {
     .maybeSingle();
 
   if (error) throw error;
-  return data;
+  return mapFromDbRecord(data);
 };
 
 const deleteDocumentRecord = async (documentId) => {
@@ -88,7 +121,7 @@ const deleteDocumentRecord = async (documentId) => {
     .single();
 
   if (error) throw error;
-  return data;
+  return mapFromDbRecord(data);
 };
 
 const createVerificationReport = async ({ vehicleId, overall_status, overall_score, ai_summary, recommendation, validation_results = null, cross_validation_results = null }) => {
