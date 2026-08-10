@@ -37,7 +37,9 @@ class _AuthScreenState extends State<AuthScreen> {
   void initState() {
     super.initState();
     _currentMode = widget.initialMode;
-    debugPrint('📱 [AuthScreen] Initialized in mode: ${_currentMode == AuthMode.register ? 'REGISTER' : 'LOGIN'}');
+    debugPrint(
+      '📱 [AuthScreen] Initialized in mode: ${_currentMode == AuthMode.register ? 'REGISTER' : 'LOGIN'}',
+    );
   }
 
   @override
@@ -77,11 +79,15 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _handleSendOtp() async {
     final phone = _phoneController.text.trim();
     if (phone.length < 8) {
-      setState(() => _errorMessage = 'Please enter a valid phone number (e.g. 9876543210)');
+      setState(
+        () => _errorMessage =
+            'Please enter a valid phone number (e.g. 9876543210)',
+      );
       return;
     }
 
-    if (_currentMode == AuthMode.register && _nameController.text.trim().isEmpty) {
+    if (_currentMode == AuthMode.register &&
+        _nameController.text.trim().isEmpty) {
       setState(() => _errorMessage = 'Please enter your full name to register');
       return;
     }
@@ -96,19 +102,28 @@ class _AuthScreenState extends State<AuthScreen> {
 
       // 1. If in Register mode, FIRST check if phone number already exists in DB
       if (_currentMode == AuthMode.register) {
-        debugPrint('📝 [Register Flow] Checking if phone number $fullPhone is already registered...');
-        final alreadyRegistered = await _authService.isPhoneRegistered(fullPhone);
+        debugPrint(
+          '📝 [Register Flow] Checking if phone number $fullPhone is already registered...',
+        );
+        final alreadyRegistered = await _authService.isPhoneRegistered(
+          fullPhone,
+        );
 
         if (alreadyRegistered) {
-          debugPrint('⚠️ [Register Flow] Phone number $fullPhone is already registered! Blocking OTP dispatch.');
+          debugPrint(
+            '⚠️ [Register Flow] Phone number $fullPhone is already registered! Blocking OTP dispatch.',
+          );
           if (!mounted) return;
           setState(() {
             _isLoading = false;
-            _errorMessage = 'This phone number is already registered. Please login.';
+            _errorMessage =
+                'This phone number is already registered. Please login.';
           });
           return; // DO NOT SEND OTP, DO NOT OPEN OTP SCREEN
         }
-        debugPrint('✅ [Register Flow] Phone number $fullPhone is new. Proceeding to generate & send OTP...');
+        debugPrint(
+          '✅ [Register Flow] Phone number $fullPhone is new. Proceeding to generate & send OTP...',
+        );
       }
 
       // 2. Phone is new (or in Login mode): Request OTP from backend
@@ -146,7 +161,9 @@ class _AuthScreenState extends State<AuthScreen> {
 
     final phone = _phoneController.text.trim();
     final fullPhone = phone.startsWith('+') ? phone : '+91$phone';
-    final name = _currentMode == AuthMode.register ? _nameController.text.trim() : null;
+    final name = _currentMode == AuthMode.register
+        ? _nameController.text.trim()
+        : null;
 
     setState(() {
       _isLoading = true;
@@ -165,7 +182,9 @@ class _AuthScreenState extends State<AuthScreen> {
 
       // Existing user detection during registration
       if (result['alreadyExists'] == true) {
-        debugPrint('🔍 [AuthScreen] Phone number already registered! Switching to Login tab.');
+        debugPrint(
+          '🔍 [AuthScreen] Phone number already registered! Switching to Login tab.',
+        );
         setState(() {
           _currentMode = AuthMode.login;
           _currentStep = 0;
@@ -176,7 +195,9 @@ class _AuthScreenState extends State<AuthScreen> {
       }
 
       // Successful registration or login
-      debugPrint('✅ [AuthScreen] Auth flow successfully completed. Navigating to Home/caller.');
+      debugPrint(
+        '✅ [AuthScreen] Auth flow successfully completed. Navigating to Home/caller.',
+      );
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop(true);
       } else {
@@ -217,7 +238,9 @@ class _AuthScreenState extends State<AuthScreen> {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: _currentMode == AuthMode.login ? Colors.white : Colors.transparent,
+                  color: _currentMode == AuthMode.login
+                      ? Colors.white
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: _currentMode == AuthMode.login
                       ? [
@@ -257,7 +280,9 @@ class _AuthScreenState extends State<AuthScreen> {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: _currentMode == AuthMode.register ? Colors.white : Colors.transparent,
+                  color: _currentMode == AuthMode.register
+                      ? Colors.white
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: _currentMode == AuthMode.register
                       ? [
@@ -309,7 +334,11 @@ class _AuthScreenState extends State<AuthScreen> {
             ],
           ),
           child: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF103B66), size: 18),
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Color(0xFF103B66),
+              size: 18,
+            ),
             onPressed: () {
               if (Navigator.of(context).canPop()) {
                 Navigator.of(context).pop(false);
@@ -352,8 +381,8 @@ class _AuthScreenState extends State<AuthScreen> {
                           child: Icon(
                             _currentStep == 0
                                 ? (_currentMode == AuthMode.login
-                                    ? Icons.lock_outline_rounded
-                                    : Icons.person_add_outlined)
+                                      ? Icons.lock_outline_rounded
+                                      : Icons.person_add_outlined)
                                 : Icons.mark_email_read_outlined,
                             size: 34,
                             color: const Color(0xFF1E5AA8),
@@ -365,21 +394,23 @@ class _AuthScreenState extends State<AuthScreen> {
                       // Title & Subtitle
                       Text(
                         _currentStep == 0
-                            ? (_currentMode == AuthMode.login ? 'Welcome Back!' : 'Create an Account')
+                            ? (_currentMode == AuthMode.login
+                                  ? 'Welcome Back!'
+                                  : 'Create an Account')
                             : 'Verify Phone Number',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: const Color(0xFF103B66),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 22,
-                            ),
+                          color: const Color(0xFF103B66),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         _currentStep == 0
                             ? (_currentMode == AuthMode.login
-                                ? 'Log in with your phone number to access bookings and rent out vehicles.'
-                                : 'Sign up in seconds to start renting or listing cars.')
+                                  ? 'Log in with your phone number to access bookings and rent out vehicles.'
+                                  : 'Sign up in seconds to start renting or listing cars.')
                             : 'Enter the 6-digit OTP code sent to +91 ${_phoneController.text.trim()}',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
@@ -393,7 +424,10 @@ class _AuthScreenState extends State<AuthScreen> {
                       // Error message banner
                       if (_errorMessage != null) ...[
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFFFEBEE),
                             borderRadius: BorderRadius.circular(14),
@@ -401,7 +435,11 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.error_outline_rounded, color: Colors.red, size: 22),
+                              const Icon(
+                                Icons.error_outline_rounded,
+                                color: Colors.red,
+                                size: 22,
+                              ),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
@@ -432,20 +470,30 @@ class _AuthScreenState extends State<AuthScreen> {
                             decoration: InputDecoration(
                               labelText: 'Full Name',
                               hintText: 'e.g. John Doe',
-                              prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF1E5AA8)),
+                              prefixIcon: const Icon(
+                                Icons.person_outline,
+                                color: Color(0xFF1E5AA8),
+                              ),
                               filled: true,
                               fillColor: const Color(0xFFF8FAFC),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFE2E8F0),
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFE2E8F0),
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(color: Color(0xFF1E5AA8), width: 2),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF1E5AA8),
+                                  width: 2,
+                                ),
                               ),
                             ),
                           ),
@@ -466,7 +514,11 @@ class _AuthScreenState extends State<AuthScreen> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.phone_outlined, color: Color(0xFF1E5AA8), size: 20),
+                                  Icon(
+                                    Icons.phone_outlined,
+                                    color: Color(0xFF1E5AA8),
+                                    size: 20,
+                                  ),
                                   SizedBox(width: 8),
                                   Text(
                                     '+91',
@@ -479,22 +531,32 @@ class _AuthScreenState extends State<AuthScreen> {
                                   SizedBox(width: 8),
                                   SizedBox(
                                     height: 20,
-                                    child: VerticalDivider(color: Color(0xFFCBD5E1), thickness: 1),
+                                    child: VerticalDivider(
+                                      color: Color(0xFFCBD5E1),
+                                      thickness: 1,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                              borderSide: const BorderSide(
+                                color: Color(0xFFE2E8F0),
+                              ),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                              borderSide: const BorderSide(
+                                color: Color(0xFFE2E8F0),
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(color: Color(0xFF1E5AA8), width: 2),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF1E5AA8),
+                                width: 2,
+                              ),
                             ),
                           ),
                         ),
@@ -521,12 +583,16 @@ class _AuthScreenState extends State<AuthScreen> {
                                   ),
                                 )
                               : Text(
-                                  _currentMode == AuthMode.login ? 'Send Login OTP' : 'Send Registration OTP',
-                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                                  _currentMode == AuthMode.login
+                                      ? 'Send Login OTP'
+                                      : 'Send Registration OTP',
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                         ),
                       ]
-
                       // STEP 1: OTP Verification Form
                       else ...[
                         TextField(
@@ -546,15 +612,22 @@ class _AuthScreenState extends State<AuthScreen> {
                             fillColor: const Color(0xFFF8FAFC),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                              borderSide: const BorderSide(
+                                color: Color(0xFFE2E8F0),
+                              ),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                              borderSide: const BorderSide(
+                                color: Color(0xFFE2E8F0),
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(color: Color(0xFF1E5AA8), width: 2),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF1E5AA8),
+                                width: 2,
+                              ),
                             ),
                           ),
                         ),
@@ -562,7 +635,10 @@ class _AuthScreenState extends State<AuthScreen> {
                         if (_devOtp != null) ...[
                           const SizedBox(height: 10),
                           Container(
-                            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 6,
+                              horizontal: 12,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFE6F4EA),
                               borderRadius: BorderRadius.circular(10),
@@ -601,7 +677,10 @@ class _AuthScreenState extends State<AuthScreen> {
                                 )
                               : const Text(
                                   'Verify & Continue',
-                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                         ),
                         const SizedBox(height: 14),
@@ -623,10 +702,14 @@ class _AuthScreenState extends State<AuthScreen> {
                             ),
                             _canResend
                                 ? TextButton(
-                                    onPressed: _isLoading ? null : _handleSendOtp,
+                                    onPressed: _isLoading
+                                        ? null
+                                        : _handleSendOtp,
                                     child: const Text(
                                       'Resend OTP',
-                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   )
                                 : Text(

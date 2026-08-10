@@ -86,7 +86,10 @@ class _LocationScreenState extends State<LocationScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Select Location', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text(
+          'Select Location',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -100,7 +103,8 @@ class _LocationScreenState extends State<LocationScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                   child: LocationSearchBar(
                     controller: _searchController,
-                    isLoading: provider.searchStatus == LocationLoadStatus.loading,
+                    isLoading:
+                        provider.searchStatus == LocationLoadStatus.loading,
                     onChanged: (value) {
                       setState(() {});
                       provider.searchLocations(value);
@@ -113,7 +117,9 @@ class _LocationScreenState extends State<LocationScreen> {
                   ),
                 ),
                 Expanded(
-                  child: isSearching ? _buildSearchResults(provider) : _buildDefaultContent(provider),
+                  child: isSearching
+                      ? _buildSearchResults(provider)
+                      : _buildDefaultContent(provider),
                 ),
               ],
             );
@@ -135,7 +141,10 @@ class _LocationScreenState extends State<LocationScreen> {
           child: Text(
             provider.searchError ?? 'Something went wrong.',
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
           ),
         ),
       );
@@ -148,10 +157,20 @@ class _LocationScreenState extends State<LocationScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.location_off_outlined, size: 48, color: AppColors.textSecondary.withOpacity(0.5)),
+              Icon(
+                Icons.location_off_outlined,
+                size: 48,
+                color: AppColors.textSecondary.withOpacity(0.5),
+              ),
               const SizedBox(height: 12),
-              const Text('No locations found',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+              const Text(
+                'No locations found',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
             ],
           ),
         ),
@@ -163,7 +182,10 @@ class _LocationScreenState extends State<LocationScreen> {
       itemCount: provider.searchResults.length,
       itemBuilder: (context, index) {
         final location = provider.searchResults[index];
-        return LocationTile(location: location, onTap: () => _selectLocation(location));
+        return LocationTile(
+          location: location,
+          onTap: () => _selectLocation(location),
+        );
       },
     );
   }
@@ -180,7 +202,10 @@ class _LocationScreenState extends State<LocationScreen> {
             child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
           )
         else
-          RecentLocationsList(locations: provider.recentLocations, onLocationTap: _selectLocation),
+          RecentLocationsList(
+            locations: provider.recentLocations,
+            onLocationTap: _selectLocation,
+          ),
         const SizedBox(height: 20),
         if (provider.popularStatus == LocationLoadStatus.loading)
           const Padding(
@@ -188,7 +213,10 @@ class _LocationScreenState extends State<LocationScreen> {
             child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
           )
         else
-          PopularLocationsList(locations: provider.popularLocations, onLocationTap: _selectLocation),
+          PopularLocationsList(
+            locations: provider.popularLocations,
+            onLocationTap: _selectLocation,
+          ),
         const SizedBox(height: 20),
         InkWell(
           onTap: _handleChooseOnMapTap,
@@ -208,22 +236,40 @@ class _LocationScreenState extends State<LocationScreen> {
                     color: AppColors.primary.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.map_outlined, color: AppColors.primary, size: 20),
+                  child: const Icon(
+                    Icons.map_outlined,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Can't find your location?",
-                          style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                      Text(
+                        "Can't find your location?",
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
                       SizedBox(height: 2),
-                      Text('Drop a pin on the map to select location',
-                          style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
+                      Text(
+                        'Drop a pin on the map to select location',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.textSecondary,
+                ),
               ],
             ),
           ),

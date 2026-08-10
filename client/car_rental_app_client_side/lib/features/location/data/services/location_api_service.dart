@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../../core/config/api_config.dart';
+import '../../../auth/services/auth_service.dart';
 import '../models/location_model.dart';
 
 class LocationApiEndpoints {
@@ -24,6 +25,18 @@ class LocationApiService {
 
   LocationApiService({http.Client? client}) : _client = client ?? http.Client();
 
+  Map<String, String> _getAuthHeaders({bool jsonContent = false}) {
+    final headers = <String, String>{};
+    if (jsonContent) {
+      headers['Content-Type'] = 'application/json';
+    }
+    final token = AuthService.currentToken;
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
+  }
+
   /// Decodes a backend response, unwraps the `{success, data}` envelope,
   /// and throws a [LocationApiException] with the backend's own message
   /// when `success` is false or the HTTP status is non-2xx.
@@ -32,7 +45,10 @@ class LocationApiService {
     try {
       body = jsonDecode(response.body) as Map<String, dynamic>;
     } catch (_) {
-      throw LocationApiException(fallbackMessage, statusCode: response.statusCode);
+      throw LocationApiException(
+        fallbackMessage,
+        statusCode: response.statusCode,
+      );
     }
 
     final success = body['success'] as bool? ?? false;
@@ -45,77 +61,48 @@ class LocationApiService {
   }
 
   Future<List<LocationModel>> searchLocations(String query) async {
-    final trimmed = query.trim();
-    if (trimmed.isEmpty) return [];
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}${LocationApiEndpoints.search}',
+    ).replace(queryParameters: {'q': query});
+    final response = await _client.get(uri);
 
-    // 1. Try backend search
-    try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.search}')
-          .replace(queryParameters: {'q': trimmed});
-      final response = await _client.get(uri);
-      final data = _decodeEnvelope(response, 'Failed to search locations');
-      final list = (data as List<dynamic>?) ?? [];
-      final results = list.map((item) => LocationModel.fromJson(item as Map<String, dynamic>)).toList();
-      if (results.isNotEmpty) return results;
-    } catch (_) {
-      // Fall through to OpenStreetMap search
-    }
-
-    // 2. OpenStreetMap Nominatim Search Fallback
-    try {
-      final osmUri = Uri.parse(
-        'https://nominatim.openstreetmap.org/search?q=${Uri.encodeComponent(trimmed)}&format=json&addressdetails=1&limit=5&countrycodes=in',
-      );
-      final osmRes = await _client.get(
-        osmUri,
-        headers: {'User-Agent': 'CarRentalApplication/1.0 (Flutter Client)'},
-      );
-      if (osmRes.statusCode == 200) {
-        final List<dynamic> rawList = jsonDecode(osmRes.body) as List<dynamic>;
-        return rawList.map((item) {
-          final map = item as Map<String, dynamic>;
-          final addressObj = (map['address'] as Map<String, dynamic>?) ?? {};
-          final city = addressObj['city'] ?? addressObj['town'] ?? addressObj['state_district'] ?? addressObj['village'] ?? addressObj['county'] ?? '';
-          final state = addressObj['state'] ?? '';
-          final country = addressObj['country'] ?? 'India';
-          final name = map['name'] != null && (map['name'] as String).isNotEmpty
-              ? map['name'] as String
-              : (map['display_name'] as String? ?? '').split(',').first.trim();
-
-          return LocationModel(
-            id: '',
-            placeId: 'osm_${map['place_id'] ?? ''}',
-            name: name.isNotEmpty ? name : (city.isNotEmpty ? city : trimmed),
-            address: map['display_name'] as String? ?? '',
-            latitude: double.tryParse(map['lat']?.toString() ?? '') ?? 0.0,
-            longitude: double.tryParse(map['lon']?.toString() ?? '') ?? 0.0,
-            city: city,
-            state: state,
-            country: country,
-          );
-        }).toList();
-      }
-    } catch (_) {}
-
-    return [];
+    final data = _decodeEnvelope(response, 'Failed to search locations');
+    final list = (data as List<dynamic>?) ?? [];
+    return list
+        .map((item) => LocationModel.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
   Future<List<LocationModel>> fetchRecentLocations() async {
+    // If user is not logged in (Guest), do not query the shared backend database
+    final token = AuthService.currentToken;
+    if (token == null || token.isEmpty) {
+      return [];
+    }
+
     final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.recent}');
-    final response = await _client.get(uri);
+    final response = await _client.get(uri, headers: _getAuthHeaders());
 
     final data = _decodeEnvelope(response, 'Failed to fetch recent locations');
     final list = (data as List<dynamic>?) ?? [];
-    return list.map((item) => LocationModel.fromJson(item as Map<String, dynamic>)).toList();
+    return list
+        .map((item) => LocationModel.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
   /// Saves a location the user selected (from search, current location,
   /// or map) into the backend's recent-locations list.
   Future<void> saveRecentLocation(LocationModel location) async {
+    // If user is not logged in (Guest), do not save to shared backend database
+    final token = AuthService.currentToken;
+    if (token == null || token.isEmpty) {
+      return;
+    }
+
     final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.recent}');
     final response = await _client.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: _getAuthHeaders(jsonContent: true),
       body: jsonEncode(location.toJson()),
     );
 
@@ -123,7 +110,9 @@ class LocationApiService {
   }
 
   Future<void> deleteRecentLocation(String id) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.recent}/$id');
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}${LocationApiEndpoints.recent}/$id',
+    );
     final response = await _client.delete(uri);
 
     if (response.statusCode != 200 && response.statusCode != 204) {
@@ -141,20 +130,30 @@ class LocationApiService {
   }
 
   Future<List<LocationModel>> fetchPopularLocations() async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.popular}');
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}${LocationApiEndpoints.popular}',
+    );
     final response = await _client.get(uri);
 
     final data = _decodeEnvelope(response, 'Failed to fetch popular locations');
     final list = (data as List<dynamic>?) ?? [];
-    return list.map((item) => LocationModel.fromJson(item as Map<String, dynamic>)).toList();
+    return list
+        .map((item) => LocationModel.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
-  Future<LocationModel> reverseGeocode(double latitude, double longitude) async {
-    // 1. Try backend reverse-geocode
+  Future<LocationModel> reverseGeocode(
+    double latitude,
+    double longitude,
+  ) async {
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}${LocationApiEndpoints.reverseGeocode}',
+    );
+
+    http.Response response;
     try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.reverseGeocode}');
-      http.Response response;
       try {
+        // 1. Try POST first (standard for deployed backend)
         response = await _client.post(
           uri,
           headers: {'Content-Type': 'application/json'},
@@ -166,12 +165,18 @@ class LocationApiService {
           }),
         );
       } catch (_) {
-        final getUri = uri.replace(queryParameters: {'lat': '$latitude', 'lng': '$longitude'});
+        // If network POST failure, try GET
+        final getUri = uri.replace(
+          queryParameters: {'lat': '$latitude', 'lng': '$longitude'},
+        );
         response = await _client.get(getUri);
       }
 
+      // 2. If POST returned 404 or 405 Method Not Allowed, fallback to GET
       if (response.statusCode == 404 || response.statusCode == 405) {
-        final getUri = uri.replace(queryParameters: {'lat': '$latitude', 'lng': '$longitude'});
+        final getUri = uri.replace(
+          queryParameters: {'lat': '$latitude', 'lng': '$longitude'},
+        );
         response = await _client.get(getUri);
       }
 

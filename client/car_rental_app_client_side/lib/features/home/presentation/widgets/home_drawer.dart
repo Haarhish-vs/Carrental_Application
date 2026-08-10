@@ -32,15 +32,14 @@ class HomeDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayName =
-        (userName == null || userName!.trim().isEmpty)
-            ? 'Guest User'
-            : userName!;
+    final displayName = (userName == null || userName!.trim().isEmpty)
+        ? 'Guest User'
+        : userName!;
 
     final displayLocation =
         (userLocation == null || userLocation!.trim().isEmpty)
-            ? 'Select Location'
-            : userLocation!;
+        ? 'Select Location'
+        : userLocation!;
 
     return Drawer(
       child: SafeArea(
@@ -84,9 +83,7 @@ class HomeDrawer extends StatelessWidget {
                         child: Text(
                           displayLocation,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                          ),
+                          style: const TextStyle(color: Colors.white70),
                         ),
                       ),
                     ],
@@ -157,10 +154,7 @@ class HomeDrawer extends StatelessWidget {
 
             const SizedBox(height: 8),
 
-            const Text(
-              "Version 1.0.0",
-              style: TextStyle(color: Colors.grey),
-            ),
+            const Text("Version 1.0.0", style: TextStyle(color: Colors.grey)),
 
             const SizedBox(height: 16),
           ],

@@ -49,9 +49,18 @@ class BottomNavigation extends StatelessWidget {
       elevation: 10,
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
-        BottomNavigationBarItem(icon: Icon(Icons.list_alt_outlined), label: 'My Bookings'),
-        BottomNavigationBarItem(icon: Icon(Icons.directions_car_outlined), label: 'My Car'),
-        BottomNavigationBarItem(icon: Icon(Icons.garage_outlined), label: 'Host'),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.list_alt_outlined),
+          label: 'My Bookings',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.directions_car_outlined),
+          label: 'My Car',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.garage_outlined),
+          label: 'Host',
+        ),
       ],
     );
   }

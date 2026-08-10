@@ -6,7 +6,8 @@ import '../services/location_api_service.dart';
 class LocationRepository {
   final LocationApiService _apiService;
 
-  LocationRepository({required LocationApiService apiService}) : _apiService = apiService;
+  LocationRepository({required LocationApiService apiService})
+    : _apiService = apiService;
 
   Future<List<LocationModel>> searchLocations(String query) {
     return _apiService.searchLocations(query);

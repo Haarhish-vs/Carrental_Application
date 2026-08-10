@@ -38,23 +38,37 @@ class LocationSearchBar extends StatelessWidget {
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(vertical: 14),
           hintText: 'Search city, area, airport or landmark...',
-          hintStyle: const TextStyle(fontSize: 13.5, color: AppColors.textSecondary),
-          prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary, size: 22),
+          hintStyle: const TextStyle(
+            fontSize: 13.5,
+            color: AppColors.textSecondary,
+          ),
+          prefixIcon: const Icon(
+            Icons.search,
+            color: AppColors.textSecondary,
+            size: 22,
+          ),
           suffixIcon: isLoading
               ? const Padding(
                   padding: EdgeInsets.all(14),
                   child: SizedBox(
                     width: 16,
                     height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
                   ),
                 )
               : (controller.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.textSecondary),
-                      onPressed: onClear,
-                    )
-                  : null),
+                    ? IconButton(
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          size: 18,
+                          color: AppColors.textSecondary,
+                        ),
+                        onPressed: onClear,
+                      )
+                    : null),
         ),
       ),
     );

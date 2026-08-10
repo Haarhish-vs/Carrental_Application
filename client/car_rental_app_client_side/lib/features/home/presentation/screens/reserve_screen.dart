@@ -41,13 +41,21 @@ class _ReserveScreenState extends State<ReserveScreen> {
 
   int get _rentalDays {
     if (_pickupDate == null || _returnDate == null) return 0;
-    
+
     // Normalize to midnight to calculate calendar days difference
-    final start = DateTime(_pickupDate!.year, _pickupDate!.month, _pickupDate!.day);
-    final end = DateTime(_returnDate!.year, _returnDate!.month, _returnDate!.day);
-    
+    final start = DateTime(
+      _pickupDate!.year,
+      _pickupDate!.month,
+      _pickupDate!.day,
+    );
+    final end = DateTime(
+      _returnDate!.year,
+      _returnDate!.month,
+      _returnDate!.day,
+    );
+
     if (end.isBefore(start)) return 0;
-    
+
     final diff = end.difference(start).inDays;
     // Same day = 1 day rental; each extra day = +1
     return diff == 0 ? 1 : diff;
@@ -60,7 +68,20 @@ class _ReserveScreenState extends State<ReserveScreen> {
   }
 
   String _formatDate(DateTime date) {
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return '${monthNames[date.month - 1]} ${date.day}';
   }
 
@@ -75,17 +96,36 @@ class _ReserveScreenState extends State<ReserveScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w500)),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 13,
+            color: Colors.grey,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
       ],
     );
   }
 
-  Future<void> _selectDate(BuildContext context, {required bool isPickup}) async {
+  Future<void> _selectDate(
+    BuildContext context, {
+    required bool isPickup,
+  }) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: isPickup ? (_pickupDate ?? DateTime.now()) : (_returnDate ?? DateTime.now().add(const Duration(days: 1))),
+      initialDate: isPickup
+          ? (_pickupDate ?? DateTime.now())
+          : (_returnDate ?? DateTime.now().add(const Duration(days: 1))),
       firstDate: DateTime.now().subtract(const Duration(days: 30)),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
@@ -104,10 +144,15 @@ class _ReserveScreenState extends State<ReserveScreen> {
     }
   }
 
-  Future<void> _selectTime(BuildContext context, {required bool isPickup}) async {
+  Future<void> _selectTime(
+    BuildContext context, {
+    required bool isPickup,
+  }) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
-      initialTime: isPickup ? (_pickupTime ?? const TimeOfDay(hour: 10, minute: 0)) : (_returnTime ?? const TimeOfDay(hour: 18, minute: 0)),
+      initialTime: isPickup
+          ? (_pickupTime ?? const TimeOfDay(hour: 10, minute: 0))
+          : (_returnTime ?? const TimeOfDay(hour: 18, minute: 0)),
     );
 
     if (picked != null) {
@@ -121,11 +166,20 @@ class _ReserveScreenState extends State<ReserveScreen> {
     }
   }
 
-  Widget _buildStepNode(int stepNum, String title, bool isCompleted, bool isActive) {
+  Widget _buildStepNode(
+    int stepNum,
+    String title,
+    bool isCompleted,
+    bool isActive,
+  ) {
     return Column(
       children: [
         if (isCompleted)
-          const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 24)
+          const Icon(
+            Icons.check_circle_rounded,
+            color: AppColors.success,
+            size: 24,
+          )
         else if (isActive)
           Container(
             width: 24,
@@ -134,12 +188,18 @@ class _ReserveScreenState extends State<ReserveScreen> {
               color: AppColors.primary,
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 2),
-              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+              boxShadow: const [
+                BoxShadow(color: Colors.black12, blurRadius: 4),
+              ],
             ),
             child: Center(
               child: Text(
                 '$stepNum',
-                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           )
@@ -155,7 +215,11 @@ class _ReserveScreenState extends State<ReserveScreen> {
             child: Center(
               child: Text(
                 '$stepNum',
-                style: TextStyle(color: Colors.grey.shade400, fontSize: 11, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.grey.shade400,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -164,8 +228,12 @@ class _ReserveScreenState extends State<ReserveScreen> {
           title,
           style: TextStyle(
             fontSize: 11,
-            fontWeight: isActive || isCompleted ? FontWeight.w600 : FontWeight.w400,
-            color: isActive || isCompleted ? AppColors.textPrimary : Colors.grey.shade500,
+            fontWeight: isActive || isCompleted
+                ? FontWeight.w600
+                : FontWeight.w400,
+            color: isActive || isCompleted
+                ? AppColors.textPrimary
+                : Colors.grey.shade500,
           ),
         ),
       ],
@@ -184,13 +252,16 @@ class _ReserveScreenState extends State<ReserveScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> images = widget.car.images.isNotEmpty 
-        ? widget.car.images.take(4).toList() 
+    final List<String> images = widget.car.images.isNotEmpty
+        ? widget.car.images.take(4).toList()
         : (widget.car.imageUrl.isNotEmpty ? [widget.car.imageUrl] : []);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reservation', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Reservation',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
@@ -237,7 +308,11 @@ class _ReserveScreenState extends State<ReserveScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: const [
-                        BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.03), blurRadius: 14, offset: Offset(0, 6)),
+                        BoxShadow(
+                          color: Color.fromRGBO(0, 0, 0, 0.03),
+                          blurRadius: 14,
+                          offset: Offset(0, 6),
+                        ),
                       ],
                     ),
                     child: Row(
@@ -267,10 +342,19 @@ class _ReserveScreenState extends State<ReserveScreen> {
                                         return Image.network(
                                           images[index],
                                           fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) => Container(
-                                            color: const Color(0xFFEAF2FF),
-                                            child: const Icon(Icons.directions_car_rounded, size: 24, color: AppColors.primary),
-                                          ),
+                                          errorBuilder:
+                                              (
+                                                context,
+                                                error,
+                                                stackTrace,
+                                              ) => Container(
+                                                color: const Color(0xFFEAF2FF),
+                                                child: const Icon(
+                                                  Icons.directions_car_rounded,
+                                                  size: 24,
+                                                  color: AppColors.primary,
+                                                ),
+                                              ),
                                         );
                                       },
                                     ),
@@ -283,11 +367,17 @@ class _ReserveScreenState extends State<ReserveScreen> {
                                     children: List.generate(
                                       images.length,
                                       (index) => Container(
-                                        margin: const EdgeInsets.symmetric(horizontal: 3),
-                                        width: _currentImageIndex == index ? 8 : 6,
+                                        margin: const EdgeInsets.symmetric(
+                                          horizontal: 3,
+                                        ),
+                                        width: _currentImageIndex == index
+                                            ? 8
+                                            : 6,
                                         height: 6,
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(3),
+                                          borderRadius: BorderRadius.circular(
+                                            3,
+                                          ),
                                           color: _currentImageIndex == index
                                               ? AppColors.primary
                                               : Colors.grey.shade300,
@@ -306,7 +396,11 @@ class _ReserveScreenState extends State<ReserveScreen> {
                               color: const Color(0xFFEAF2FF),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(Icons.directions_car_rounded, size: 36, color: AppColors.primary),
+                            child: const Icon(
+                              Icons.directions_car_rounded,
+                              size: 36,
+                              color: AppColors.primary,
+                            ),
                           ),
                         const SizedBox(width: 14),
 
@@ -317,21 +411,36 @@ class _ReserveScreenState extends State<ReserveScreen> {
                             children: [
                               Text(
                                 widget.car.name,
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 '${widget.car.fuelType} - ${widget.car.transmission}',
-                                style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey.shade500,
+                                ),
                               ),
                               const SizedBox(height: 8),
                               Row(
                                 children: [
-                                  const Icon(Icons.star_rounded, size: 16, color: Colors.amber),
+                                  const Icon(
+                                    Icons.star_rounded,
+                                    size: 16,
+                                    color: Colors.amber,
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
                                     '${widget.car.rating.toStringAsFixed(1)} (128 trips)',
-                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -350,7 +459,11 @@ class _ReserveScreenState extends State<ReserveScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: const [
-                        BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.03), blurRadius: 14, offset: Offset(0, 6)),
+                        BoxShadow(
+                          color: Color.fromRGBO(0, 0, 0, 0.03),
+                          blurRadius: 14,
+                          offset: Offset(0, 6),
+                        ),
                       ],
                     ),
                     child: Column(
@@ -358,11 +471,19 @@ class _ReserveScreenState extends State<ReserveScreen> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.calendar_today_outlined, size: 18, color: Colors.grey.shade600),
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              size: 18,
+                              color: Colors.grey.shade600,
+                            ),
                             const SizedBox(width: 8),
                             const Text(
                               'Date & Time',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
                           ],
                         ),
@@ -376,7 +497,10 @@ class _ReserveScreenState extends State<ReserveScreen> {
                                 Container(
                                   width: 8,
                                   height: 8,
-                                  decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle),
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.success,
+                                    shape: BoxShape.circle,
+                                  ),
                                 ),
                                 Container(
                                   width: 1.5,
@@ -386,7 +510,10 @@ class _ReserveScreenState extends State<ReserveScreen> {
                                 Container(
                                   width: 8,
                                   height: 8,
-                                  decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.primary,
+                                    shape: BoxShape.circle,
+                                  ),
                                 ),
                               ],
                             ),
@@ -400,16 +527,32 @@ class _ReserveScreenState extends State<ReserveScreen> {
                                   // Pickup row
                                   GestureDetector(
                                     onTap: () async {
-                                      await _selectDate(context, isPickup: true);
-                                      if (mounted) await _selectTime(context, isPickup: true);
+                                      await _selectDate(
+                                        context,
+                                        isPickup: true,
+                                      );
+                                      if (mounted)
+                                        await _selectTime(
+                                          context,
+                                          isPickup: true,
+                                        );
                                     },
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            Text('PICKUP', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade500)),
+                                            Text(
+                                              'PICKUP',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.grey.shade500,
+                                              ),
+                                            ),
                                             const SizedBox(height: 3),
                                             Text(
                                               _pickupDate != null
@@ -418,12 +561,18 @@ class _ReserveScreenState extends State<ReserveScreen> {
                                               style: TextStyle(
                                                 fontSize: 15,
                                                 fontWeight: FontWeight.w600,
-                                                color: _pickupDate != null ? AppColors.textPrimary : Colors.grey.shade600,
+                                                color: _pickupDate != null
+                                                    ? AppColors.textPrimary
+                                                    : Colors.grey.shade600,
                                               ),
                                             ),
                                           ],
                                         ),
-                                        Icon(Icons.edit_outlined, size: 18, color: Colors.grey.shade500),
+                                        Icon(
+                                          Icons.edit_outlined,
+                                          size: 18,
+                                          color: Colors.grey.shade500,
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -432,16 +581,32 @@ class _ReserveScreenState extends State<ReserveScreen> {
                                   // Return row
                                   GestureDetector(
                                     onTap: () async {
-                                      await _selectDate(context, isPickup: false);
-                                      if (mounted) await _selectTime(context, isPickup: false);
+                                      await _selectDate(
+                                        context,
+                                        isPickup: false,
+                                      );
+                                      if (mounted)
+                                        await _selectTime(
+                                          context,
+                                          isPickup: false,
+                                        );
                                     },
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            Text('RETURN', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade500)),
+                                            Text(
+                                              'RETURN',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.grey.shade500,
+                                              ),
+                                            ),
                                             const SizedBox(height: 3),
                                             Text(
                                               _returnDate != null
@@ -450,12 +615,18 @@ class _ReserveScreenState extends State<ReserveScreen> {
                                               style: TextStyle(
                                                 fontSize: 15,
                                                 fontWeight: FontWeight.w600,
-                                                color: _returnDate != null ? AppColors.textPrimary : Colors.grey.shade600,
+                                                color: _returnDate != null
+                                                    ? AppColors.textPrimary
+                                                    : Colors.grey.shade600,
                                               ),
                                             ),
                                           ],
                                         ),
-                                        Icon(Icons.edit_outlined, size: 18, color: Colors.grey.shade500),
+                                        Icon(
+                                          Icons.edit_outlined,
+                                          size: 18,
+                                          color: Colors.grey.shade500,
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -468,36 +639,49 @@ class _ReserveScreenState extends State<ReserveScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                    // 5. Specifications Grid
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: const [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.03), blurRadius: 14, offset: Offset(0, 6))],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Specifications', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                          const SizedBox(height: 12),
-                          GridView.count(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            crossAxisCount: 2,
-                            childAspectRatio: 3,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            children: [
-                              _specItem('Transmission', widget.car.transmission),
-                              _specItem('Fuel', widget.car.fuelType),
-                              _specItem('Seats', '${widget.car.seats}'),
-                              _specItem('Rating', '${widget.car.rating} ★'),
-                            ],
-                          ),
-                        ],
-                      ),
+                  // 5. Specifications Grid
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color.fromRGBO(0, 0, 0, 0.03),
+                          blurRadius: 14,
+                          offset: Offset(0, 6),
+                        ),
+                      ],
                     ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Specifications',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        GridView.count(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisCount: 2,
+                          childAspectRatio: 3,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          children: [
+                            _specItem('Transmission', widget.car.transmission),
+                            _specItem('Fuel', widget.car.fuelType),
+                            _specItem('Seats', '${widget.car.seats}'),
+                            _specItem('Rating', '${widget.car.rating} ★'),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -511,7 +695,13 @@ class _ReserveScreenState extends State<ReserveScreen> {
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
           color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 10,
+              offset: Offset(0, -2),
+            ),
+          ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -520,11 +710,22 @@ class _ReserveScreenState extends State<ReserveScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('TOTAL', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+                const Text(
+                  'TOTAL',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   '₹${_totalAmount.toStringAsFixed(2)}',
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ],
             ),
@@ -535,11 +736,14 @@ class _ReserveScreenState extends State<ReserveScreen> {
                     ? () async {
                         // Auth guard
                         if (!AuthService.isAuthenticated) {
-                          final loggedIn = await Navigator.of(context).push<bool>(
-                            MaterialPageRoute(
-                              builder: (_) => const AuthScreen(initialMode: AuthMode.login),
-                            ),
-                          );
+                          final loggedIn = await Navigator.of(context)
+                              .push<bool>(
+                                MaterialPageRoute(
+                                  builder: (_) => const AuthScreen(
+                                    initialMode: AuthMode.login,
+                                  ),
+                                ),
+                              );
                           if (loggedIn != true || !context.mounted) return;
                         }
                         if (!context.mounted) return;
@@ -636,13 +840,21 @@ class _ReserveScreenState extends State<ReserveScreen> {
                     : null,
                 style: FilledButton.styleFrom(
                   minimumSize: const Size(0, 56),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   backgroundColor: AppColors.primary,
                 ),
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Request to Book', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(
+                      'Pay Now',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     SizedBox(width: 8),
                     Icon(Icons.arrow_forward, size: 16),
                   ],

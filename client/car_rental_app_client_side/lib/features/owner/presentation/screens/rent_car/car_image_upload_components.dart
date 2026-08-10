@@ -3,30 +3,24 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-enum RentCarImageSlot {
-  front,
-  rear,
-  interior,
-  dashboard,
-  additional,
-}
+enum RentCarImageSlot { front, rear, interior, dashboard, additional }
 
 extension RentCarImageSlotX on RentCarImageSlot {
   String get label => switch (this) {
-        RentCarImageSlot.front => 'Front View',
-        RentCarImageSlot.rear => 'Rear View',
-        RentCarImageSlot.interior => 'Interior View',
-        RentCarImageSlot.dashboard => 'Dashboard View',
-        RentCarImageSlot.additional => 'Additional',
-      };
+    RentCarImageSlot.front => 'Front View',
+    RentCarImageSlot.rear => 'Rear View',
+    RentCarImageSlot.interior => 'Interior View',
+    RentCarImageSlot.dashboard => 'Dashboard View',
+    RentCarImageSlot.additional => 'Additional',
+  };
 
   IconData get icon => switch (this) {
-        RentCarImageSlot.front => Icons.photo_camera_front_outlined,
-        RentCarImageSlot.rear => Icons.photo_camera_back_outlined,
-        RentCarImageSlot.interior => Icons.chair_outlined,
-        RentCarImageSlot.dashboard => Icons.dashboard_outlined,
-        RentCarImageSlot.additional => Icons.photo_library_outlined,
-      };
+    RentCarImageSlot.front => Icons.photo_camera_front_outlined,
+    RentCarImageSlot.rear => Icons.photo_camera_back_outlined,
+    RentCarImageSlot.interior => Icons.chair_outlined,
+    RentCarImageSlot.dashboard => Icons.dashboard_outlined,
+    RentCarImageSlot.additional => Icons.photo_library_outlined,
+  };
 
   bool get isRequired => this != RentCarImageSlot.additional;
 }
@@ -35,10 +29,11 @@ enum RentCarImageUploadState { pending, uploading, uploaded, failed }
 
 enum RentCarImageSourceChoice { camera, gallery }
 
-typedef RentCarMultipartUpload = Future<List<String>> Function(
-  List<XFile> files,
-  ValueChanged<double> onProgress,
-);
+typedef RentCarMultipartUpload =
+    Future<List<String>> Function(
+      List<XFile> files,
+      ValueChanged<double> onProgress,
+    );
 
 class RentCarUploadImageItem {
   const RentCarUploadImageItem({
@@ -58,12 +53,7 @@ class RentCarUploadImageItem {
     required XFile file,
     required Uint8List bytes,
   }) {
-    return RentCarUploadImageItem(
-      id: id,
-      slot: slot,
-      file: file,
-      bytes: bytes,
-    );
+    return RentCarUploadImageItem(id: id, slot: slot, file: file, bytes: bytes);
   }
 
   factory RentCarUploadImageItem.remote({
@@ -91,7 +81,8 @@ class RentCarUploadImageItem {
 
   bool get hasLocalFile => file != null;
   bool get hasRemoteUrl => uploadedUrl != null && uploadedUrl!.isNotEmpty;
-  bool get isUploaded => state == RentCarImageUploadState.uploaded || hasRemoteUrl;
+  bool get isUploaded =>
+      state == RentCarImageUploadState.uploaded || hasRemoteUrl;
 
   RentCarUploadImageItem copyWith({
     XFile? file,
@@ -142,26 +133,28 @@ Future<RentCarImageSourceChoice?> showRentCarImageSourceSheet(
             Text(
               title,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF103B66),
-                  ),
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF103B66),
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Choose a source for the next image.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF57718A),
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: const Color(0xFF57718A)),
             ),
             const SizedBox(height: 20),
             FilledButton.icon(
-              onPressed: () => Navigator.of(context).pop(RentCarImageSourceChoice.camera),
+              onPressed: () =>
+                  Navigator.of(context).pop(RentCarImageSourceChoice.camera),
               icon: const Icon(Icons.photo_camera_outlined),
               label: const Text('Take Photo'),
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
-              onPressed: () => Navigator.of(context).pop(RentCarImageSourceChoice.gallery),
+              onPressed: () =>
+                  Navigator.of(context).pop(RentCarImageSourceChoice.gallery),
               icon: const Icon(Icons.photo_library_outlined),
               label: const Text('Choose from Gallery'),
             ),
@@ -180,12 +173,10 @@ Future<void> showRentCarImagePreviewDialog(
       ? Image.network(
           item.uploadedUrl!,
           fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image_outlined)),
+          errorBuilder: (_, __, ___) =>
+              const Center(child: Icon(Icons.broken_image_outlined)),
         )
-      : Image.memory(
-          item.bytes!,
-          fit: BoxFit.contain,
-        );
+      : Image.memory(item.bytes!, fit: BoxFit.contain);
 
   return showDialog<void>(
     context: context,
@@ -202,9 +193,9 @@ Future<void> showRentCarImagePreviewDialog(
               Text(
                 item.slot.label,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF103B66),
-                    ),
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF103B66),
+                ),
               ),
               const SizedBox(height: 16),
               AspectRatio(
@@ -219,7 +210,9 @@ Future<void> showRentCarImagePreviewDialog(
               ),
               const SizedBox(height: 16),
               Text(
-                item.hasRemoteUrl ? item.uploadedUrl! : item.file?.name ?? 'Local image',
+                item.hasRemoteUrl
+                    ? item.uploadedUrl!
+                    : item.file?.name ?? 'Local image',
                 style: Theme.of(context).textTheme.bodySmall,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -265,14 +258,17 @@ class RentCarImageRequirementCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.rule_folder_outlined, color: Color(0xFF1E5AA8)),
+                const Icon(
+                  Icons.rule_folder_outlined,
+                  color: Color(0xFF1E5AA8),
+                ),
                 const SizedBox(width: 10),
                 Text(
                   'Image Requirements',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: const Color(0xFF103B66),
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: const Color(0xFF103B66),
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
@@ -334,10 +330,7 @@ class RentCarImageRequirementCard extends StatelessWidget {
 }
 
 class RentCarImageDropArea extends StatelessWidget {
-  const RentCarImageDropArea({
-    super.key,
-    required this.onTap,
-  });
+  const RentCarImageDropArea({super.key, required this.onTap});
 
   final VoidCallback onTap;
 
@@ -376,22 +369,26 @@ class RentCarImageDropArea extends StatelessWidget {
                   Text(
                     'Upload car images',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: const Color(0xFF103B66),
-                          fontWeight: FontWeight.w700,
-                        ),
+                      color: const Color(0xFF103B66),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Tap to take a photo or choose multiple images from the gallery.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF57718A),
-                        ),
+                      color: const Color(0xFF57718A),
+                    ),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 12),
-            const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Color(0xFF8EA6BE)),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 16,
+              color: Color(0xFF8EA6BE),
+            ),
           ],
         ),
       ),
@@ -508,8 +505,8 @@ class _ImageTileCard extends StatelessWidget {
             errorBuilder: (_, __, ___) => _fallbackPreview(item),
           )
         : item.bytes != null
-            ? Image.memory(item.bytes!, fit: BoxFit.cover)
-            : _fallbackPreview(item);
+        ? Image.memory(item.bytes!, fit: BoxFit.cover)
+        : _fallbackPreview(item);
 
     return Card(
       elevation: isDragging ? 8 : 0,
@@ -525,7 +522,9 @@ class _ImageTileCard extends StatelessWidget {
               child: Stack(
                 children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(22),
+                    ),
                     child: ColoredBox(
                       color: const Color(0xFFF4F7FB),
                       child: SizedBox.expand(child: preview),
@@ -535,7 +534,10 @@ class _ImageTileCard extends StatelessWidget {
                     top: 10,
                     left: 10,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.6),
                         borderRadius: BorderRadius.circular(999),
@@ -543,9 +545,9 @@ class _ImageTileCard extends StatelessWidget {
                       child: Text(
                         item.slot.label,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -615,12 +617,17 @@ class _ImageTileCard extends StatelessWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(item.slot.icon, size: 18, color: const Color(0xFF1E5AA8)),
+                      Icon(
+                        item.slot.icon,
+                        size: 18,
+                        color: const Color(0xFF1E5AA8),
+                      ),
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
                           item.slot.label,
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(
                                 color: const Color(0xFF103B66),
                                 fontWeight: FontWeight.w700,
                               ),
@@ -641,17 +648,18 @@ class _ImageTileCard extends StatelessWidget {
                     )
                   else if (item.state == RentCarImageUploadState.failed)
                     Text(
-                      item.errorMessage ?? 'Upload failed. Retry replacement or upload again.',
+                      item.errorMessage ??
+                          'Upload failed. Retry replacement or upload again.',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFFC62828),
-                          ),
+                        color: const Color(0xFFC62828),
+                      ),
                     )
                   else if (item.isUploaded)
                     Text(
                       item.uploadedUrl ?? 'Uploaded image URL ready',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFF57718A),
-                          ),
+                        color: const Color(0xFF57718A),
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     )
@@ -659,8 +667,8 @@ class _ImageTileCard extends StatelessWidget {
                     Text(
                       item.file?.name ?? 'Local file selected',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFF57718A),
-                          ),
+                        color: const Color(0xFF57718A),
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -715,9 +723,9 @@ class _RequirementPill extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: textColor,
-              fontWeight: FontWeight.w700,
-            ),
+          color: textColor,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -744,9 +752,9 @@ class _RequirementStatusRow extends StatelessWidget {
           child: Text(
             label,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w600,
-                ),
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],
@@ -755,10 +763,7 @@ class _RequirementStatusRow extends StatelessWidget {
 }
 
 class _UploadBadge extends StatelessWidget {
-  const _UploadBadge({
-    required this.label,
-    required this.color,
-  });
+  const _UploadBadge({required this.label, required this.color});
 
   final String label;
   final Color color;
@@ -774,9 +779,9 @@ class _UploadBadge extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-            ),
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

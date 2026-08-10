@@ -1,11 +1,15 @@
-import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:dio/dio.dart';
+import 'package:car_rental_app_client_side/core/config/api_config.dart';
 import 'package:car_rental_app_client_side/core/theme/app_colors.dart';
 import 'package:car_rental_app_client_side/features/owner/data/models/vehicle_model.dart';
 import 'package:car_rental_app_client_side/features/owner/data/services/car_api_service.dart';
+import 'package:car_rental_app_client_side/features/owner/data/models/document_verification_models.dart';
+import 'package:car_rental_app_client_side/features/owner/data/controllers/document_verification_controller.dart';
 import 'rent_car_shared.dart';
 
 class CarDocumentsScreen extends StatefulWidget {
@@ -26,13 +30,22 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
   late final TextEditingController _insurancePolicyController;
   late final TextEditingController _ownerIdController;
   late final TextEditingController _permitController;
+  late final TextEditingController _fitnessController;
+  late final TextEditingController _pucController;
 
   XFile? _rcDocumentFile;
   XFile? _insuranceDocumentFile;
   XFile? _dlDocumentFile;
-  XFile? _pollutionDocumentFile;
+  XFile? _fitnessDocumentFile;
+  XFile? _pucDocumentFile;
+  XFile? _permitDocumentFile;
 
   bool _isLoading = false;
+  late final void Function(DocumentVerificationState) _verificationListener;
+  DocumentVerificationState _verificationState = DocumentVerificationState();
+
+  // Cached formatted sizes: maps filename -> "2.4 MB" or "420 KB"
+  final Map<String, String> _documentSizes = {};
 
   @override
   void initState() {
@@ -43,21 +56,75 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
     _insurancePolicyController = TextEditingController();
     _ownerIdController = TextEditingController();
     _permitController = TextEditingController();
+    _fitnessController = TextEditingController();
+    _pucController = TextEditingController();
 
     // Load any existing local documents from the draft
     _rcDocumentFile = widget.draft.localDocuments['rc_book'];
     _insuranceDocumentFile = widget.draft.localDocuments['insurance'];
     _dlDocumentFile = widget.draft.localDocuments['driving_license'];
-    _pollutionDocumentFile = widget.draft.localDocuments['pollution_certificate'];
+    _fitnessDocumentFile = widget.draft.localDocuments['fitness_certificate'];
+    _pucDocumentFile = widget.draft.localDocuments['puc'];
+    _permitDocumentFile = widget.draft.localDocuments['permit'];
+
+    _loadInitialFileSizes();
+
+    // Listen to verification flow updates
+    _verificationListener = (state) {
+      if (mounted) {
+        setState(() {
+          _verificationState = state;
+        });
+      }
+    };
+    DocumentVerificationController.instance.addListener(_verificationListener);
   }
 
   @override
   void dispose() {
+    DocumentVerificationController.instance.removeListener(
+      _verificationListener,
+    );
     _registrationCertificateController.dispose();
     _insurancePolicyController.dispose();
     _ownerIdController.dispose();
     _permitController.dispose();
+    _fitnessController.dispose();
+    _pucController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadInitialFileSizes() async {
+    final docs = [
+      _rcDocumentFile,
+      _insuranceDocumentFile,
+      _fitnessDocumentFile,
+      _pucDocumentFile,
+      _permitDocumentFile,
+      _dlDocumentFile,
+    ];
+    for (final doc in docs) {
+      if (doc != null) {
+        try {
+          final length = await doc.length();
+          final sizeStr = _formatBytes(length);
+          if (mounted) {
+            setState(() {
+              _documentSizes[doc.name] = sizeStr;
+            });
+          }
+        } catch (_) {}
+      }
+    }
+  }
+
+  String _formatBytes(int bytes) {
+    if (bytes <= 0) return '0 KB';
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    }
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
   String? _requiredText(String? value, String label) {
@@ -70,19 +137,103 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
   void _goBack() {
     // Save state back to localDocuments before pop
     final updatedDocs = <String, XFile>{};
-    if (_rcDocumentFile != null) updatedDocs['rc_book'] = _rcDocumentFile!;
-    if (_insuranceDocumentFile != null) updatedDocs['insurance'] = _insuranceDocumentFile!;
-    if (_dlDocumentFile != null) updatedDocs['driving_license'] = _dlDocumentFile!;
-    if (_pollutionDocumentFile != null) updatedDocs['pollution_certificate'] = _pollutionDocumentFile!;
+    if (_rcDocumentFile != null) {
+      updatedDocs['rc_book'] = _rcDocumentFile!;
+    }
+    if (_insuranceDocumentFile != null) {
+      updatedDocs['insurance'] = _insuranceDocumentFile!;
+    }
+    if (_dlDocumentFile != null) {
+      updatedDocs['driving_license'] = _dlDocumentFile!;
+    }
+    if (_fitnessDocumentFile != null) {
+      updatedDocs['fitness_certificate'] = _fitnessDocumentFile!;
+    }
+    if (_pucDocumentFile != null) {
+      updatedDocs['puc'] = _pucDocumentFile!;
+    }
+    if (_permitDocumentFile != null) {
+      updatedDocs['permit'] = _permitDocumentFile!;
+    }
 
     final updatedDraft = widget.draft.copyWith(
       localDocuments: updatedDocs,
       registrationNumber: _registrationCertificateController.text.trim(),
     );
 
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(updatedDraft);
   }
 
+  Future<XFile?> _pickPdfDocument(String title) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+        withData: true,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final pickedFile = result.files.first;
+
+        XFile? xfile;
+        final ext = pickedFile.extension?.toLowerCase() ?? 'pdf';
+        final mimeType = ext == 'pdf'
+            ? 'application/pdf'
+            : 'image/${ext == 'png' ? 'png' : 'jpeg'}';
+
+        if (kIsWeb) {
+          if (pickedFile.bytes != null) {
+            xfile = XFile.fromData(
+              pickedFile.bytes!,
+              name: pickedFile.name,
+              mimeType: mimeType,
+            );
+          }
+        } else {
+          if (pickedFile.path != null) {
+            xfile = XFile(pickedFile.path!, mimeType: mimeType);
+          } else if (pickedFile.bytes != null) {
+            xfile = XFile.fromData(
+              pickedFile.bytes!,
+              name: pickedFile.name,
+              mimeType: mimeType,
+            );
+          }
+        }
+
+        if (xfile == null) {
+          _showValidationError("This document appears to be empty or unreadable.");
+          return null;
+        }
+
+        final length = await xfile.length();
+        final validationError = PdfDocumentValidator.validatePdf(
+          xfile.name,
+          xfile.mimeType,
+          length,
+          maxSizeMb: ApiConfig.maxDocumentPdfSizeMb,
+        );
+
+        if (validationError != null) {
+          _showValidationError(validationError);
+          return null;
+        }
+
+        // Cache size representation
+        setState(() {
+          _documentSizes[xfile!.name] = _formatBytes(length);
+        });
+
+        return xfile;
+      }
+    } catch (e, stack) {
+      debugPrint("PDF selection error: $e\n$stack");
+      _showValidationError("Unable to upload this document. Please try again. Error: $e");
+    }
+    return null;
+  }
+
+  /// Existing DL modal sheet picker (camera + files)
   Future<XFile?> _pickDocument(String title) async {
     return showModalBottomSheet<XFile?>(
       context: context,
@@ -102,16 +253,16 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                 Text(
                   'Upload $title',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF103B66),
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF103B66),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Choose camera, gallery, or file to upload your document scan or PDF.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFF57718A),
-                      ),
+                    color: const Color(0xFF57718A),
+                  ),
                 ),
                 const SizedBox(height: 20),
                 FilledButton.icon(
@@ -120,7 +271,9 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                       source: ImageSource.camera,
                       imageQuality: 85,
                     );
-                    if (context.mounted) Navigator.of(context).pop(picked);
+                    if (context.mounted) {
+                      Navigator.of(context).pop(picked);
+                    }
                   },
                   icon: const Icon(Icons.camera_alt_outlined),
                   label: const Text('Take Document Photo'),
@@ -140,23 +293,39 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                       final pickedFile = result.files.first;
                       XFile? xfile;
 
-                      if (pickedFile.path != null) {
-                        xfile = XFile(pickedFile.path!);
-                      } else if (pickedFile.bytes != null) {
-                        xfile = XFile.fromData(
-                          pickedFile.bytes!,
-                          name: pickedFile.name,
-                          mimeType: pickedFile.extension == 'pdf'
-                              ? 'application/pdf'
-                              : 'image/${pickedFile.extension ?? 'jpeg'}',
-                        );
+                      if (kIsWeb) {
+                        if (pickedFile.bytes != null) {
+                          xfile = XFile.fromData(
+                            pickedFile.bytes!,
+                            name: pickedFile.name,
+                            mimeType: pickedFile.extension == 'pdf'
+                                ? 'application/pdf'
+                                : 'image/${pickedFile.extension ?? 'jpeg'}',
+                          );
+                        }
+                      } else {
+                        if (pickedFile.path != null) {
+                          xfile = XFile(pickedFile.path!);
+                        } else if (pickedFile.bytes != null) {
+                          xfile = XFile.fromData(
+                            pickedFile.bytes!,
+                            name: pickedFile.name,
+                            mimeType: pickedFile.extension == 'pdf'
+                                ? 'application/pdf'
+                                : 'image/${pickedFile.extension ?? 'jpeg'}',
+                          );
+                        }
                       }
 
-                      if (context.mounted) Navigator.of(context).pop(xfile);
+                      if (context.mounted) {
+                        Navigator.of(context).pop(xfile);
+                      }
                       return;
                     }
 
-                    if (context.mounted) Navigator.of(context).pop(null);
+                    if (context.mounted) {
+                      Navigator.of(context).pop(null);
+                    }
                   },
                   icon: const Icon(Icons.description_outlined),
                   label: const Text('Choose Document from Files'),
@@ -172,17 +341,70 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
     );
   }
 
-  void _showDocumentPreviewDialog(XFile file) {
+  void _showValidationError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+
+  void _showDocumentPreviewDialog(XFile file, {bool isPdf = true}) {
     showDialog<void>(
       context: context,
       builder: (context) {
-        final isImage = ['jpg', 'jpeg', 'png'].contains(file.name.split('.').last.toLowerCase()) || 
-          (file.mimeType?.startsWith('image/') ?? false);
+        final sizeText = _documentSizes[file.name] ?? '';
 
         return AlertDialog(
-          title: Text(file.name),
-          content: isImage
-              ? FutureBuilder<Uint8List>(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          title: Text(
+            isPdf ? 'PDF Scan Document' : 'Document Image',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF103B66),
+            ),
+          ),
+          content: isPdf
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.picture_as_pdf_rounded,
+                      size: 72,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      file.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Color(0xFF103B66),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    if (sizeText.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        sizeText,
+                        style: const TextStyle(
+                          color: Color(0xFF57718A),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    const Text(
+                      'PDF document selected',
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                )
+              : FutureBuilder<Uint8List>(
                   future: file.readAsBytes(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
@@ -196,19 +418,6 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                     }
                     return const Text('Failed to load image');
                   },
-                )
-              : const SizedBox(
-                  height: 120,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.picture_as_pdf, size: 48, color: Colors.red),
-                        SizedBox(height: 8),
-                        Text('PDF Scan Document', style: TextStyle(fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                  ),
                 ),
           actions: [
             TextButton(
@@ -227,11 +436,8 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
     }
 
     if (_rcDocumentFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please upload the Registration Certificate (RC) document.'),
-          backgroundColor: Colors.orange,
-        ),
+      _showValidationError(
+        "Please upload the Registration Certificate (RC) document.",
       );
       return;
     }
@@ -241,161 +447,627 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
     try {
       // 1. Upload car images to Cloudinary (using existing uploadFiles flow)
       final List<XFile> localCarImages = widget.draft.localPhotos;
-      final List<String> uploadedCarUrls = List<String>.from(widget.draft.selectedPhotos);
+      final List<String> uploadedCarUrls = List<String>.from(
+        widget.draft.selectedPhotos,
+      );
 
       if (localCarImages.isNotEmpty) {
-        final cloudUrls = await _apiService.uploadFiles(localCarImages, (progress) {});
+        final cloudUrls = await _apiService.uploadFiles(
+          localCarImages,
+          (progress) {},
+        );
         uploadedCarUrls.addAll(cloudUrls);
       }
 
-      // 2. Upload verification documents to Supabase storage flow
-      String? rcDocUrl;
-      String? insuranceDocUrl;
-      String? dlDocUrl;
-      String? pollutionDocUrl;
+      // 2. Prepare vehicle payload & create vehicle (if not already created)
+      String? vehicleId = _verificationState.vehicleId;
+      Map<String, dynamic> vehicle;
 
-      // RC Book
-      rcDocUrl = await _apiService.uploadDocument(_rcDocumentFile!);
+      if (vehicleId == null) {
+        final payload = VehicleModel.fromDraft(
+          widget.draft.copyWith(selectedPhotos: uploadedCarUrls),
+        );
+        payload['rc_number'] = _registrationCertificateController.text.trim();
 
-      // Insurance (Optional)
-      if (_insuranceDocumentFile != null) {
-        insuranceDocUrl = await _apiService.uploadDocument(_insuranceDocumentFile!);
+        vehicle = await _apiService.createVehicle(payload);
+        vehicleId = vehicle['id'] as String?;
+        if (vehicleId == null) {
+          throw Exception('Failed to obtain vehicle ID from listing response.');
+        }
       }
 
-      // Driving License (Optional)
+      // 3. Upload driving license (if present) to Supabase (old flow)
       if (_dlDocumentFile != null) {
-        dlDocUrl = await _apiService.uploadDocument(_dlDocumentFile!);
-      }
-
-      // Pollution Certificate (Optional)
-      if (_pollutionDocumentFile != null) {
-        pollutionDocUrl = await _apiService.uploadDocument(_pollutionDocumentFile!);
-      }
-
-      // 3. Prepare vehicle payload
-      final payload = VehicleModel.fromDraft(widget.draft.copyWith(
-        selectedPhotos: uploadedCarUrls,
-      ));
-      payload['rc_number'] = _registrationCertificateController.text.trim();
-
-      // 4. Create vehicle listing
-      final vehicle = await _apiService.createVehicle(payload);
-      final vehicleId = vehicle['id'] as String?;
-
-      if (vehicleId != null) {
-        // 5. Submit documents metadata to vehicle_documents table
-        // RC Book metadata
+        final dlDocUrl = await _apiService.uploadDocument(_dlDocumentFile!);
         await _apiService.uploadVehicleDocument(
           vehicleId: vehicleId,
-          documentType: 'rc_book',
-          documentUrl: rcDocUrl,
+          documentType: 'driving_license',
+          documentUrl: dlDocUrl,
         );
-
-        // Insurance metadata
-        if (insuranceDocUrl != null || _insurancePolicyController.text.isNotEmpty) {
-          await _apiService.uploadVehicleDocument(
-            vehicleId: vehicleId,
-            documentType: 'insurance',
-            documentUrl: insuranceDocUrl ?? _insurancePolicyController.text.trim(),
-          );
-        }
-
-        // Driving license metadata
-        if (dlDocUrl != null || _ownerIdController.text.isNotEmpty) {
-          await _apiService.uploadVehicleDocument(
-            vehicleId: vehicleId,
-            documentType: 'driving_license',
-            documentUrl: dlDocUrl ?? _ownerIdController.text.trim(),
-          );
-        }
-
-        // Pollution Certificate metadata
-        if (pollutionDocUrl != null || _permitController.text.isNotEmpty) {
-          await _apiService.uploadVehicleDocument(
-            vehicleId: vehicleId,
-            documentType: 'pollution_certificate',
-            documentUrl: pollutionDocUrl ?? _permitController.text.trim(),
-          );
-        }
       }
 
-      if (!mounted) return;
-
-      // 6. Show success summary dialog
-      final summary = <String, String>{
-        'Brand': widget.draft.brand,
-        'Model': widget.draft.model,
-        'Year': widget.draft.manufacturingYear,
-        'Daily Price': '₹${widget.draft.dailyPrice}',
-        'RC Number': _registrationCertificateController.text.trim(),
-        'RC Document': 'Uploaded & Verified',
-        'Car Images': '${uploadedCarUrls.length} Uploaded to Cloudinary',
-        'Listing Status': vehicle['status'] ?? 'under_review',
-      };
-
-      await showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) {
-          return AlertDialog(
-            title: Row(
-              children: const [
-                Icon(Icons.check_circle_rounded, color: Colors.green, size: 28),
-                SizedBox(width: 8),
-                Text('Listing Created!'),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Your vehicle listing has been successfully saved, and documents have been uploaded to Supabase Storage.'),
-                const SizedBox(height: 16),
-                ...summary.entries.map(
-                  (entry) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: RichText(
-                      text: TextSpan(
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: const Color(0xFF103B66),
-                            ),
-                        children: [
-                          TextSpan(
-                            text: '${entry.key}: ',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          TextSpan(text: entry.value),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              FilledButton(
-                onPressed: () {
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                },
-                child: const Text('Back to Home'),
-              ),
-            ],
-          );
-        },
+      // 4. Trigger document verification workflow on the OCR backend
+      await DocumentVerificationController.instance.startVerificationFlow(
+        vehicleId: vehicleId,
+        rc: _rcDocumentFile,
+        insurance: _insuranceDocumentFile,
+        fc: _fitnessDocumentFile,
+        puc: _pucDocumentFile,
+        permit: _permitDocumentFile,
       );
+
+      // Check for validation errors
+      final state = DocumentVerificationController.instance.state;
+      if (state.errorMessage != null) {
+        throw Exception(state.errorMessage);
+      }
+
+      final result = state.verificationResult;
+      if (result != null) {
+        if (result.overallStatus == 'VERIFIED' ||
+            result.overallStatus == 'APPROVED') {
+          _showSuccessDialog(uploadedCarUrls, vehicleId);
+        }
+      }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to submit listing: ${e.toString().replaceAll('Exception:', '').trim()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      String errorMsg = e.toString().replaceAll('Exception:', '').trim();
+      if (e is DioException) {
+        final resData = e.response?.data;
+        if (resData is Map && resData.containsKey('message')) {
+          errorMsg = resData['message'].toString();
+        } else if (e.response?.statusMessage != null) {
+          errorMsg = "${e.response?.statusCode}: ${e.response?.statusMessage}";
+        }
+      }
+      _showValidationError("Submission failed: $errorMsg");
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  void _showSuccessDialog(List<String> uploadedCarUrls, String vehicleId) {
+    final summary = <String, String>{
+      'Brand': widget.draft.brand,
+      'Model': widget.draft.model,
+      'Year': widget.draft.manufacturingYear,
+      'Daily Price': '₹${widget.draft.dailyPrice}',
+      'RC Number': _registrationCertificateController.text.trim(),
+      'Verification Status': 'VERIFIED',
+      'Car Images': '${uploadedCarUrls.length} Uploaded to Cloudinary',
+    };
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.check_circle_rounded, color: Colors.green, size: 28),
+              SizedBox(width: 8),
+              Text('Listing Created!'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Your vehicle listing has been successfully saved, and documents have passed OCR verification.',
+              ),
+              const SizedBox(height: 16),
+              ...summary.entries.map(
+                (entry) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: RichText(
+                    text: TextSpan(
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: const Color(0xFF103B66),
+                      ),
+                      children: [
+                        TextSpan(
+                          text: '${entry.key}: ',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        TextSpan(text: entry.value),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () {
+                // Wipes registration cache on final success
+                DocumentVerificationController.instance.reset();
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              },
+              child: const Text('Back to Home'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String _maskSensitiveText(dynamic value) {
+    if (value == null) return '';
+    final str = value.toString();
+    if (str.length <= 4) return str;
+    final first = str.substring(0, 2);
+    final last = str.substring(str.length - 2);
+    final mask = '*' * (str.length - 4);
+    return '$first$mask$last';
+  }
+
+  dynamic _getValueSafely(Map<String, dynamic> map, List<String> keys) {
+    for (final key in keys) {
+      if (map.containsKey(key)) return map[key];
+    }
+    return null;
+  }
+
+  Widget _buildExtractedFieldRow(
+    String label,
+    String key,
+    Map<String, dynamic> fields, {
+    bool shouldMask = false,
+  }) {
+    final val = _getValueSafely(fields, [
+      key,
+      key.replaceAll(RegExp(r'(?=[A-Z])'), '_').toLowerCase(),
+    ]);
+    if (val == null) return const SizedBox.shrink();
+    final displayVal = shouldMask ? _maskSensitiveText(val) : val.toString();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(color: Color(0xFF57718A), fontSize: 13),
+          ),
+          Text(
+            displayVal,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF103B66),
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExtractedInfoSection() {
+    if (_verificationState.analysisResults.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return RentCarSectionCard(
+      title: 'Extracted OCR Information',
+      icon: Icons.document_scanner_outlined,
+      child: Column(
+        children: _verificationState.analysisResults.entries.map((entry) {
+          final docType = entry.key;
+          final analysisResult = entry.value;
+          final fields = analysisResult.extractedFields;
+
+          if (fields.isEmpty) return const SizedBox.shrink();
+
+          return ExpansionTile(
+            title: Text(
+              docType.toUpperCase(),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF103B66),
+              ),
+            ),
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Column(
+                  children: [
+                    if (docType == 'rc') ...[
+                      _buildExtractedFieldRow(
+                        'Registration Number',
+                        'registrationNumber',
+                        fields,
+                        shouldMask: true,
+                      ),
+                      _buildExtractedFieldRow(
+                        'Owner Name',
+                        'ownerName',
+                        fields,
+                      ),
+                      _buildExtractedFieldRow(
+                        'Engine Number',
+                        'engineNumber',
+                        fields,
+                        shouldMask: true,
+                      ),
+                      _buildExtractedFieldRow(
+                        'Chassis Number',
+                        'chassisNumber',
+                        fields,
+                        shouldMask: true,
+                      ),
+                      _buildExtractedFieldRow(
+                        'Registration Date',
+                        'registrationDate',
+                        fields,
+                      ),
+                    ] else if (docType == 'insurance') ...[
+                      _buildExtractedFieldRow(
+                        'Policy Number',
+                        'policyNumber',
+                        fields,
+                        shouldMask: true,
+                      ),
+                      _buildExtractedFieldRow(
+                        'Expiry Date',
+                        'expiryDate',
+                        fields,
+                      ),
+                    ] else if (docType == 'fc') ...[
+                      _buildExtractedFieldRow(
+                        'Certificate Number',
+                        'certificateNumber',
+                        fields,
+                        shouldMask: true,
+                      ),
+                      _buildExtractedFieldRow(
+                        'Expiry Date',
+                        'expiryDate',
+                        fields,
+                      ),
+                    ] else if (docType == 'puc') ...[
+                      _buildExtractedFieldRow(
+                        'Certificate Number',
+                        'certificateNumber',
+                        fields,
+                        shouldMask: true,
+                      ),
+                      _buildExtractedFieldRow(
+                        'Expiry Date',
+                        'expiryDate',
+                        fields,
+                      ),
+                    ] else if (docType == 'permit') ...[
+                      _buildExtractedFieldRow(
+                        'Permit Number',
+                        'permitNumber',
+                        fields,
+                        shouldMask: true,
+                      ),
+                      _buildExtractedFieldRow(
+                        'Expiry Date',
+                        'expiryDate',
+                        fields,
+                      ),
+                    ] else ...[
+                      ...fields.entries.map(
+                        (e) => _buildExtractedFieldRow(
+                          e.key
+                              .replaceAll(RegExp(r'(?=[A-Z])'), ' ')
+                              .toUpperCase(),
+                          e.key,
+                          fields,
+                          shouldMask:
+                              e.key.toLowerCase().contains('number') ||
+                              e.key.toLowerCase().contains('no'),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildVerificationDetailRow(
+    String label,
+    DocumentVerificationStatus? status,
+  ) {
+    final failed = status == DocumentVerificationStatus.failed;
+    final verified = status == DocumentVerificationStatus.verified;
+    final statusColor = failed
+        ? Colors.red
+        : (verified ? Colors.green : Colors.grey);
+    final icon = failed
+        ? Icons.cancel_rounded
+        : (verified ? Icons.check_circle_rounded : Icons.info_outline);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Icon(icon, color: statusColor, size: 20),
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF103B66),
+            ),
+          ),
+          const Spacer(),
+          Text(
+            failed ? 'REJECTED' : (verified ? 'VALID' : 'PENDING'),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: statusColor,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerificationResultPanel() {
+    final result = _verificationState.verificationResult;
+    if (result == null) return const SizedBox.shrink();
+
+    final isFailed =
+        result.overallStatus == 'FAILED' ||
+        result.overallStatus == 'NEEDS_ATTENTION';
+    final statusColor = isFailed ? Colors.red : Colors.green;
+    final statusBg = isFailed
+        ? const Color(0xFFFFF2F2)
+        : const Color(0xFFF2FFF2);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: statusBg,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    isFailed
+                        ? Icons.warning_amber_rounded
+                        : Icons.check_circle_rounded,
+                    color: statusColor,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      isFailed
+                          ? 'Verification Requires Attention'
+                          : 'Verification Complete',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: statusColor,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Score: ${(result.overallScore * 100).toStringAsFixed(0)}%',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                result.summary.isNotEmpty
+                    ? result.summary
+                    : 'All uploaded documents have been processed.',
+                style: const TextStyle(color: Color(0xFF103B66), fontSize: 14),
+              ),
+              if (result.recommendation.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Recommendation: ${result.recommendation}',
+                  style: const TextStyle(
+                    color: Color(0xFF57718A),
+                    fontSize: 13,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        RentCarSectionCard(
+          title: 'Verification Status Details',
+          icon: Icons.assignment_turned_in_outlined,
+          child: Column(
+            children: [
+              _buildVerificationDetailRow(
+                'RC Book',
+                _verificationState.documentStatuses['rc'],
+              ),
+              if (_insuranceDocumentFile != null)
+                _buildVerificationDetailRow(
+                  'Insurance',
+                  _verificationState.documentStatuses['insurance'],
+                ),
+              if (_fitnessDocumentFile != null)
+                _buildVerificationDetailRow(
+                  'Fitness Certificate (FC)',
+                  _verificationState.documentStatuses['fc'],
+                ),
+              if (_pucDocumentFile != null)
+                _buildVerificationDetailRow(
+                  'PUC Certificate',
+                  _verificationState.documentStatuses['puc'],
+                ),
+              if (_permitDocumentFile != null)
+                _buildVerificationDetailRow(
+                  'Permit Document',
+                  _verificationState.documentStatuses['permit'],
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (result.crossValidationResults.isNotEmpty)
+          RentCarSectionCard(
+            title: 'Cross-Document Validations',
+            icon: Icons.compare_arrows_rounded,
+            child: Column(
+              children: result.crossValidationResults.entries.map((e) {
+                final Map<String, dynamic> valMap = e.value is Map
+                    ? e.value
+                    : {};
+                final passed =
+                    valMap['passed'] == true ||
+                    valMap['status'] == 'success' ||
+                    valMap['status'] == 'VALID';
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Icon(
+                        passed
+                            ? Icons.check_circle_outline
+                            : Icons.error_outline_rounded,
+                        color: passed ? Colors.green : Colors.orange,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          e.key
+                              .replaceAll(RegExp(r'(?=[A-Z])'), ' ')
+                              .toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF103B66),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        valMap['message']?.toString() ??
+                            (passed ? 'PASSED' : 'MISMATCH'),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: passed ? Colors.green : Colors.orange,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildProgressRow(String label, DocumentVerificationStatus? status) {
+    if (status == null || status == DocumentVerificationStatus.notUploaded) {
+      return const SizedBox.shrink();
+    }
+
+    IconData icon = Icons.circle_outlined;
+    Color color = Colors.grey;
+    String statusStr = 'Pending';
+
+    switch (status) {
+      case DocumentVerificationStatus.uploading:
+        icon = Icons.cloud_upload_outlined;
+        color = AppColors.primary;
+        statusStr = 'Uploading...';
+        break;
+      case DocumentVerificationStatus.uploaded:
+        icon = Icons.cloud_done_outlined;
+        color = Colors.blue;
+        statusStr = 'Uploaded';
+        break;
+      case DocumentVerificationStatus.analyzing:
+        icon = Icons.hourglass_empty_rounded;
+        color = Colors.orange;
+        statusStr = 'Extracting info...';
+        break;
+      case DocumentVerificationStatus.analyzed:
+        icon = Icons.fact_check_outlined;
+        color = Colors.purple;
+        statusStr = 'Extracted';
+        break;
+      case DocumentVerificationStatus.verifying:
+        icon = Icons.gpp_maybe_outlined;
+        color = Colors.blue;
+        statusStr = 'Verifying...';
+        break;
+      case DocumentVerificationStatus.verified:
+        icon = Icons.check_circle_rounded;
+        color = Colors.green;
+        statusStr = 'Verified';
+        break;
+      case DocumentVerificationStatus.failed:
+        icon = Icons.cancel_rounded;
+        color = Colors.red;
+        statusStr = 'Failed';
+        break;
+      default:
+        break;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+          ),
+          const Spacer(),
+          Text(
+            statusStr,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: color,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildDocUploadCard({
@@ -406,8 +1078,11 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
     required VoidCallback onRemove,
     required VoidCallback onPreview,
     required IconData icon,
+    bool isPdfOnly = true,
   }) {
     final hasFile = file != null;
+    final sizeText = hasFile ? (_documentSizes[file.name] ?? '') : '';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -428,7 +1103,11 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
               borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(
-              hasFile ? Icons.picture_as_pdf_rounded : icon,
+              hasFile
+                  ? (isPdfOnly
+                        ? Icons.picture_as_pdf_rounded
+                        : Icons.description_rounded)
+                  : icon,
               color: hasFile ? Colors.white : AppColors.primary,
             ),
           ),
@@ -440,24 +1119,58 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: const Color(0xFF103B66),
-                        fontWeight: FontWeight.bold,
-                      ),
+                    color: const Color(0xFF103B66),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  hasFile ? file.name : subtitle,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF57718A),
+                if (hasFile) ...[
+                  Text(
+                    file.name,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF103B66),
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (sizeText.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '$sizeText • ${file.name.split('.').last.toUpperCase()} Selected',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.green,
+                        fontWeight: FontWeight.w500,
                       ),
-                  overflow: TextOverflow.ellipsis,
-                ),
+                    ),
+                  ],
+                ] else ...[
+                  Text(
+                    subtitle,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF57718A),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (isPdfOnly) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      'PDF document only • Max ${ApiConfig.maxDocumentPdfSizeMb}MB',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF8FA3B8),
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ],
               ],
             ),
           ),
           if (hasFile) ...[
             IconButton(
-              icon: const Icon(Icons.visibility_outlined, color: Color(0xFF57718A)),
+              icon: const Icon(
+                Icons.visibility_outlined,
+                color: Color(0xFF57718A),
+              ),
               onPressed: onPreview,
             ),
             IconButton(
@@ -466,7 +1179,10 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
             ),
           ] else
             IconButton(
-              icon: Icon(Icons.add_circle_outline_rounded, color: AppColors.primary),
+              icon: Icon(
+                Icons.add_circle_outline_rounded,
+                color: AppColors.primary,
+              ),
               onPressed: onPick,
             ),
         ],
@@ -476,6 +1192,12 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final result = _verificationState.verificationResult;
+    final hasFailed =
+        result != null &&
+        (result.overallStatus == 'FAILED' ||
+            result.overallStatus == 'NEEDS_ATTENTION');
+
     return Form(
       key: _formKey,
       child: Stack(
@@ -487,11 +1209,17 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                 'Select your RC Book and optional verification documents to list your vehicle.',
             onBack: _isLoading ? null : _goBack,
             onNext: _isLoading ? null : _submit,
-            nextLabel: 'Upload',
+            nextLabel: hasFailed ? 'Retry' : 'Upload',
             backLabel: 'Back',
             isLastStep: true,
             child: Column(
               children: [
+                if (result != null) ...[
+                  _buildVerificationResultPanel(),
+                  const SizedBox(height: 16),
+                  _buildExtractedInfoSection(),
+                  const SizedBox(height: 16),
+                ],
                 RentCarSectionCard(
                   title: 'Required Verification Documents',
                   icon: Icons.upload_file_rounded,
@@ -502,12 +1230,18 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                         subtitle: 'Tap to pick PDF scan or document image',
                         file: _rcDocumentFile,
                         icon: Icons.receipt_long_outlined,
+                        isPdfOnly: true,
                         onPick: () async {
-                          final file = await _pickDocument('RC Book');
-                          if (file != null) setState(() => _rcDocumentFile = file);
+                          final file = await _pickPdfDocument('RC Book');
+                          if (file != null) {
+                            setState(() => _rcDocumentFile = file);
+                          }
                         },
                         onRemove: () => setState(() => _rcDocumentFile = null),
-                        onPreview: () => _showDocumentPreviewDialog(_rcDocumentFile!),
+                        onPreview: () => _showDocumentPreviewDialog(
+                          _rcDocumentFile!,
+                          isPdf: true,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       RentCarTextField(
@@ -515,8 +1249,10 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                         label: 'Registration Certificate Number',
                         hint: 'Enter official RC number',
                         icon: Icons.receipt_long_outlined,
-                        validator: (value) =>
-                            _requiredText(value, 'registration certificate number'),
+                        validator: (value) => _requiredText(
+                          value,
+                          'registration certificate number',
+                        ),
                         textInputAction: TextInputAction.next,
                         readOnly: _isLoading,
                       ),
@@ -534,12 +1270,21 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                         subtitle: 'Tap to pick insurance scan/PDF',
                         file: _insuranceDocumentFile,
                         icon: Icons.policy_outlined,
+                        isPdfOnly: true,
                         onPick: () async {
-                          final file = await _pickDocument('Insurance Policy');
-                          if (file != null) setState(() => _insuranceDocumentFile = file);
+                          final file = await _pickPdfDocument(
+                            'Insurance Policy',
+                          );
+                          if (file != null) {
+                            setState(() => _insuranceDocumentFile = file);
+                          }
                         },
-                        onRemove: () => setState(() => _insuranceDocumentFile = null),
-                        onPreview: () => _showDocumentPreviewDialog(_insuranceDocumentFile!),
+                        onRemove: () =>
+                            setState(() => _insuranceDocumentFile = null),
+                        onPreview: () => _showDocumentPreviewDialog(
+                          _insuranceDocumentFile!,
+                          isPdf: true,
+                        ),
                       ),
                       const SizedBox(height: 14),
                       RentCarTextField(
@@ -552,16 +1297,121 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                       ),
                       const SizedBox(height: 20),
                       _buildDocUploadCard(
+                        title: 'Fitness Certificate (FC)',
+                        subtitle: 'Tap to pick fitness scan/PDF',
+                        file: _fitnessDocumentFile,
+                        icon: Icons.health_and_safety_outlined,
+                        isPdfOnly: true,
+                        onPick: () async {
+                          final file = await _pickPdfDocument(
+                            'Fitness Certificate (FC)',
+                          );
+                          if (file != null) {
+                            setState(() => _fitnessDocumentFile = file);
+                          }
+                        },
+                        onRemove: () =>
+                            setState(() => _fitnessDocumentFile = null),
+                        onPreview: () => _showDocumentPreviewDialog(
+                          _fitnessDocumentFile!,
+                          isPdf: true,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      RentCarTextField(
+                        controller: _fitnessController,
+                        label: 'Fitness Certificate Reference (Optional)',
+                        hint: 'Enter fitness certificate reference number',
+                        icon: Icons.health_and_safety_outlined,
+                        textInputAction: TextInputAction.next,
+                        readOnly: _isLoading,
+                      ),
+                      const SizedBox(height: 20),
+                      _buildDocUploadCard(
+                        title: 'Pollution Under Control (PUC)',
+                        subtitle: 'Tap to pick PUC certificate scan/PDF',
+                        file: _pucDocumentFile,
+                        icon: Icons.wb_cloudy_outlined,
+                        isPdfOnly: true,
+                        onPick: () async {
+                          final file = await _pickPdfDocument(
+                            'PUC Certificate',
+                          );
+                          if (file != null) {
+                            setState(() => _pucDocumentFile = file);
+                          }
+                        },
+                        onRemove: () => setState(() => _pucDocumentFile = null),
+                        onPreview: () => _showDocumentPreviewDialog(
+                          _pucDocumentFile!,
+                          isPdf: true,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      RentCarTextField(
+                        controller: _pucController,
+                        label: 'PUC Reference (Optional)',
+                        hint: 'Enter PUC certificate number',
+                        icon: Icons.wb_cloudy_outlined,
+                        textInputAction: TextInputAction.next,
+                        readOnly: _isLoading,
+                      ),
+                      const SizedBox(height: 20),
+                      _buildDocUploadCard(
+                        title: 'Permit Document',
+                        subtitle: 'Tap to pick permit scan/PDF',
+                        file: _permitDocumentFile,
+                        icon: Icons.credit_card_outlined,
+                        isPdfOnly: true,
+                        onPick: () async {
+                          final file = await _pickPdfDocument(
+                            'Permit Document',
+                          );
+                          if (file != null) {
+                            setState(() => _permitDocumentFile = file);
+                          }
+                        },
+                        onRemove: () =>
+                            setState(() => _permitDocumentFile = null),
+                        onPreview: () => _showDocumentPreviewDialog(
+                          _permitDocumentFile!,
+                          isPdf: true,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      RentCarTextField(
+                        controller: _permitController,
+                        label: 'Permit Reference (Optional)',
+                        hint: 'Enter permit reference number',
+                        icon: Icons.credit_card_outlined,
+                        readOnly: _isLoading,
+                      ),
+                      const SizedBox(height: 20),
+                      _buildDocUploadCard(
                         title: 'Driving License',
                         subtitle: 'Tap to pick driving license scan/PDF',
                         file: _dlDocumentFile,
                         icon: Icons.badge_outlined,
+                        isPdfOnly: false,
                         onPick: () async {
                           final file = await _pickDocument('Driving License');
-                          if (file != null) setState(() => _dlDocumentFile = file);
+                          if (file != null) {
+                            setState(() => _dlDocumentFile = file);
+                          }
                         },
                         onRemove: () => setState(() => _dlDocumentFile = null),
-                        onPreview: () => _showDocumentPreviewDialog(_dlDocumentFile!),
+                        onPreview: () {
+                          final isPdf =
+                              _dlDocumentFile!.name
+                                  .split('.')
+                                  .last
+                                  .toLowerCase() ==
+                              'pdf';
+                          _showDocumentPreviewDialog(
+                            _dlDocumentFile!,
+                            isPdf: isPdf,
+                          );
+                        },
                       ),
                       const SizedBox(height: 14),
                       RentCarTextField(
@@ -569,28 +1419,6 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                         label: 'Owner ID Reference / DL Number (Optional)',
                         hint: 'Enter owner DL reference',
                         icon: Icons.badge_outlined,
-                        textInputAction: TextInputAction.next,
-                        readOnly: _isLoading,
-                      ),
-                      const SizedBox(height: 20),
-                      _buildDocUploadCard(
-                        title: 'Pollution Certificate / Permit',
-                        subtitle: 'Tap to pick permit or pollution scan/PDF',
-                        file: _pollutionDocumentFile,
-                        icon: Icons.credit_card_outlined,
-                        onPick: () async {
-                          final file = await _pickDocument('Pollution Certificate / Permit');
-                          if (file != null) setState(() => _pollutionDocumentFile = file);
-                        },
-                        onRemove: () => setState(() => _pollutionDocumentFile = null),
-                        onPreview: () => _showDocumentPreviewDialog(_pollutionDocumentFile!),
-                      ),
-                      const SizedBox(height: 14),
-                      RentCarTextField(
-                        controller: _permitController,
-                        label: 'Permit / Fitness / Pollution Reference (Optional)',
-                        hint: 'Enter permit or pollution number',
-                        icon: Icons.credit_card_outlined,
                         readOnly: _isLoading,
                       ),
                     ],
@@ -616,30 +1444,64 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
               ],
             ),
           ),
-          if (_isLoading)
+          if (_isLoading ||
+              _verificationState.isUploading ||
+              _verificationState.isAnalyzing ||
+              _verificationState.isVerifying)
             Positioned.fill(
               child: Container(
-                color: Colors.black.withOpacity(0.4),
-                child: const Center(
+                color: Colors.black.withValues(alpha: 0.4),
+                child: Center(
                   child: Card(
-                    shape: RoundedRectangleBorder(
+                    shape: const RoundedRectangleBorder(
                       borderRadius: BorderRadius.all(Radius.circular(24)),
                     ),
+                    margin: const EdgeInsets.symmetric(horizontal: 24),
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 32,
+                      ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          CircularProgressIndicator(),
-                          const SizedBox(height: 20),
-                          Text(
-                            'Uploading Listing & Documents...',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          const CircularProgressIndicator(),
+                          const SizedBox(height: 24),
+                          const Text(
+                            'Document Verification In Progress',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: Color(0xFF103B66),
+                            ),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Please do not close the app.',
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Please wait while we run OCR verification.',
                             style: TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
+                          const SizedBox(height: 24),
+                          const Divider(),
+                          const SizedBox(height: 16),
+                          _buildProgressRow(
+                            'RC Book Document',
+                            _verificationState.documentStatuses['rc'],
+                          ),
+                          _buildProgressRow(
+                            'Insurance Policy',
+                            _verificationState.documentStatuses['insurance'],
+                          ),
+                          _buildProgressRow(
+                            'Fitness Certificate (FC)',
+                            _verificationState.documentStatuses['fc'],
+                          ),
+                          _buildProgressRow(
+                            'PUC Certificate',
+                            _verificationState.documentStatuses['puc'],
+                          ),
+                          _buildProgressRow(
+                            'Permit Document',
+                            _verificationState.documentStatuses['permit'],
                           ),
                         ],
                       ),

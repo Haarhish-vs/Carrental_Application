@@ -39,9 +39,16 @@ class CurrentLocationCard extends StatelessWidget {
                   ? const SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.primary,
+                      ),
                     )
-                  : const Icon(Icons.my_location_rounded, color: AppColors.primary, size: 20),
+                  : const Icon(
+                      Icons.my_location_rounded,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -50,12 +57,21 @@ class CurrentLocationCard extends StatelessWidget {
                 children: [
                   const Text(
                     'Use Current Location',
-                    style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    isLoading ? 'Detecting your location...' : 'Find cars near your current location',
-                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    isLoading
+                        ? 'Detecting your location...'
+                        : 'Find cars near your current location',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),

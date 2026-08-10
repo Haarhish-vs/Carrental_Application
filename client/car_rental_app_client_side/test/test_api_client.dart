@@ -5,7 +5,7 @@ import 'package:car_rental_app_client_side/features/owner/presentation/screens/r
 void main() {
   final service = CarApiService();
   assert(service.toString().isNotEmpty);
-  
+
   final draft = RentCarDraft(
     brand: 'Toyota',
     model: 'Corolla',
@@ -23,7 +23,9 @@ void main() {
     pickupLocation: '123 Indiranagar, Bengaluru, Karnataka, 560038',
     availabilityFrom: '2026-08-10',
     availabilityTo: '2026-08-20',
-    selectedPhotos: ['https://carrental-application-z49a.onrender.com/uploads/sample.jpg'],
+    selectedPhotos: [
+      'https://carrental-application-z49a.onrender.com/uploads/sample.jpg',
+    ],
     selectedDocuments: [],
   );
 
