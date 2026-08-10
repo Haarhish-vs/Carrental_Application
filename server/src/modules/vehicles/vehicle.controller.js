@@ -250,54 +250,14 @@ const uploadDocumentFile = async (req, res, next) => {
   }
 };
 
-const searchVehicles = async (req, res, next) => {
-  try {
-    const params = req.method === 'GET' ? {
-      location: req.query.location ? (typeof req.query.location === 'string' && req.query.location.startsWith('{') ? JSON.parse(req.query.location) : req.query.location) : req.query.city,
-      pickupDate: req.query.pickupDate || req.query.pickup_date || req.query.startDate || req.query.start_date,
-      pickupTime: req.query.pickupTime || req.query.pickup_time || req.query.startTime || req.query.start_time,
-      returnDate: req.query.returnDate || req.query.return_date || req.query.endDate || req.query.end_date,
-      returnTime: req.query.returnTime || req.query.return_time || req.query.endTime || req.query.end_time,
-      filters: req.query.filters ? (typeof req.query.filters === 'string' ? JSON.parse(req.query.filters) : req.query.filters) : {
-        carType: req.query.carType || req.query.car_type,
-        transmission: req.query.transmission,
-        fuelType: req.query.fuelType || req.query.fuel_type,
-        seats: req.query.seats || req.query.seatingCapacity,
-        minPrice: req.query.minPrice || req.query.min_price,
-        maxPrice: req.query.maxPrice || req.query.max_price
-      },
-      sort: req.query.sort || req.query.sortBy || 'recommended',
-      page: req.query.page || 1,
-      limit: req.query.limit || 10
-    } : req.body;
-
-    const result = await vehicleService.searchVehicles(params);
-    return res.status(200).json(result);
-  } catch (error) {
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        success: false,
-        message: error.message
-      });
-    }
-    next(error);
-  }
-};
-
 const getFilterOptions = async (req, res, next) => {
   try {
-    const filters = await vehicleService.getFilterOptions();
+    const options = await vehicleService.getFilterOptions();
     return res.status(200).json({
       success: true,
-      filters: filters
+      data: options
     });
   } catch (error) {
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        success: false,
-        message: error.message
-      });
-    }
     next(error);
   }
 };
@@ -314,6 +274,5 @@ module.exports = {
   verifyDocumentAdmin,
   uploadMedia,
   uploadDocumentFile,
-  searchVehicles,
   getFilterOptions
 };

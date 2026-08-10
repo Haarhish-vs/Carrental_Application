@@ -25,8 +25,14 @@ class PopularCarsGrid extends StatelessWidget {
       children: [
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 20),
-          child: Text('Popular Cars',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          child: Text(
+            'Popular Cars',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
         ),
         const SizedBox(height: 12),
         LayoutBuilder(
@@ -35,8 +41,8 @@ class PopularCarsGrid extends StatelessWidget {
             final crossAxisCount = constraints.maxWidth >= 900
                 ? 4
                 : constraints.maxWidth >= 600
-                    ? 3
-                    : 2;
+                ? 3
+                : 2;
             return GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),

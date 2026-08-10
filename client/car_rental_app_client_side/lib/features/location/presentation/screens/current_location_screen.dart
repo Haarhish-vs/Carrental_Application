@@ -25,7 +25,8 @@ class _CurrentLocationScreenState extends State<CurrentLocationScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _detect());
   }
 
-  Future<void> _detect() => context.read<LocationProvider>().requestCurrentLocation();
+  Future<void> _detect() =>
+      context.read<LocationProvider>().requestCurrentLocation();
 
   Future<void> _handleUseThisLocation(LocationModel location) async {
     final provider = context.read<LocationProvider>();
@@ -77,7 +78,10 @@ class _CurrentLocationScreenState extends State<CurrentLocationScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Current Location', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text(
+          'Current Location',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -91,9 +95,13 @@ class _CurrentLocationScreenState extends State<CurrentLocationScreen> {
             if (provider.currentLocationStatus == LocationLoadStatus.error) {
               switch (provider.currentLocationErrorType) {
                 case CurrentLocationErrorType.serviceDisabled:
-                  return _ServicesDisabledView(onOpenSettings: _handleOpenLocationSettings);
+                  return _ServicesDisabledView(
+                    onOpenSettings: _handleOpenLocationSettings,
+                  );
                 case CurrentLocationErrorType.permissionDenied:
-                  return _PermissionRequiredView(onGrant: _handleGrantPermission);
+                  return _PermissionRequiredView(
+                    onGrant: _handleGrantPermission,
+                  );
                 case CurrentLocationErrorType.permissionDeniedForever:
                   return _PermissionRequiredView(
                     onGrant: _handleOpenAppSettings,
@@ -103,7 +111,9 @@ class _CurrentLocationScreenState extends State<CurrentLocationScreen> {
                 case CurrentLocationErrorType.unknown:
                 case CurrentLocationErrorType.none:
                   return _GenericErrorView(
-                    message: provider.currentLocationError ?? 'Something went wrong.',
+                    message:
+                        provider.currentLocationError ??
+                        'Something went wrong.',
                     onRetry: _detect,
                   );
               }
@@ -139,7 +149,11 @@ class _DetectingView extends StatelessWidget {
             const SizedBox(height: 32),
             const Text(
               'Detecting your location...',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
             ),
             const SizedBox(height: 8),
             const Text(
@@ -158,7 +172,8 @@ class _PulsingLocationIndicator extends StatefulWidget {
   const _PulsingLocationIndicator();
 
   @override
-  State<_PulsingLocationIndicator> createState() => _PulsingLocationIndicatorState();
+  State<_PulsingLocationIndicator> createState() =>
+      _PulsingLocationIndicatorState();
 }
 
 class _PulsingLocationIndicatorState extends State<_PulsingLocationIndicator>
@@ -168,7 +183,10 @@ class _PulsingLocationIndicatorState extends State<_PulsingLocationIndicator>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat();
   }
 
   @override
@@ -198,7 +216,11 @@ class _PulsingLocationIndicatorState extends State<_PulsingLocationIndicator>
                   color: AppColors.primary,
                   shape: BoxShape.circle,
                   boxShadow: [
-                    BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 16, spreadRadius: 2),
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.4),
+                      blurRadius: 16,
+                      spreadRadius: 2,
+                    ),
                   ],
                 ),
               ),
@@ -219,7 +241,10 @@ class _PulsingLocationIndicatorState extends State<_PulsingLocationIndicator>
       child: Container(
         width: size,
         height: size,
-        decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+        decoration: const BoxDecoration(
+          color: AppColors.primary,
+          shape: BoxShape.circle,
+        ),
       ),
     );
   }
@@ -262,20 +287,41 @@ class _LocationFoundView extends StatelessWidget {
                     color: AppColors.primary.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.location_on, color: AppColors.primary, size: 20),
+                  child: const Icon(
+                    Icons.location_on,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Your Current Location',
-                          style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
+                      const Text(
+                        'Your Current Location',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                       const SizedBox(height: 4),
-                      Text(location.name,
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                      Text(
+                        location.name,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
                       const SizedBox(height: 3),
-                      Text(location.address, style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
+                      Text(
+                        location.address,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -292,10 +338,15 @@ class _LocationFoundView extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 elevation: 0,
               ),
-              label: const Text('Use This Location', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+              label: const Text(
+                'Use This Location',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -307,9 +358,14 @@ class _LocationFoundView extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.textPrimary,
                 side: const BorderSide(color: AppColors.divider),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
-              child: const Text('Choose Another Location', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+              child: const Text(
+                'Choose Another Location',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+              ),
             ),
           ),
         ],
@@ -322,7 +378,10 @@ class _PermissionRequiredView extends StatelessWidget {
   final VoidCallback onGrant;
   final String buttonLabel;
 
-  const _PermissionRequiredView({required this.onGrant, this.buttonLabel = 'Grant Permission'});
+  const _PermissionRequiredView({
+    required this.onGrant,
+    this.buttonLabel = 'Grant Permission',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -334,16 +393,32 @@ class _PermissionRequiredView extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.08), shape: BoxShape.circle),
-              child: const Icon(Icons.location_off_rounded, size: 44, color: AppColors.primary),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.location_off_rounded,
+                size: 44,
+                color: AppColors.primary,
+              ),
             ),
             const SizedBox(height: 24),
-            const Text('Location permission required',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+            const Text(
+              'Location permission required',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
             const SizedBox(height: 8),
-            const Text('Allow location access so we can find cars near you.',
-                textAlign: TextAlign.center, style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
+            const Text(
+              'Allow location access so we can find cars near you.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+            ),
             const SizedBox(height: 28),
             SizedBox(
               width: double.infinity,
@@ -353,10 +428,18 @@ class _PermissionRequiredView extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   elevation: 0,
                 ),
-                child: Text(buttonLabel, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                child: Text(
+                  buttonLabel,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
               ),
             ),
           ],
@@ -381,16 +464,32 @@ class _ServicesDisabledView extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.08), shape: BoxShape.circle),
-              child: const Icon(Icons.location_disabled_rounded, size: 44, color: AppColors.primary),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.location_disabled_rounded,
+                size: 44,
+                color: AppColors.primary,
+              ),
             ),
             const SizedBox(height: 24),
-            const Text('Turn on Location Services',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+            const Text(
+              'Turn on Location Services',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
             const SizedBox(height: 8),
-            const Text('Enable location services on your device to detect cars near you.',
-                textAlign: TextAlign.center, style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
+            const Text(
+              'Enable location services on your device to detect cars near you.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+            ),
             const SizedBox(height: 28),
             SizedBox(
               width: double.infinity,
@@ -400,10 +499,15 @@ class _ServicesDisabledView extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   elevation: 0,
                 ),
-                child: const Text('Open Settings', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                child: const Text(
+                  'Open Settings',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                ),
               ),
             ),
           ],
@@ -427,19 +531,35 @@ class _GenericErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline_rounded, size: 44, color: AppColors.textSecondary),
+            const Icon(
+              Icons.error_outline_rounded,
+              size: 44,
+              color: AppColors.textSecondary,
+            ),
             const SizedBox(height: 16),
-            Text(message, textAlign: TextAlign.center, style: const TextStyle(fontSize: 13.5, color: AppColors.textSecondary)),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 13.5,
+                color: AppColors.textSecondary,
+              ),
+            ),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: onRetry,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 elevation: 0,
               ),
-              child: const Text('Try Again', style: TextStyle(fontWeight: FontWeight.w600)),
+              child: const Text(
+                'Try Again',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
           ],
         ),

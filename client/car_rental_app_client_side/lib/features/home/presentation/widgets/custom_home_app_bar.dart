@@ -30,9 +30,12 @@ class CustomHomeAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayName = (userName == null || userName!.trim().isEmpty) ? 'Guest' : userName!;
-    final displayLocation =
-        (location == null || location!.trim().isEmpty) ? 'Select Location' : location!;
+    final displayName = (userName == null || userName!.trim().isEmpty)
+        ? 'Guest'
+        : userName!;
+    final displayLocation = (location == null || location!.trim().isEmpty)
+        ? 'Select Location'
+        : location!;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -63,7 +66,11 @@ class CustomHomeAppBar extends StatelessWidget {
                 const SizedBox(height: 2),
                 Row(
                   children: [
-                    const Icon(Icons.location_on, size: 14, color: AppColors.primary),
+                    const Icon(
+                      Icons.location_on,
+                      size: 14,
+                      color: AppColors.primary,
+                    ),
                     const SizedBox(width: 2),
                     Flexible(
                       child: Text(
@@ -80,14 +87,18 @@ class CustomHomeAppBar extends StatelessWidget {
               ],
             ),
           ),
-          _CircleIconButton(icon: Icons.favorite_border_rounded, onTap: onFavoriteTap),
+          _CircleIconButton(
+            icon: Icons.favorite_border_rounded,
+            onTap: onFavoriteTap,
+          ),
           const SizedBox(width: 10),
           GestureDetector(
             onTap: onProfileTap,
             child: CircleAvatar(
               radius: 20,
               backgroundColor: AppColors.primary.withOpacity(0.1),
-              backgroundImage: (profileImageUrl != null && profileImageUrl!.isNotEmpty)
+              backgroundImage:
+                  (profileImageUrl != null && profileImageUrl!.isNotEmpty)
                   ? NetworkImage(profileImageUrl!)
                   : null,
               child: (profileImageUrl == null || profileImageUrl!.isEmpty)

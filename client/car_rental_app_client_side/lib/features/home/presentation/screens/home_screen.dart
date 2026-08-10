@@ -68,8 +68,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void _loadUserInfo() {
     if (AuthService.isAuthenticated && AuthService.currentUser != null) {
       final user = AuthService.currentUser!;
-      final fullName = user['full_name']?.toString() ?? user['fullName']?.toString();
-      final phone = user['phone_number']?.toString() ?? user['phoneNumber']?.toString();
+      final fullName =
+          user['full_name']?.toString() ?? user['fullName']?.toString();
+      final phone =
+          user['phone_number']?.toString() ?? user['phoneNumber']?.toString();
 
       if (fullName != null && fullName.trim().isNotEmpty) {
         _userName = fullName.trim();
@@ -107,11 +109,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: const Color(0xFFEAF2FF),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.lock_outline_rounded, color: Color(0xFF1E5AA8)),
+              child: const Icon(
+                Icons.lock_outline_rounded,
+                color: Color(0xFF1E5AA8),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         ),
@@ -128,7 +139,9 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () => Navigator.of(ctx).pop(true),
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFF1E5AA8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: const Text('Log In / Register'),
           ),
@@ -138,9 +151,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (shouldLogin != true || !mounted) return false;
 
-    final authSuccess = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => const AuthScreen()),
-    );
+    final authSuccess = await Navigator.of(
+      context,
+    ).push<bool>(MaterialPageRoute(builder: (_) => const AuthScreen()));
 
     return authSuccess == true;
   }
@@ -152,11 +165,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (authenticated && mounted) {
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => const CarSpecificationScreen(),
-        ),
-      );
+      await Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const CarSpecificationScreen()));
       if (mounted) {
         setState(() {
           _vehiclesFuture = _fetchHomeVehicles();
@@ -167,9 +178,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _handleLogout() async {
     if (!AuthService.isAuthenticated) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You are not logged in')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('You are not logged in')));
       return;
     }
 
@@ -178,7 +189,9 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Log Out'),
-        content: const Text('Are you sure you want to log out of your account?'),
+        content: const Text(
+          'Are you sure you want to log out of your account?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -188,7 +201,9 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () => Navigator.of(ctx).pop(true),
             style: FilledButton.styleFrom(
               backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: const Text('Log Out'),
           ),
@@ -226,8 +241,12 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final user = AuthService.currentUser ?? {};
-    final name = user['full_name']?.toString() ?? user['fullName']?.toString() ?? 'User';
-    final phone = user['phone_number']?.toString() ?? user['phoneNumber']?.toString() ?? '';
+    final name =
+        user['full_name']?.toString() ?? user['fullName']?.toString() ?? 'User';
+    final phone =
+        user['phone_number']?.toString() ??
+        user['phoneNumber']?.toString() ??
+        '';
 
     showDialog<void>(
       context: context,
@@ -241,7 +260,13 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              child: Text(
+                name,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         ),
@@ -250,12 +275,27 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (phone.isNotEmpty) ...[
-              const Text('Phone Number', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              const Text(
+                'Phone Number',
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
               const SizedBox(height: 2),
-              Text(phone, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              Text(
+                phone,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               const SizedBox(height: 14),
             ],
-            const Text('Account Status: Active', style: TextStyle(color: AppColors.success, fontWeight: FontWeight.bold)),
+            const Text(
+              'Account Status: Active',
+              style: TextStyle(
+                color: AppColors.success,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
         actions: [
@@ -270,7 +310,9 @@ class _HomeScreenState extends State<HomeScreen> {
             },
             style: FilledButton.styleFrom(
               backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: const Text('Log Out'),
           ),
@@ -400,11 +442,22 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: const [
-                      Text('Recommended Cars',
-                          style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                      Text(
+                        'Recommended Cars',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
                       SizedBox(height: 12),
-                      Text('Unable to load vehicles. Please try again later.',
-                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                      Text(
+                        'Unable to load vehicles. Please try again later.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -417,11 +470,22 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: const [
-                      Text('Recommended Cars',
-                          style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                      Text(
+                        'Recommended Cars',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
                       SizedBox(height: 12),
-                      Text('No cars available at the moment.',
-                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                      Text(
+                        'No cars available at the moment.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -470,9 +534,7 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
           const SizedBox(height: 26),
-          BecomeHostBanner(
-            onHostTap: _goHost,
-          ),
+          BecomeHostBanner(onHostTap: _goHost),
           const SizedBox(height: 30),
         ],
       ),
@@ -547,9 +609,9 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         onSupportTap: () {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Support coming soon')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Support coming soon')));
         },
         onHostTap: () async {
           Navigator.pop(context);
@@ -557,9 +619,9 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         onSettingsTap: () {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Settings coming soon')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Settings coming soon')));
         },
         onHelpTap: () {
           Navigator.pop(context);
@@ -578,9 +640,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _handleLogout();
         },
       ),
-      body: SafeArea(
-        child: _buildBody(),
-      ),
+      body: SafeArea(child: _buildBody()),
       bottomNavigationBar: BottomNavigation(
         currentIndex: _navIndex,
         onHomeTap: () {

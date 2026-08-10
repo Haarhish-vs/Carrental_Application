@@ -417,6 +417,38 @@ class VehicleService {
     return resultData;
   }
 
+  async getFilterOptions() {
+    const { data: vehicles, error } = await supabase
+      .from('vehicles')
+      .select('city, brand, transmission, fuel_type, seats, price_per_day');
+
+    if (error) {
+      throw new Error(`Failed to retrieve filter options: ${error.message}`);
+    }
+
+    const cities = [...new Set((vehicles || []).map(v => v.city).filter(Boolean))].sort();
+    const brands = [...new Set((vehicles || []).map(v => v.brand).filter(Boolean))].sort();
+    const transmissions = [...new Set((vehicles || []).map(v => v.transmission).filter(Boolean))].sort();
+    const fuelTypes = [...new Set((vehicles || []).map(v => v.fuel_type).filter(Boolean))].sort();
+    const seats = [...new Set((vehicles || []).map(v => v.seats).filter(v => v !== null))].sort((a, b) => a - b);
+    
+    const prices = (vehicles || []).map(v => parseFloat(v.price_per_day)).filter(p => !isNaN(p));
+    const minPrice = prices.length ? Math.min(...prices) : 0;
+    const maxPrice = prices.length ? Math.max(...prices) : 0;
+
+    return {
+      cities,
+      brands,
+      transmissions,
+      fuelTypes,
+      seats,
+      priceRange: {
+        min: minPrice,
+        max: maxPrice
+      }
+    };
+  }
+
   /**
   async getVehicleById(vehicleId, currentUserId = null) {
     const { data: vehicle, error: fetchError } = await supabase

@@ -57,10 +57,10 @@ class AuthRequiredView extends StatelessWidget {
                     title,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: const Color(0xFF103B66),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                        ),
+                      color: const Color(0xFF103B66),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
                   ),
                   const SizedBox(height: 8),
 
@@ -79,11 +79,12 @@ class AuthRequiredView extends StatelessWidget {
                   // Login / Register CTA
                   FilledButton(
                     onPressed: () async {
-                      final authSuccess = await Navigator.of(context).push<bool>(
-                        MaterialPageRoute(
-                          builder: (_) => const AuthScreen(),
-                        ),
-                      );
+                      final authSuccess = await Navigator.of(context)
+                          .push<bool>(
+                            MaterialPageRoute(
+                              builder: (_) => const AuthScreen(),
+                            ),
+                          );
 
                       if (authSuccess == true && onAuthenticated != null) {
                         onAuthenticated!();
