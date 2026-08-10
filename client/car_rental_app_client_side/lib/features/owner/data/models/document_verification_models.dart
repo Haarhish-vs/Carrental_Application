@@ -126,3 +126,34 @@ class DocumentVerificationState {
     );
   }
 }
+
+class PdfDocumentValidator {
+  static String? validatePdf(
+    String filename,
+    String? mimeType,
+    int bytesLength, {
+    int maxSizeMb = 10,
+  }) {
+    final fileExt = filename.split('.').last.toLowerCase();
+    if (fileExt != 'pdf') {
+      return "Only PDF documents are accepted.";
+    }
+
+    if (mimeType != null &&
+        mimeType.isNotEmpty &&
+        mimeType != 'application/pdf') {
+      return "Only PDF documents are accepted.";
+    }
+
+    if (bytesLength <= 0) {
+      return "This PDF appears to be empty or unreadable.";
+    }
+
+    final maxSizeInBytes = maxSizeMb * 1024 * 1024;
+    if (bytesLength > maxSizeInBytes) {
+      return "This PDF exceeds the allowed file size.";
+    }
+
+    return null;
+  }
+}

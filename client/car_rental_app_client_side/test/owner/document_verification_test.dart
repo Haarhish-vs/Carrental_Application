@@ -43,11 +43,15 @@ void main() {
 
     test('1. Multipart field mapping checks', () async {
       mockInterceptor.mockResponseData = {'success': true};
-      
-      final rc = XFile.fromData(Uint8List(10), name: 'rc.pdf');
-      final insurance = XFile.fromData(Uint8List(10), name: 'ins.jpg');
-      final fc = XFile.fromData(Uint8List(10), name: 'fc.png');
-      
+
+      final rc = XFile.fromData(Uint8List(10), name: 'rc.pdf', path: 'rc.pdf');
+      final insurance = XFile.fromData(
+        Uint8List(10),
+        name: 'ins.pdf',
+        path: 'ins.pdf',
+      );
+      final fc = XFile.fromData(Uint8List(10), name: 'fc.pdf', path: 'fc.pdf');
+
       await repository.uploadDocuments(
         vehicleId: 'veh123',
         rc: rc,
@@ -59,30 +63,48 @@ void main() {
       expect(lastReq, isNotNull);
       expect(lastReq!.path, '/api/documents/upload');
       expect(lastReq.data, isA<FormData>());
-      
+
       final formData = lastReq.data as FormData;
       final fields = formData.fields;
-      expect(fields.any((f) => f.key == 'vehicleId' && f.value == 'veh123'), isTrue);
+      expect(
+        fields.any((f) => f.key == 'vehicleId' && f.value == 'veh123'),
+        isTrue,
+      );
 
       final files = formData.files;
-      expect(files.any((f) => f.key == 'rc'), isTrue);
-      expect(files.any((f) => f.key == 'insurance'), isTrue);
-      expect(files.any((f) => f.key == 'fc'), isTrue);
+
+      // Verify exact field mappings
+      final rcFileEntry = files.firstWhere((f) => f.key == 'rc');
+      final insFileEntry = files.firstWhere((f) => f.key == 'insurance');
+      final fcFileEntry = files.firstWhere((f) => f.key == 'fc');
+
+      expect(rcFileEntry, isNotNull);
+      expect(insFileEntry, isNotNull);
+      expect(fcFileEntry, isNotNull);
+
+      // Verify correct filename preserved
+      expect(rcFileEntry.value.filename, 'rc.pdf');
+      expect(insFileEntry.value.filename, 'ins.pdf');
+
+      // Verify correct MIME type application/pdf is set
+      expect(rcFileEntry.value.contentType?.mimeType, 'application/pdf');
+      expect(insFileEntry.value.contentType?.mimeType, 'application/pdf');
+
       expect(files.any((f) => f.key == 'puc'), isFalse);
     });
 
     test('2. Authentication token header presence', () async {
       mockInterceptor.mockResponseData = {'success': true};
-      
+
       // Inject dummy authentication session token to CarApiService
       CarApiService.token = 'test-token-jwt-123';
-      
+
       await repository.verifyDocuments(vehicleId: 'veh123');
 
       final lastReq = mockInterceptor.lastRequestOptions;
       expect(lastReq, isNotNull);
       expect(lastReq!.headers['Authorization'], 'Bearer test-token-jwt-123');
-      
+
       // Clean up token
       CarApiService.token = null;
     });
@@ -94,8 +116,8 @@ void main() {
           'extractedFields': {
             'registrationNumber': 'TN-38-AB-1234',
             'ownerName': 'Alice Smith',
-          }
-        }
+          },
+        },
       };
 
       final result = await repository.analyzeDocument(
@@ -124,7 +146,7 @@ void main() {
           'recommendation': 'Approved',
           'validationResults': {},
           'crossValidationResults': {},
-        }
+        },
       };
 
       final result = await repository.verifyDocuments(vehicleId: 'veh123');
@@ -164,11 +186,14 @@ void main() {
         'summary': 'Insurance expired',
         'recommendation': 'Reject',
         'validationResults': {
-          'insurance': {'isValid': false, 'status': 'EXPIRED'}
+          'insurance': {'isValid': false, 'status': 'EXPIRED'},
         },
         'crossValidationResults': {
-          'chassisMismatch': {'passed': false, 'message': 'Chassis number mismatch'}
-        }
+          'chassisMismatch': {
+            'passed': false,
+            'message': 'Chassis number mismatch',
+          },
+        },
       };
 
       final result = await repository.verifyDocuments(vehicleId: 'veh123');
@@ -176,6 +201,63 @@ void main() {
       expect(result.overallScore, 60.0);
       expect(result.validationResults['insurance']['isValid'], false);
       expect(result.crossValidationResults['chassisMismatch']['passed'], false);
+    });
+
+    group('Vehicle PDF Validation Tests', () {
+      test('1. PDF file accepted', () {
+        final err = PdfDocumentValidator.validatePdf(
+          'receipt.pdf',
+          'application/pdf',
+          1024,
+        );
+        expect(err, isNull);
+      });
+
+      test('2. JPG rejected', () {
+        final err = PdfDocumentValidator.validatePdf(
+          'rc.jpg',
+          'image/jpeg',
+          1024,
+        );
+        expect(err, 'Only PDF documents are accepted.');
+      });
+
+      test('3. PNG rejected', () {
+        final err = PdfDocumentValidator.validatePdf(
+          'rc.png',
+          'image/png',
+          1024,
+        );
+        expect(err, 'Only PDF documents are accepted.');
+      });
+
+      test('4. Non-PDF rejected', () {
+        final err = PdfDocumentValidator.validatePdf(
+          'rc.txt',
+          'text/plain',
+          1024,
+        );
+        expect(err, 'Only PDF documents are accepted.');
+      });
+
+      test('5. Empty PDF rejected', () {
+        final err = PdfDocumentValidator.validatePdf(
+          'empty.pdf',
+          'application/pdf',
+          0,
+        );
+        expect(err, 'This PDF appears to be empty or unreadable.');
+      });
+
+      test('6. Oversized PDF rejected', () {
+        final err = PdfDocumentValidator.validatePdf(
+          'huge.pdf',
+          'application/pdf',
+          12 * 1024 * 1024,
+          maxSizeMb: 10,
+        );
+        expect(err, 'This PDF exceeds the allowed file size.');
+      });
     });
   });
 }

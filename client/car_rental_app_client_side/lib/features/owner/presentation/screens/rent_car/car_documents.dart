@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:car_rental_app_client_side/core/config/api_config.dart';
 import 'package:car_rental_app_client_side/core/theme/app_colors.dart';
 import 'package:car_rental_app_client_side/features/owner/data/models/vehicle_model.dart';
 import 'package:car_rental_app_client_side/features/owner/data/services/car_api_service.dart';
@@ -41,6 +42,9 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
   late final void Function(DocumentVerificationState) _verificationListener;
   DocumentVerificationState _verificationState = DocumentVerificationState();
 
+  // Cached formatted sizes: maps filename -> "2.4 MB" or "420 KB"
+  final Map<String, String> _documentSizes = {};
+
   @override
   void initState() {
     super.initState();
@@ -60,6 +64,8 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
     _fitnessDocumentFile = widget.draft.localDocuments['fitness_certificate'];
     _pucDocumentFile = widget.draft.localDocuments['puc'];
     _permitDocumentFile = widget.draft.localDocuments['permit'];
+
+    _loadInitialFileSizes();
 
     // Listen to verification flow updates
     _verificationListener = (state) {
@@ -84,6 +90,39 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
     _fitnessController.dispose();
     _pucController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadInitialFileSizes() async {
+    final docs = [
+      _rcDocumentFile,
+      _insuranceDocumentFile,
+      _fitnessDocumentFile,
+      _pucDocumentFile,
+      _permitDocumentFile,
+      _dlDocumentFile,
+    ];
+    for (final doc in docs) {
+      if (doc != null) {
+        try {
+          final length = await doc.length();
+          final sizeStr = _formatBytes(length);
+          if (mounted) {
+            setState(() {
+              _documentSizes[doc.name] = sizeStr;
+            });
+          }
+        } catch (_) {}
+      }
+    }
+  }
+
+  String _formatBytes(int bytes) {
+    if (bytes <= 0) return '0 KB';
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    }
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
   String? _requiredText(String? value, String label) {
@@ -123,6 +162,61 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
     Navigator.of(context).pop(updatedDraft);
   }
 
+  /// OCR PDF Picker - Bypasses camera modal, only accepts *.pdf
+  Future<XFile?> _pickPdfDocument(String title) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        withData: true,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final pickedFile = result.files.first;
+
+        XFile? xfile;
+        if (pickedFile.path != null) {
+          xfile = XFile(pickedFile.path!);
+        } else if (pickedFile.bytes != null) {
+          xfile = XFile.fromData(
+            pickedFile.bytes!,
+            name: pickedFile.name,
+            mimeType: 'application/pdf',
+          );
+        }
+
+        if (xfile == null) {
+          _showValidationError("This PDF appears to be empty or unreadable.");
+          return null;
+        }
+
+        final length = await xfile.length();
+        final validationError = PdfDocumentValidator.validatePdf(
+          xfile.name,
+          xfile.mimeType,
+          length,
+          maxSizeMb: ApiConfig.maxDocumentPdfSizeMb,
+        );
+
+        if (validationError != null) {
+          _showValidationError(validationError);
+          return null;
+        }
+
+        // Cache size representation
+        setState(() {
+          _documentSizes[xfile!.name] = _formatBytes(length);
+        });
+
+        return xfile;
+      }
+    } catch (_) {
+      _showValidationError("Unable to upload this document. Please try again.");
+    }
+    return null;
+  }
+
+  /// Existing DL modal sheet picker (camera + files)
   Future<XFile?> _pickDocument(String title) async {
     return showModalBottomSheet<XFile?>(
       context: context,
@@ -160,7 +254,9 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                       source: ImageSource.camera,
                       imageQuality: 85,
                     );
-                    if (context.mounted) Navigator.of(context).pop(picked);
+                    if (context.mounted) {
+                      Navigator.of(context).pop(picked);
+                    }
                   },
                   icon: const Icon(Icons.camera_alt_outlined),
                   label: const Text('Take Document Photo'),
@@ -192,11 +288,15 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                         );
                       }
 
-                      if (context.mounted) Navigator.of(context).pop(xfile);
+                      if (context.mounted) {
+                        Navigator.of(context).pop(xfile);
+                      }
                       return;
                     }
 
-                    if (context.mounted) Navigator.of(context).pop(null);
+                    if (context.mounted) {
+                      Navigator.of(context).pop(null);
+                    }
                   },
                   icon: const Icon(Icons.description_outlined),
                   label: const Text('Choose Document from Files'),
@@ -212,22 +312,70 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
     );
   }
 
-  void _showDocumentPreviewDialog(XFile file) {
+  void _showValidationError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+
+  void _showDocumentPreviewDialog(XFile file, {bool isPdf = true}) {
     showDialog<void>(
       context: context,
       builder: (context) {
-        final isImage =
-            [
-              'jpg',
-              'jpeg',
-              'png',
-            ].contains(file.name.split('.').last.toLowerCase()) ||
-            (file.mimeType?.startsWith('image/') ?? false);
+        final sizeText = _documentSizes[file.name] ?? '';
 
         return AlertDialog(
-          title: Text(file.name),
-          content: isImage
-              ? FutureBuilder<Uint8List>(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          title: Text(
+            isPdf ? 'PDF Scan Document' : 'Document Image',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF103B66),
+            ),
+          ),
+          content: isPdf
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.picture_as_pdf_rounded,
+                      size: 72,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      file.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Color(0xFF103B66),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    if (sizeText.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        sizeText,
+                        style: const TextStyle(
+                          color: Color(0xFF57718A),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    const Text(
+                      'PDF document selected',
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                )
+              : FutureBuilder<Uint8List>(
                   future: file.readAsBytes(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
@@ -241,22 +389,6 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                     }
                     return const Text('Failed to load image');
                   },
-                )
-              : const SizedBox(
-                  height: 120,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.picture_as_pdf, size: 48, color: Colors.red),
-                        SizedBox(height: 8),
-                        Text(
-                          'PDF Scan Document',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
           actions: [
             TextButton(
@@ -275,13 +407,8 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
     }
 
     if (_rcDocumentFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please upload the Registration Certificate (RC) document.',
-          ),
-          backgroundColor: Colors.orange,
-        ),
+      _showValidationError(
+        "Please upload the Registration Certificate (RC) document.",
       );
       return;
     }
@@ -355,13 +482,8 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Submission failed: ${e.toString().replaceAll('Exception:', '').trim()}',
-          ),
-          backgroundColor: Colors.red,
-        ),
+      _showValidationError(
+        "Submission failed: ${e.toString().replaceAll('Exception:', '').trim()}",
       );
     } finally {
       if (mounted) {
@@ -920,8 +1042,11 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
     required VoidCallback onRemove,
     required VoidCallback onPreview,
     required IconData icon,
+    bool isPdfOnly = true,
   }) {
     final hasFile = file != null;
+    final sizeText = hasFile ? (_documentSizes[file.name] ?? '') : '';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -942,7 +1067,11 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
               borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(
-              hasFile ? Icons.picture_as_pdf_rounded : icon,
+              hasFile
+                  ? (isPdfOnly
+                        ? Icons.picture_as_pdf_rounded
+                        : Icons.description_rounded)
+                  : icon,
               color: hasFile ? Colors.white : AppColors.primary,
             ),
           ),
@@ -959,13 +1088,44 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  hasFile ? file.name : subtitle,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF57718A),
+                if (hasFile) ...[
+                  Text(
+                    file.name,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF103B66),
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  overflow: TextOverflow.ellipsis,
-                ),
+                  if (sizeText.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '$sizeText • PDF Selected',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.green,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ] else ...[
+                  Text(
+                    subtitle,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF57718A),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (isPdfOnly) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      'PDF document only • Max ${ApiConfig.maxDocumentPdfSizeMb}MB',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF8FA3B8),
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ],
               ],
             ),
           ),
@@ -1034,15 +1194,18 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                         subtitle: 'Tap to pick PDF scan or document image',
                         file: _rcDocumentFile,
                         icon: Icons.receipt_long_outlined,
+                        isPdfOnly: true,
                         onPick: () async {
-                          final file = await _pickDocument('RC Book');
+                          final file = await _pickPdfDocument('RC Book');
                           if (file != null) {
                             setState(() => _rcDocumentFile = file);
                           }
                         },
                         onRemove: () => setState(() => _rcDocumentFile = null),
-                        onPreview: () =>
-                            _showDocumentPreviewDialog(_rcDocumentFile!),
+                        onPreview: () => _showDocumentPreviewDialog(
+                          _rcDocumentFile!,
+                          isPdf: true,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       RentCarTextField(
@@ -1071,16 +1234,21 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                         subtitle: 'Tap to pick insurance scan/PDF',
                         file: _insuranceDocumentFile,
                         icon: Icons.policy_outlined,
+                        isPdfOnly: true,
                         onPick: () async {
-                          final file = await _pickDocument('Insurance Policy');
+                          final file = await _pickPdfDocument(
+                            'Insurance Policy',
+                          );
                           if (file != null) {
                             setState(() => _insuranceDocumentFile = file);
                           }
                         },
                         onRemove: () =>
                             setState(() => _insuranceDocumentFile = null),
-                        onPreview: () =>
-                            _showDocumentPreviewDialog(_insuranceDocumentFile!),
+                        onPreview: () => _showDocumentPreviewDialog(
+                          _insuranceDocumentFile!,
+                          isPdf: true,
+                        ),
                       ),
                       const SizedBox(height: 14),
                       RentCarTextField(
@@ -1097,8 +1265,9 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                         subtitle: 'Tap to pick fitness scan/PDF',
                         file: _fitnessDocumentFile,
                         icon: Icons.health_and_safety_outlined,
+                        isPdfOnly: true,
                         onPick: () async {
-                          final file = await _pickDocument(
+                          final file = await _pickPdfDocument(
                             'Fitness Certificate (FC)',
                           );
                           if (file != null) {
@@ -1107,8 +1276,10 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                         },
                         onRemove: () =>
                             setState(() => _fitnessDocumentFile = null),
-                        onPreview: () =>
-                            _showDocumentPreviewDialog(_fitnessDocumentFile!),
+                        onPreview: () => _showDocumentPreviewDialog(
+                          _fitnessDocumentFile!,
+                          isPdf: true,
+                        ),
                       ),
                       const SizedBox(height: 14),
                       RentCarTextField(
@@ -1125,15 +1296,20 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                         subtitle: 'Tap to pick PUC certificate scan/PDF',
                         file: _pucDocumentFile,
                         icon: Icons.wb_cloudy_outlined,
+                        isPdfOnly: true,
                         onPick: () async {
-                          final file = await _pickDocument('PUC Certificate');
+                          final file = await _pickPdfDocument(
+                            'PUC Certificate',
+                          );
                           if (file != null) {
                             setState(() => _pucDocumentFile = file);
                           }
                         },
                         onRemove: () => setState(() => _pucDocumentFile = null),
-                        onPreview: () =>
-                            _showDocumentPreviewDialog(_pucDocumentFile!),
+                        onPreview: () => _showDocumentPreviewDialog(
+                          _pucDocumentFile!,
+                          isPdf: true,
+                        ),
                       ),
                       const SizedBox(height: 14),
                       RentCarTextField(
@@ -1150,16 +1326,21 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                         subtitle: 'Tap to pick permit scan/PDF',
                         file: _permitDocumentFile,
                         icon: Icons.credit_card_outlined,
+                        isPdfOnly: true,
                         onPick: () async {
-                          final file = await _pickDocument('Permit Document');
+                          final file = await _pickPdfDocument(
+                            'Permit Document',
+                          );
                           if (file != null) {
                             setState(() => _permitDocumentFile = file);
                           }
                         },
                         onRemove: () =>
                             setState(() => _permitDocumentFile = null),
-                        onPreview: () =>
-                            _showDocumentPreviewDialog(_permitDocumentFile!),
+                        onPreview: () => _showDocumentPreviewDialog(
+                          _permitDocumentFile!,
+                          isPdf: true,
+                        ),
                       ),
                       const SizedBox(height: 14),
                       RentCarTextField(
@@ -1175,6 +1356,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                         subtitle: 'Tap to pick driving license scan/PDF',
                         file: _dlDocumentFile,
                         icon: Icons.badge_outlined,
+                        isPdfOnly: false,
                         onPick: () async {
                           final file = await _pickDocument('Driving License');
                           if (file != null) {
@@ -1182,8 +1364,18 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                           }
                         },
                         onRemove: () => setState(() => _dlDocumentFile = null),
-                        onPreview: () =>
-                            _showDocumentPreviewDialog(_dlDocumentFile!),
+                        onPreview: () {
+                          final isPdf =
+                              _dlDocumentFile!.name
+                                  .split('.')
+                                  .last
+                                  .toLowerCase() ==
+                              'pdf';
+                          _showDocumentPreviewDialog(
+                            _dlDocumentFile!,
+                            isPdf: isPdf,
+                          );
+                        },
                       ),
                       const SizedBox(height: 14),
                       RentCarTextField(
