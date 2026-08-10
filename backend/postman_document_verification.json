@@ -1,0 +1,88 @@
+{
+  "info": {
+    "name": "Vehicle Document Verification API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Upload Documents",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer <jwt-token>",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "vehicleId", "value": "veh-123", "type": "text" },
+            { "key": "rc", "type": "file", "src": [] },
+            { "key": "insurance", "type": "file", "src": [] },
+            { "key": "fc", "type": "file", "src": [] },
+            { "key": "puc", "type": "file", "src": [] },
+            { "key": "permit", "type": "file", "src": [] }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/documents/upload",
+          "host": ["http://localhost:3000"],
+          "path": ["api", "documents", "upload"]
+        }
+      }
+    },
+    {
+      "name": "Analyze Document",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer <jwt-token>",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "vehicleId", "value": "veh-123", "type": "text" },
+            { "key": "documentType", "value": "rc", "type": "text" },
+            { "key": "file", "type": "file", "src": [] }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/documents/analyze",
+          "host": ["http://localhost:3000"],
+          "path": ["api", "documents", "analyze"]
+        }
+      }
+    },
+    {
+      "name": "Verify Documents",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer <jwt-token>",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vehicleId\": \"veh-123\"\n}",
+          "options": {
+            "raw": { "language": "json" }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/documents/verify",
+          "host": ["http://localhost:3000"],
+          "path": ["api", "documents", "verify"]
+        }
+      }
+    }
+  ]
+}
