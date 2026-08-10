@@ -204,6 +204,24 @@ class VehicleService {
       throw error;
     }
 
+    if (isAvailable) {
+      const { data: bookings, error: bookingError } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('vehicle_id', vehicleId)
+        .in('status', ['pending', 'confirmed', 'active']);
+
+      if (bookingError) {
+        throw new Error(`Failed to check active bookings: ${bookingError.message}`);
+      }
+
+      if (bookings && bookings.length > 0) {
+        const error = new Error('Cannot mark vehicle as available while there is a pending, confirmed, or active booking.');
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
     const { data: updatedVehicle, error: updateError } = await supabase
       .from('vehicles')
       .update({ is_available: !!isAvailable, updated_at: new Date().toISOString() })
