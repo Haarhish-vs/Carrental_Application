@@ -122,6 +122,20 @@ const cancelBooking = async (req, res, next) => {
   }
 };
 
+const confirmPayment = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const booking = await bookingService.confirmPayment(id, req.user.id);
+    return res.status(200).json({
+      success: true,
+      message: 'Payment confirmed successfully',
+      data: booking
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createBooking,
   checkAvailability,
@@ -131,5 +145,6 @@ module.exports = {
   confirmBooking,
   startBooking,
   completeBooking,
-  cancelBooking
+  cancelBooking,
+  confirmPayment
 };

@@ -3,6 +3,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/widgets/auth_required_view.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../../owner/data/services/car_api_service.dart';
+import '../../models/car_model.dart';
+import 'payment_screen.dart';
 
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key, required this.onExplorePressed});
@@ -99,38 +101,47 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     return dateStr;
   }
 
-  Widget _buildStatusChip(String status) {
+  Widget _buildStatusChip(String status, String paymentStatus) {
     Color bg;
     Color text;
     String label = status.toUpperCase();
 
-    switch (status.toLowerCase()) {
-      case 'confirmed':
-        bg = const Color(0xFFE6F4EA);
-        text = AppColors.success;
-        label = 'CONFIRMED';
-        break;
-      case 'active':
-        bg = const Color(0xFFEAF2FF);
-        text = AppColors.primary;
-        label = 'ACTIVE';
-        break;
-      case 'completed':
-        bg = const Color(0xFFF1F3F4);
-        text = AppColors.textSecondary;
-        label = 'COMPLETED';
-        break;
-      case 'cancelled':
-        bg = const Color(0xFFFCE8E6);
-        text = Colors.red;
-        label = 'CANCELLED';
-        break;
-      case 'pending':
-      default:
-        bg = const Color(0xFFFEF7E0);
-        text = Colors.orange;
-        label = 'PENDING';
-        break;
+    if (status.toLowerCase() == 'pending') {
+      bg = const Color(0xFFFEF7E0);
+      text = Colors.orange;
+      label = 'PENDING APPROVAL';
+    } else if (status.toLowerCase() == 'confirmed' && paymentStatus.toLowerCase() == 'unpaid') {
+      bg = const Color(0xFFE2F0FD);
+      text = AppColors.primary;
+      label = 'AWAITING PAYMENT';
+    } else {
+      switch (status.toLowerCase()) {
+        case 'confirmed':
+          bg = const Color(0xFFE6F4EA);
+          text = AppColors.success;
+          label = 'CONFIRMED';
+          break;
+        case 'active':
+          bg = const Color(0xFFEAF2FF);
+          text = AppColors.primary;
+          label = 'ACTIVE';
+          break;
+        case 'completed':
+          bg = const Color(0xFFF1F3F4);
+          text = AppColors.textSecondary;
+          label = 'COMPLETED';
+          break;
+        case 'cancelled':
+          bg = const Color(0xFFFCE8E6);
+          text = Colors.red;
+          label = 'CANCELLED';
+          break;
+        default:
+          bg = const Color(0xFFFEF7E0);
+          text = Colors.orange;
+          label = 'PENDING';
+          break;
+      }
     }
 
     return Container(
@@ -367,7 +378,10 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                       ),
                                     ),
                                   ),
-                                  _buildStatusChip(booking['status'] ?? 'pending'),
+                                  _buildStatusChip(
+                                    booking['status'] ?? 'pending',
+                                    booking['payment_status'] ?? 'unpaid',
+                                  ),
                                 ],
                               ),
                               const SizedBox(height: 4),
@@ -466,6 +480,40 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                   ),
                                 ],
                               ),
+                              // Pay Now button for confirmed & unpaid bookings
+                              if (booking['status'] == 'confirmed' &&
+                                  booking['payment_status'] == 'unpaid') ...[
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: FilledButton.icon(
+                                    onPressed: () async {
+                                      final carModel = CarModel.fromJson(car);
+                                      await Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => PaymentScreen(
+                                            car: carModel,
+                                            pickupDateTime: rawStart,
+                                            returnDateTime: rawEnd,
+                                            days: computedDays,
+                                            totalAmount: displayPrice,
+                                            bookingId: booking['id']?.toString(),
+                                          ),
+                                        ),
+                                      );
+                                      _refreshBookings();
+                                    },
+                                    icon: const Icon(Icons.payment_rounded, size: 16),
+                                    label: const Text('Pay Now'),
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: AppColors.primary,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                               // Cancel button for cancellable bookings
                               if (_isCancellable(booking['status'] ?? '')) ...[
                                 const SizedBox(height: 12),

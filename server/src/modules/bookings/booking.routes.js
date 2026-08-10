@@ -15,6 +15,7 @@ router.get('/my-vehicle-bookings', protect, bookingController.getMyVehicleBookin
 router.post('/', protect, bookingController.createBooking);
 router.get('/:id', protect, bookingController.getBookingById);
 router.patch('/:id/confirm', protect, bookingController.confirmBooking);
+router.patch('/:id/pay', protect, bookingController.confirmPayment);
 router.patch('/:id/start', protect, bookingController.startBooking);
 router.patch('/:id/complete', protect, bookingController.completeBooking);
 router.patch('/:id/cancel', protect, bookingController.cancelBooking);
