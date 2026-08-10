@@ -162,12 +162,11 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
     Navigator.of(context).pop(updatedDraft);
   }
 
-  /// OCR PDF Picker - Bypasses camera modal, only accepts *.pdf
   Future<XFile?> _pickPdfDocument(String title) async {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf'],
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
         withData: true,
       );
 
@@ -175,18 +174,23 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
         final pickedFile = result.files.first;
 
         XFile? xfile;
+        final ext = pickedFile.extension?.toLowerCase() ?? 'pdf';
+        final mimeType = ext == 'pdf'
+            ? 'application/pdf'
+            : 'image/${ext == 'png' ? 'png' : 'jpeg'}';
+
         if (pickedFile.path != null) {
-          xfile = XFile(pickedFile.path!);
+          xfile = XFile(pickedFile.path!, mimeType: mimeType);
         } else if (pickedFile.bytes != null) {
           xfile = XFile.fromData(
             pickedFile.bytes!,
             name: pickedFile.name,
-            mimeType: 'application/pdf',
+            mimeType: mimeType,
           );
         }
 
         if (xfile == null) {
-          _showValidationError("This PDF appears to be empty or unreadable.");
+          _showValidationError("This document appears to be empty or unreadable.");
           return null;
         }
 
@@ -210,8 +214,9 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
 
         return xfile;
       }
-    } catch (_) {
-      _showValidationError("Unable to upload this document. Please try again.");
+    } catch (e, stack) {
+      debugPrint("PDF selection error: $e\n$stack");
+      _showValidationError("Unable to upload this document. Please try again. Error: $e");
     }
     return null;
   }
@@ -1100,7 +1105,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                   if (sizeText.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
-                      '$sizeText • PDF Selected',
+                      '$sizeText • ${file.name.split('.').last.toUpperCase()} Selected',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Colors.green,
                         fontWeight: FontWeight.w500,

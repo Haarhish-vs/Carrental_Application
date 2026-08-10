@@ -135,23 +135,24 @@ class PdfDocumentValidator {
     int maxSizeMb = 10,
   }) {
     final fileExt = filename.split('.').last.toLowerCase();
-    if (fileExt != 'pdf') {
-      return "Only PDF documents are accepted.";
+    final allowedExts = ['pdf', 'jpg', 'jpeg', 'png'];
+    if (!allowedExts.contains(fileExt)) {
+      return "Only PDF and image (JPG, PNG) documents are accepted.";
     }
 
     if (mimeType != null &&
         mimeType.isNotEmpty &&
-        mimeType != 'application/pdf') {
-      return "Only PDF documents are accepted.";
+        !['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'].contains(mimeType)) {
+      return "Only PDF and image (JPG, PNG) documents are accepted.";
     }
 
     if (bytesLength <= 0) {
-      return "This PDF appears to be empty or unreadable.";
+      return "This document appears to be empty or unreadable.";
     }
 
     final maxSizeInBytes = maxSizeMb * 1024 * 1024;
     if (bytesLength > maxSizeInBytes) {
-      return "This PDF exceeds the allowed file size.";
+      return "This document exceeds the allowed file size.";
     }
 
     return null;
