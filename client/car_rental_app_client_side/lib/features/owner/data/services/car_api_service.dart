@@ -48,7 +48,9 @@ class CarApiService {
             '❌ [API Error] Status: ${error.response?.statusCode} | Path: ${error.requestOptions.path} | Error: ${error.message}',
           );
           if (error.response?.statusCode == 401) {
-            debugPrint('⚠️ [CarApiService] 401 Unauthorized. Clearing session...');
+            debugPrint(
+              '⚠️ [CarApiService] 401 Unauthorized. Clearing session...',
+            );
             await AuthService.logout();
           }
           // Implement simple retry functionality for network connection timeouts
@@ -376,7 +378,10 @@ class CarApiService {
 
   /// Toggle a vehicle's availability (owner only).
   /// Pass [isAvailable] = false to mark as unavailable, true to re-enable.
-  Future<void> toggleVehicleAvailability(String vehicleId, {required bool isAvailable}) async {
+  Future<void> toggleVehicleAvailability(
+    String vehicleId, {
+    required bool isAvailable,
+  }) async {
     try {
       final response = await _dio.patch(
         '/api/vehicles/$vehicleId/availability',
@@ -384,7 +389,9 @@ class CarApiService {
       );
       if (response.statusCode == 200) return;
       throw DioException(
-        requestOptions: RequestOptions(path: '/api/vehicles/$vehicleId/availability'),
+        requestOptions: RequestOptions(
+          path: '/api/vehicles/$vehicleId/availability',
+        ),
         message: response.data?['message'] ?? 'Failed to update availability',
       );
     } on DioException catch (e) {

@@ -42,15 +42,22 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
     });
   }
 
-  Future<void> _toggleAvailability(String vehicleId, bool currentlyAvailable) async {
+  Future<void> _toggleAvailability(
+    String vehicleId,
+    bool currentlyAvailable,
+  ) async {
     final targetAvailable = !currentlyAvailable;
-    final actionLabel = targetAvailable ? 'mark as available' : 'mark as unavailable';
+    final actionLabel = targetAvailable
+        ? 'mark as available'
+        : 'mark as unavailable';
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: Text(targetAvailable ? 'Mark as Available' : 'Mark as Unavailable'),
+        title: Text(
+          targetAvailable ? 'Mark as Available' : 'Mark as Unavailable',
+        ),
         content: Text(
           targetAvailable
               ? 'This car will become visible and bookable by renters.'
@@ -63,7 +70,9 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(actionLabel[0].toUpperCase() + actionLabel.substring(1)),
+            child: Text(
+              actionLabel[0].toUpperCase() + actionLabel.substring(1),
+            ),
           ),
         ],
       ),
@@ -72,11 +81,18 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
     if (confirmed != true || !mounted) return;
 
     try {
-      await _apiService.toggleVehicleAvailability(vehicleId, isAvailable: targetAvailable);
+      await _apiService.toggleVehicleAvailability(
+        vehicleId,
+        isAvailable: targetAvailable,
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(targetAvailable ? 'Car is now available for booking.' : 'Car is now marked as unavailable.'),
+          content: Text(
+            targetAvailable
+                ? 'Car is now available for booking.'
+                : 'Car is now marked as unavailable.',
+          ),
           backgroundColor: targetAvailable ? AppColors.success : Colors.orange,
         ),
       );
@@ -156,7 +172,10 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
         const SizedBox(width: 4),
         Text(
           label,
-          style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+          style: const TextStyle(
+            fontSize: 11.5,
+            color: AppColors.textSecondary,
+          ),
         ),
       ],
     );
@@ -167,13 +186,17 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
     final model = car['model']?.toString() ?? '';
     final name = [brand, model].where((s) => s.isNotEmpty).join(' ');
     final city = car['city']?.toString() ?? 'Unknown City';
-    final price = double.tryParse(
-          car['price_per_day']?.toString() ?? car['dailyPrice']?.toString() ?? '',
+    final price =
+        double.tryParse(
+          car['price_per_day']?.toString() ??
+              car['dailyPrice']?.toString() ??
+              '',
         ) ??
         0.0;
     final seats = car['seats']?.toString() ?? '4';
     final transmission = car['transmission']?.toString() ?? 'Automatic';
-    final fuelType = (car['fuel_type'] ?? car['fuelType'])?.toString() ?? 'Petrol';
+    final fuelType =
+        (car['fuel_type'] ?? car['fuelType'])?.toString() ?? 'Petrol';
     final isAvailable = car['is_available'] == true;
     final bookedUntil = _bookedUntil(car);
 
@@ -213,7 +236,11 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.lock_outline, color: Colors.white, size: 14),
+                          const Icon(
+                            Icons.lock_outline,
+                            color: Colors.white,
+                            size: 14,
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             bookedUntil != null
@@ -258,11 +285,18 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                 // City
                 Row(
                   children: [
-                    const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
+                    const Icon(
+                      Icons.location_on_outlined,
+                      size: 14,
+                      color: AppColors.textSecondary,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       city,
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -324,7 +358,10 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                             car['id']?.toString() ?? '',
                             isAvailable,
                           ),
-                          icon: const Icon(Icons.check_circle_outline, size: 16),
+                          icon: const Icon(
+                            Icons.check_circle_outline,
+                            size: 16,
+                          ),
                           label: const Text('Mark as Available'),
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.success,
@@ -358,7 +395,8 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
     if (!AuthService.isAuthenticated) {
       return AuthRequiredView(
         title: 'My Cars',
-        message: 'Log in or create an account to view your listed vehicles, track availability, and manage earnings.',
+        message:
+            'Log in or create an account to view your listed vehicles, track availability, and manage earnings.',
         buttonText: 'Log In / Register',
         onAuthenticated: _refresh,
       );
@@ -382,7 +420,10 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
+                icon: const Icon(
+                  Icons.refresh_rounded,
+                  color: AppColors.primary,
+                ),
                 onPressed: _refresh,
                 tooltip: 'Refresh',
               ),
@@ -405,17 +446,27 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                        const Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: Colors.red,
+                        ),
                         const SizedBox(height: 12),
                         const Text(
                           'Something went wrong',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           snapshot.error.toString(),
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         OutlinedButton(
@@ -436,7 +487,11 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.garage_outlined, size: 64, color: Color(0xFF8EA6BE)),
+                        const Icon(
+                          Icons.garage_outlined,
+                          size: 64,
+                          color: Color(0xFF8EA6BE),
+                        ),
                         const SizedBox(height: 16),
                         const Text(
                           'No Cars Listed Yet',
@@ -450,7 +505,10 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                         const Text(
                           'List your first car and start earning today!',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                         const SizedBox(height: 24),
                         FilledButton.icon(
@@ -458,7 +516,10 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                           icon: const Icon(Icons.add_rounded),
                           label: const Text('List a Car'),
                           style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -471,7 +532,10 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
               }
 
               return ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
                 itemCount: cars.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 16),
                 itemBuilder: (context, index) => _buildCarCard(cars[index]),

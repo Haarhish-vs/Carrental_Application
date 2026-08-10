@@ -39,7 +39,10 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
 
   Future<void> _resolveCenter() async {
     if (!mounted) return;
-    await context.read<LocationProvider>().reverseGeocode(_centerPoint.latitude, _centerPoint.longitude);
+    await context.read<LocationProvider>().reverseGeocode(
+      _centerPoint.latitude,
+      _centerPoint.longitude,
+    );
   }
 
   Future<void> _handleConfirm(LocationModel resolved) async {
@@ -74,7 +77,10 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Select on Map', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text(
+          'Select on Map',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
         centerTitle: true,
       ),
       body: Consumer<LocationProvider>(
@@ -84,7 +90,10 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
           return Stack(
             children: [
               GoogleMap(
-                initialCameraPosition: const CameraPosition(target: _defaultCenter, zoom: 14),
+                initialCameraPosition: const CameraPosition(
+                  target: _defaultCenter,
+                  zoom: 14,
+                ),
                 onMapCreated: (controller) => _mapController = controller,
                 onCameraMove: _onCameraMove,
                 onCameraIdle: _onCameraIdle,
@@ -96,7 +105,11 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
                 child: Center(
                   child: Padding(
                     padding: EdgeInsets.only(bottom: 40),
-                    child: Icon(Icons.location_on, size: 44, color: AppColors.primary),
+                    child: Icon(
+                      Icons.location_on,
+                      size: 44,
+                      color: AppColors.primary,
+                    ),
                   ),
                 ),
               ),
@@ -113,14 +126,24 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(18),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 16, offset: const Offset(0, 6)),
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
                         ],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Selected Location',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                          const Text(
+                            'Selected Location',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
                           const SizedBox(height: 8),
                           _buildResolvedAddress(provider),
                         ],
@@ -131,17 +154,29 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: provider.mapReverseGeocodeStatus == LocationLoadStatus.success && resolved != null
+                        onPressed:
+                            provider.mapReverseGeocodeStatus ==
+                                    LocationLoadStatus.success &&
+                                resolved != null
                             ? () => _handleConfirm(resolved)
                             : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
-                          disabledBackgroundColor: AppColors.primary.withOpacity(0.4),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          disabledBackgroundColor: AppColors.primary
+                              .withOpacity(0.4),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                           elevation: 0,
                         ),
-                        child: const Text('Confirm Location', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                        child: const Text(
+                          'Confirm Location',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -153,9 +188,17 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.textPrimary,
                           side: const BorderSide(color: AppColors.divider),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
-                        child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -174,9 +217,19 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
         padding: EdgeInsets.symmetric(vertical: 6),
         child: Row(
           children: [
-            SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.primary,
+              ),
+            ),
             SizedBox(width: 10),
-            Text('Resolving address...', style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
+            Text(
+              'Resolving address...',
+              style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+            ),
           ],
         ),
       );
@@ -191,7 +244,10 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
 
     final resolved = provider.mapResolvedLocation;
     if (resolved == null) {
-      return const Text('Move the map to select a location', style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary));
+      return const Text(
+        'Move the map to select a location',
+        style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+      );
     }
 
     return Row(
@@ -199,21 +255,41 @@ class _MapLocationScreenState extends State<MapLocationScreen> {
       children: [
         Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.08), borderRadius: BorderRadius.circular(10)),
-          child: const Icon(Icons.location_on, color: AppColors.primary, size: 18),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.location_on,
+            color: AppColors.primary,
+            size: 18,
+          ),
         ),
         const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(resolved.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+              Text(
+                resolved.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
               const SizedBox(height: 2),
-              Text(resolved.address,
-                  maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              Text(
+                resolved.address,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              ),
             ],
           ),
         ),

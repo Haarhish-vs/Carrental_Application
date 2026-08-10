@@ -35,7 +35,11 @@ class CarCard extends StatelessWidget {
             color: AppColors.cardBackground,
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 14, offset: const Offset(0, 6)),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
             ],
           ),
           child: Column(
@@ -44,21 +48,44 @@ class CarCard extends StatelessWidget {
               Stack(
                 children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-                    child: Image.network(car.imageUrl, height: 110, width: double.infinity, fit: BoxFit.cover),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(18),
+                    ),
+                    child: Image.network(
+                      car.imageUrl,
+                      height: 110,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                   Positioned(
                     top: 8,
                     right: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.star_rounded, size: 14, color: AppColors.rating),
+                          const Icon(
+                            Icons.star_rounded,
+                            size: 14,
+                            color: AppColors.rating,
+                          ),
                           const SizedBox(width: 2),
-                          Text(car.rating.toString(), style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600)),
+                          Text(
+                            car.rating.toString(),
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -70,18 +97,28 @@ class CarCard extends StatelessWidget {
                       left: 0,
                       right: 0,
                       child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(0)),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(0),
+                        ),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 5),
                           color: Colors.black.withOpacity(0.55),
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.lock_outline, color: Colors.white, size: 12),
+                              Icon(
+                                Icons.lock_outline,
+                                color: Colors.white,
+                                size: 12,
+                              ),
                               SizedBox(width: 4),
                               Text(
                                 'Not Available',
-                                style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ],
                           ),
@@ -95,18 +132,33 @@ class CarCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(car.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                    Text(
+                      car.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     Wrap(
                       spacing: 8,
                       runSpacing: 4,
                       children: [
-                        _SpecChip(icon: Icons.settings, label: car.transmission),
-                        _SpecChip(icon: Icons.local_gas_station, label: car.fuelType),
-                        _SpecChip(icon: Icons.event_seat, label: '${car.seats} Seats'),
+                        _SpecChip(
+                          icon: Icons.settings,
+                          label: car.transmission,
+                        ),
+                        _SpecChip(
+                          icon: Icons.local_gas_station,
+                          label: car.fuelType,
+                        ),
+                        _SpecChip(
+                          icon: Icons.event_seat,
+                          label: '${car.seats} Seats',
+                        ),
                       ],
                     ),
                     const SizedBox(height: 10),
@@ -117,13 +169,25 @@ class CarCard extends StatelessWidget {
                           child: RichText(
                             overflow: TextOverflow.ellipsis,
                             text: TextSpan(
-                              style: const TextStyle(color: AppColors.textPrimary),
+                              style: const TextStyle(
+                                color: AppColors.textPrimary,
+                              ),
                               children: [
                                 TextSpan(
-                                  text: '₹${car.pricePerDay.toStringAsFixed(0)}',
-                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                                  text:
+                                      '₹${car.pricePerDay.toStringAsFixed(0)}',
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                                const TextSpan(text: '/day', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                                const TextSpan(
+                                  text: '/day',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -131,14 +195,23 @@ class CarCard extends StatelessWidget {
                         GestureDetector(
                           onTap: available ? onBookNow : null,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 7,
+                            ),
                             decoration: BoxDecoration(
-                              color: available ? AppColors.primary : AppColors.textSecondary,
+                              color: available
+                                  ? AppColors.primary
+                                  : AppColors.textSecondary,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
                               available ? 'Book Now' : 'Unavailable',
-                              style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ),
@@ -168,7 +241,13 @@ class _SpecChip extends StatelessWidget {
       children: [
         Icon(icon, size: 12, color: AppColors.textSecondary),
         const SizedBox(width: 3),
-        Text(label, style: const TextStyle(fontSize: 10.5, color: AppColors.textSecondary)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10.5,
+            color: AppColors.textSecondary,
+          ),
+        ),
       ],
     );
   }

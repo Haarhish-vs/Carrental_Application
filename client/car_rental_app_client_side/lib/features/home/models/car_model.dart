@@ -31,7 +31,10 @@ class CarModel {
     final String id = json['id']?.toString() ?? '';
     final String brand = json['brand']?.toString() ?? '';
     final String model = json['model']?.toString() ?? '';
-    final String name = [brand, model].where((part) => part.isNotEmpty).join(' ').trim();
+    final String name = [
+      brand,
+      model,
+    ].where((part) => part.isNotEmpty).join(' ').trim();
 
     String imageUrl = '';
     final List<String> imagesList = [];
@@ -41,7 +44,8 @@ class CarModel {
         if (item is String) {
           imagesList.add(item);
         } else if (item is Map<String, dynamic>) {
-          final url = item['url']?.toString() ?? item['secure_url']?.toString() ?? '';
+          final url =
+              item['url']?.toString() ?? item['secure_url']?.toString() ?? '';
           if (url.isNotEmpty) {
             imagesList.add(url);
           }
@@ -51,7 +55,8 @@ class CarModel {
     if (imagesList.isNotEmpty) {
       imageUrl = imagesList.first;
     } else {
-      final fallbackUrl = json['imageUrl']?.toString() ?? json['image_url']?.toString() ?? '';
+      final fallbackUrl =
+          json['imageUrl']?.toString() ?? json['image_url']?.toString() ?? '';
       if (fallbackUrl.isNotEmpty) {
         imageUrl = fallbackUrl;
         imagesList.add(fallbackUrl);
@@ -59,13 +64,30 @@ class CarModel {
     }
 
     final String transmission = json['transmission']?.toString() ?? 'Automatic';
-    final String fuelType = json['fuel_type']?.toString() ?? json['fuelType']?.toString() ?? 'Petrol';
-    final int seats = int.tryParse(json['seats']?.toString() ?? json['seatingCapacity']?.toString() ?? '') ?? 4;
-    final double pricePerDay = double.tryParse(json['price_per_day']?.toString() ?? json['dailyPrice']?.toString() ?? '') ?? 0.0;
-    final double rating = double.tryParse(json['rating']?.toString() ?? '') ?? 4.5;
+    final String fuelType =
+        json['fuel_type']?.toString() ??
+        json['fuelType']?.toString() ??
+        'Petrol';
+    final int seats =
+        int.tryParse(
+          json['seats']?.toString() ??
+              json['seatingCapacity']?.toString() ??
+              '',
+        ) ??
+        4;
+    final double pricePerDay =
+        double.tryParse(
+          json['price_per_day']?.toString() ??
+              json['dailyPrice']?.toString() ??
+              '',
+        ) ??
+        0.0;
+    final double rating =
+        double.tryParse(json['rating']?.toString() ?? '') ?? 4.5;
     final String city = json['city']?.toString() ?? 'Unknown City';
     final String status = json['status']?.toString() ?? 'unknown';
-    final bool isAvailable = (json['is_available'] != false && json['isAvailable'] != false) &&
+    final bool isAvailable =
+        (json['is_available'] != false && json['isAvailable'] != false) &&
         json['status']?.toString().toLowerCase() == 'active';
 
     return CarModel(

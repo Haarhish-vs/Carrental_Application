@@ -57,7 +57,11 @@ class HeroSearchCard extends StatelessWidget {
         children: [
           const Text(
             'Find your perfect ride',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 14),
           _FieldTile(
@@ -126,11 +130,16 @@ class HeroSearchCard extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 elevation: 0,
               ),
               icon: const Icon(Icons.search, size: 20),
-              label: const Text('Search Cars', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+              label: const Text(
+                'Search Cars',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+              ),
             ),
           ),
         ],
@@ -156,7 +165,9 @@ class _FieldTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayValue = (value == null || value!.trim().isEmpty) ? placeholder : value!;
+    final displayValue = (value == null || value!.trim().isEmpty)
+        ? placeholder
+        : value!;
     final hasValue = value != null && value!.trim().isNotEmpty;
 
     return InkWell(
@@ -173,7 +184,13 @@ class _FieldTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                   const SizedBox(height: 2),
                   Text(
                     displayValue,
@@ -181,7 +198,9 @@ class _FieldTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
-                      color: hasValue ? AppColors.textPrimary : AppColors.textSecondary,
+                      color: hasValue
+                          ? AppColors.textPrimary
+                          : AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -197,16 +216,17 @@ class _FieldTile extends StatelessWidget {
 class _DividerLine extends StatelessWidget {
   const _DividerLine();
   @override
-  Widget build(BuildContext context) => const Divider(height: 1, color: AppColors.divider);
+  Widget build(BuildContext context) =>
+      const Divider(height: 1, color: AppColors.divider);
 }
 
 class _VerticalDivider extends StatelessWidget {
   const _VerticalDivider();
   @override
   Widget build(BuildContext context) => Container(
-        width: 1,
-        height: 44,
-        color: AppColors.divider,
-        margin: const EdgeInsets.symmetric(horizontal: 10),
-      );
+    width: 1,
+    height: 44,
+    color: AppColors.divider,
+    margin: const EdgeInsets.symmetric(horizontal: 10),
+  );
 }

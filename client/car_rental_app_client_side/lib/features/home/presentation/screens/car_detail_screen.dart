@@ -33,7 +33,11 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.grey.shade100, width: 1),
         boxShadow: const [
-          BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.02), blurRadius: 10, offset: Offset(0, 4)),
+          BoxShadow(
+            color: Color.fromRGBO(0, 0, 0, 0.02),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
         ],
       ),
       child: Row(
@@ -54,14 +58,22 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
               children: [
                 Text(
                   title,
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade500,
+                    fontWeight: FontWeight.w500,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 3),
                 Text(
                   subtitle,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -75,8 +87,8 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> images = widget.car.images.isNotEmpty 
-        ? widget.car.images 
+    final List<String> images = widget.car.images.isNotEmpty
+        ? widget.car.images
         : (widget.car.imageUrl.isNotEmpty ? [widget.car.imageUrl] : []);
 
     return Scaffold(
@@ -108,10 +120,15 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                             return Image.network(
                               images[index],
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                color: const Color(0xFFEAF2FF),
-                                child: const Icon(Icons.directions_car, size: 70, color: AppColors.primary),
-                              ),
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                    color: const Color(0xFFEAF2FF),
+                                    child: const Icon(
+                                      Icons.directions_car,
+                                      size: 70,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
                             );
                           },
                         ),
@@ -128,8 +145,12 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                               radius: 20,
                               child: IconButton(
                                 icon: Icon(
-                                  _isLiked ? Icons.favorite : Icons.favorite_border,
-                                  color: _isLiked ? Colors.red : Colors.grey.shade700,
+                                  _isLiked
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color: _isLiked
+                                      ? Colors.red
+                                      : Colors.grey.shade700,
                                   size: 18,
                                 ),
                                 onPressed: () {
@@ -144,7 +165,11 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                               backgroundColor: Colors.white.withOpacity(0.9),
                               radius: 20,
                               child: IconButton(
-                                icon: Icon(Icons.share_outlined, color: Colors.grey.shade700, size: 18),
+                                icon: Icon(
+                                  Icons.share_outlined,
+                                  color: Colors.grey.shade700,
+                                  size: 18,
+                                ),
                                 onPressed: () {},
                               ),
                             ),
@@ -160,7 +185,11 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                           backgroundColor: Colors.white.withOpacity(0.9),
                           radius: 20,
                           child: IconButton(
-                            icon: const Icon(Icons.arrow_back, color: Colors.black, size: 20),
+                            icon: const Icon(
+                              Icons.arrow_back,
+                              color: Colors.black,
+                              size: 20,
+                            ),
                             onPressed: () => Navigator.of(context).pop(),
                           ),
                         ),
@@ -171,15 +200,24 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                         bottom: 16,
                         left: 16,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.9),
                             borderRadius: BorderRadius.circular(20),
-                            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                            boxShadow: const [
+                              BoxShadow(color: Colors.black12, blurRadius: 4),
+                            ],
                           ),
                           child: const Row(
                             children: [
-                              Icon(Icons.threed_rotation_rounded, size: 14, color: AppColors.primary),
+                              Icon(
+                                Icons.threed_rotation_rounded,
+                                size: 14,
+                                color: AppColors.primary,
+                              ),
                               SizedBox(width: 6),
                               Text(
                                 "360 View",
@@ -205,7 +243,9 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                             children: List.generate(
                               images.length,
                               (index) => Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 4),
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
                                 width: _currentImageIndex == index ? 12 : 8,
                                 height: 8,
                                 decoration: BoxDecoration(
@@ -214,7 +254,10 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                                       ? AppColors.primary
                                       : Colors.white.withOpacity(0.8),
                                   boxShadow: const [
-                                    BoxShadow(color: Colors.black26, blurRadius: 4),
+                                    BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 4,
+                                    ),
                                   ],
                                 ),
                               ),
@@ -233,22 +276,37 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                         // Title
                         Text(
                           widget.car.name,
-                          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          style: const TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
                         const SizedBox(height: 6),
 
                         // Rating
                         Row(
                           children: [
-                            const Icon(Icons.star_rounded, size: 18, color: Colors.amber),
+                            const Icon(
+                              Icons.star_rounded,
+                              size: 18,
+                              color: Colors.amber,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               widget.car.rating.toStringAsFixed(1),
-                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
                             Text(
                               ' - 120 reviews',
-                              style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade500,
+                              ),
                             ),
                           ],
                         ),
@@ -266,7 +324,9 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                             children: [
                               const CircleAvatar(
                                 radius: 24,
-                                backgroundImage: NetworkImage('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'),
+                                backgroundImage: NetworkImage(
+                                  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
+                                ),
                               ),
                               const SizedBox(width: 14),
                               Expanded(
@@ -275,16 +335,28 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                                   children: [
                                     const Text(
                                       'Hosted by Michael',
-                                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.textPrimary,
+                                      ),
                                     ),
                                     const SizedBox(height: 3),
                                     Row(
                                       children: [
-                                        const Icon(Icons.check_circle_rounded, size: 14, color: AppColors.success),
+                                        const Icon(
+                                          Icons.check_circle_rounded,
+                                          size: 14,
+                                          color: AppColors.success,
+                                        ),
                                         const SizedBox(width: 4),
                                         Text(
                                           'Verified Owner',
-                                          style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w500),
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey.shade500,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -299,7 +371,11 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                         // Specifications grid
                         const Text(
                           'Specifications',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
                         const SizedBox(height: 14),
                         GridView.count(
@@ -310,31 +386,68 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                           mainAxisSpacing: 12,
                           childAspectRatio: 2.2,
                           children: [
-                            _buildSpecCard(Icons.local_gas_station_outlined, 'Fuel Type', widget.car.fuelType),
-                            _buildSpecCard(Icons.settings_outlined, 'Transmission', widget.car.transmission),
-                            _buildSpecCard(Icons.airline_seat_recline_normal_outlined, 'Seats', '${widget.car.seats} Seats'),
-                            _buildSpecCard(Icons.ac_unit_outlined, 'AC', 'Climate Control'),
+                            _buildSpecCard(
+                              Icons.local_gas_station_outlined,
+                              'Fuel Type',
+                              widget.car.fuelType,
+                            ),
+                            _buildSpecCard(
+                              Icons.settings_outlined,
+                              'Transmission',
+                              widget.car.transmission,
+                            ),
+                            _buildSpecCard(
+                              Icons.airline_seat_recline_normal_outlined,
+                              'Seats',
+                              '${widget.car.seats} Seats',
+                            ),
+                            _buildSpecCard(
+                              Icons.ac_unit_outlined,
+                              'AC',
+                              'Climate Control',
+                            ),
                           ],
                         ),
                         const SizedBox(height: 12),
-                        _buildSpecCard(Icons.map_outlined, 'Navigation', 'Built-in GPS'),
+                        _buildSpecCard(
+                          Icons.map_outlined,
+                          'Navigation',
+                          'Built-in GPS',
+                        ),
                         const SizedBox(height: 24),
 
                         // Included in your booking
                         const Text(
                           'Included in your booking',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
                         const SizedBox(height: 14),
                         Row(
                           children: [
                             Container(
                               padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(color: AppColors.success.withOpacity(0.1), shape: BoxShape.circle),
-                              child: const Icon(Icons.check, size: 14, color: AppColors.success),
+                              decoration: BoxDecoration(
+                                color: AppColors.success.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.check,
+                                size: 14,
+                                color: AppColors.success,
+                              ),
                             ),
                             const SizedBox(width: 12),
-                            const Text('Unlimited KM', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                            const Text(
+                              'Unlimited KM',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 12),
@@ -342,11 +455,24 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                           children: [
                             Container(
                               padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(color: AppColors.success.withOpacity(0.1), shape: BoxShape.circle),
-                              child: const Icon(Icons.check, size: 14, color: AppColors.success),
+                              decoration: BoxDecoration(
+                                color: AppColors.success.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.check,
+                                size: 14,
+                                color: AppColors.success,
+                              ),
                             ),
                             const SizedBox(width: 12),
-                            const Text('24/7 Roadside Assistance', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                            const Text(
+                              '24/7 Roadside Assistance',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -366,7 +492,13 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
               padding: const EdgeInsets.all(20),
               decoration: const BoxDecoration(
                 color: Colors.white,
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2))],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 10,
+                    offset: Offset(0, -2),
+                  ),
+                ],
               ),
               child: SafeArea(
                 top: false,
@@ -377,7 +509,14 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('TOTAL PRICE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+                        const Text(
+                          'TOTAL PRICE',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                         const SizedBox(height: 4),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -385,11 +524,18 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                           children: [
                             Text(
                               '₹${widget.car.pricePerDay.toStringAsFixed(0)}',
-                              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
                             Text(
                               ' / day',
-                              style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade500,
+                              ),
                             ),
                           ],
                         ),
@@ -401,11 +547,14 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                         onPressed: () async {
                           // Auth guard: must be logged in to reserve
                           if (!AuthService.isAuthenticated) {
-                            final loggedIn = await Navigator.of(context).push<bool>(
-                              MaterialPageRoute(
-                                builder: (_) => const AuthScreen(initialMode: AuthMode.login),
-                              ),
-                            );
+                            final loggedIn = await Navigator.of(context)
+                                .push<bool>(
+                                  MaterialPageRoute(
+                                    builder: (_) => const AuthScreen(
+                                      initialMode: AuthMode.login,
+                                    ),
+                                  ),
+                                );
                             if (loggedIn != true || !context.mounted) return;
                           }
                           if (!context.mounted) return;
@@ -418,10 +567,18 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                         },
                         style: FilledButton.styleFrom(
                           minimumSize: const Size(0, 56),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           backgroundColor: AppColors.primary,
                         ),
-                        child: const Text('Reserve', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'Reserve',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ],

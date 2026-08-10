@@ -56,7 +56,10 @@ class _OfferCarouselState extends State<OfferCarousel> {
                         Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [Colors.black.withOpacity(0.65), Colors.transparent],
+                              colors: [
+                                Colors.black.withOpacity(0.65),
+                                Colors.transparent,
+                              ],
                               begin: Alignment.bottomCenter,
                               end: Alignment.topCenter,
                             ),
@@ -69,11 +72,22 @@ class _OfferCarouselState extends State<OfferCarousel> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(offer.title,
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                              Text(
+                                offer.title,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
                               const SizedBox(height: 2),
-                              Text(offer.subtitle,
-                                  style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12)),
+                              Text(
+                                offer.subtitle,
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.9),
+                                  fontSize: 12,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -96,7 +110,9 @@ class _OfferCarouselState extends State<OfferCarousel> {
               width: _currentIndex == index ? 18 : 6,
               height: 6,
               decoration: BoxDecoration(
-                color: _currentIndex == index ? AppColors.primary : AppColors.divider,
+                color: _currentIndex == index
+                    ? AppColors.primary
+                    : AppColors.divider,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),

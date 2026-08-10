@@ -59,7 +59,10 @@ class LocationTile extends StatelessWidget {
                     location.address,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -67,11 +70,18 @@ class LocationTile extends StatelessWidget {
             if (distanceKm != null) ...[
               Text(
                 '${distanceKm!.toStringAsFixed(0)} km',
-                style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  color: AppColors.textSecondary,
+                ),
               ),
               const SizedBox(width: 6),
             ],
-            const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.textSecondary),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 20,
+              color: AppColors.textSecondary,
+            ),
           ],
         ),
       ),

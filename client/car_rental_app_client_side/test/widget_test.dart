@@ -9,7 +9,9 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = _MockHttpOverrides();
 
-  testWidgets('App renders Car Rental Home Screen', (WidgetTester tester) async {
+  testWidgets('App renders Car Rental Home Screen', (
+    WidgetTester tester,
+  ) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const MyApp());
     await tester.pump(const Duration(minutes: 5));

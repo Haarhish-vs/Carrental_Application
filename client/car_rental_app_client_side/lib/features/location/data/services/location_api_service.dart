@@ -32,7 +32,10 @@ class LocationApiService {
     try {
       body = jsonDecode(response.body) as Map<String, dynamic>;
     } catch (_) {
-      throw LocationApiException(fallbackMessage, statusCode: response.statusCode);
+      throw LocationApiException(
+        fallbackMessage,
+        statusCode: response.statusCode,
+      );
     }
 
     final success = body['success'] as bool? ?? false;
@@ -45,13 +48,16 @@ class LocationApiService {
   }
 
   Future<List<LocationModel>> searchLocations(String query) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.search}')
-        .replace(queryParameters: {'q': query});
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}${LocationApiEndpoints.search}',
+    ).replace(queryParameters: {'q': query});
     final response = await _client.get(uri);
 
     final data = _decodeEnvelope(response, 'Failed to search locations');
     final list = (data as List<dynamic>?) ?? [];
-    return list.map((item) => LocationModel.fromJson(item as Map<String, dynamic>)).toList();
+    return list
+        .map((item) => LocationModel.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
   Future<List<LocationModel>> fetchRecentLocations() async {
@@ -60,7 +66,9 @@ class LocationApiService {
 
     final data = _decodeEnvelope(response, 'Failed to fetch recent locations');
     final list = (data as List<dynamic>?) ?? [];
-    return list.map((item) => LocationModel.fromJson(item as Map<String, dynamic>)).toList();
+    return list
+        .map((item) => LocationModel.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
   /// Saves a location the user selected (from search, current location,
@@ -77,7 +85,9 @@ class LocationApiService {
   }
 
   Future<void> deleteRecentLocation(String id) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.recent}/$id');
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}${LocationApiEndpoints.recent}/$id',
+    );
     final response = await _client.delete(uri);
 
     if (response.statusCode != 200 && response.statusCode != 204) {
@@ -95,17 +105,26 @@ class LocationApiService {
   }
 
   Future<List<LocationModel>> fetchPopularLocations() async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.popular}');
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}${LocationApiEndpoints.popular}',
+    );
     final response = await _client.get(uri);
 
     final data = _decodeEnvelope(response, 'Failed to fetch popular locations');
     final list = (data as List<dynamic>?) ?? [];
-    return list.map((item) => LocationModel.fromJson(item as Map<String, dynamic>)).toList();
+    return list
+        .map((item) => LocationModel.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
-  Future<LocationModel> reverseGeocode(double latitude, double longitude) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.reverseGeocode}');
-    
+  Future<LocationModel> reverseGeocode(
+    double latitude,
+    double longitude,
+  ) async {
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}${LocationApiEndpoints.reverseGeocode}',
+    );
+
     http.Response response;
     try {
       // 1. Try POST first (standard for deployed backend)
@@ -121,13 +140,17 @@ class LocationApiService {
       );
     } catch (_) {
       // If network POST failure, try GET
-      final getUri = uri.replace(queryParameters: {'lat': '$latitude', 'lng': '$longitude'});
+      final getUri = uri.replace(
+        queryParameters: {'lat': '$latitude', 'lng': '$longitude'},
+      );
       response = await _client.get(getUri);
     }
 
     // 2. If POST returned 404 or 405 Method Not Allowed, fallback to GET
     if (response.statusCode == 404 || response.statusCode == 405) {
-      final getUri = uri.replace(queryParameters: {'lat': '$latitude', 'lng': '$longitude'});
+      final getUri = uri.replace(
+        queryParameters: {'lat': '$latitude', 'lng': '$longitude'},
+      );
       response = await _client.get(getUri);
     }
 

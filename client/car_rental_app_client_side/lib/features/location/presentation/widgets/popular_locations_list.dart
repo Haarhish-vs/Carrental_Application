@@ -21,10 +21,13 @@ class PopularLocationsList extends StatelessWidget {
   IconData _iconFor(String name) {
     final lower = name.toLowerCase();
     if (lower.contains('airport')) return Icons.flight_takeoff_rounded;
-    if (lower.contains('railway') || lower.contains('station')) return Icons.train_rounded;
+    if (lower.contains('railway') || lower.contains('station'))
+      return Icons.train_rounded;
     if (lower.contains('bus')) return Icons.directions_bus_rounded;
     if (lower.contains('mall')) return Icons.local_mall_outlined;
-    if (lower.contains('city') || lower.contains('center') || lower.contains('centre')) {
+    if (lower.contains('city') ||
+        lower.contains('center') ||
+        lower.contains('centre')) {
       return Icons.location_city_rounded;
     }
     return Icons.place_outlined;
@@ -39,7 +42,11 @@ class PopularLocationsList extends StatelessWidget {
       children: [
         const Text(
           'Popular Locations',
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
         ),
         const SizedBox(height: 6),
         ListView.builder(

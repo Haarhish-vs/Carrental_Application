@@ -28,28 +28,51 @@ class BecomeHostBanner extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Own a Car?',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Own a Car?',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text('Earn passive income by listing your car',
-                    style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12.5)),
+                Text(
+                  'Earn passive income by listing your car',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 12.5,
+                  ),
+                ),
                 const SizedBox(height: 14),
                 ElevatedButton(
                   onPressed: onHostTap,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 10,
+                    ),
                     elevation: 0,
                   ),
-                  child: const Text('Become a Host', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                  child: const Text(
+                    'Become a Host',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  ),
                 ),
               ],
             ),
           ),
           const SizedBox(width: 10),
-          const Icon(Icons.directions_car_filled, color: Colors.white24, size: 70),
+          const Icon(
+            Icons.directions_car_filled,
+            color: Colors.white24,
+            size: 70,
+          ),
         ],
       ),
     );
