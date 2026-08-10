@@ -45,8 +45,29 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
     });
   }
 
-  Future<void> _toggleAvailability(String vehicleId, bool currentlyAvailable) async {
+  Future<void> _toggleAvailability(Map<String, dynamic> car, bool currentlyAvailable) async {
+    final vehicleId = car['id']?.toString() ?? '';
     final targetAvailable = !currentlyAvailable;
+    final bookedUntil = _bookedUntil(car);
+
+    if (targetAvailable && bookedUntil != null) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: const Text('Action Not Allowed'),
+          content: Text('This vehicle is currently booked until $bookedUntil. You cannot mark it as available until the trip is finished or completed.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     final actionLabel = targetAvailable ? 'mark as available' : 'mark as unavailable';
 
     final confirmed = await showDialog<bool>(
@@ -309,7 +330,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                   child: isAvailable
                       ? OutlinedButton.icon(
                           onPressed: () => _toggleAvailability(
-                            car['id']?.toString() ?? '',
+                            car,
                             isAvailable,
                           ),
                           icon: const Icon(Icons.block_outlined, size: 16),
@@ -324,7 +345,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                         )
                       : FilledButton.icon(
                           onPressed: () => _toggleAvailability(
-                            car['id']?.toString() ?? '',
+                            car,
                             isAvailable,
                           ),
                           icon: const Icon(Icons.check_circle_outline, size: 16),

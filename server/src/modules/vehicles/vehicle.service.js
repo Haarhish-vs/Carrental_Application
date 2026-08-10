@@ -1,5 +1,6 @@
 // vehicle.service.js
 const { supabase } = require('../../config/supabase');
+const bookingService = require('../bookings/booking.service');
 
 class VehicleService {
   /**
@@ -293,6 +294,7 @@ class VehicleService {
    * Public browsing for active/available vehicles.
    */
   async getVehicles(filters = {}) {
+    await bookingService._autoTransitionBookings();
     // 1. Get dates to check for availability exclusion
     const startStr = filters.startDate || filters.start_date;
     const endStr = filters.endDate || filters.end_date;
