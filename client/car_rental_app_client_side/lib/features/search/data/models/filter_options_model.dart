@@ -27,6 +27,9 @@ class FilterOptionsModel {
         }
       }
     }
+    if (carTypesList.isEmpty) {
+      carTypesList.addAll(const ['Sedan', 'SUV', 'Hatchback', 'Luxury']);
+    }
 
     final List<String> transList = [];
     if (filters['transmissions'] is List) {

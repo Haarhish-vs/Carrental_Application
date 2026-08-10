@@ -604,8 +604,11 @@ class VehicleService {
     const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
     const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
 
+    const defaultCarTypes = ['Sedan', 'SUV', 'Hatchback', 'Luxury'];
+    const carTypes = carTypesSet.size > 0 ? Array.from(carTypesSet).sort() : defaultCarTypes;
+
     return {
-      carTypes: Array.from(carTypesSet).sort(),
+      carTypes,
       transmissions: Array.from(transmissionsSet).sort(),
       fuelTypes: Array.from(fuelTypesSet).sort(),
       seatOptions: Array.from(seatOptionsSet).sort((a, b) => a - b),

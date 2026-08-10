@@ -101,6 +101,11 @@ class _SearchCarsScreenState extends State<SearchCarsScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.sort_rounded, color: AppColors.primary),
+            onPressed: _openSortSheet,
+            tooltip: 'Sort',
+          ),
           AnimatedBuilder(
             animation: _provider,
             builder: (context, _) {
@@ -130,7 +135,7 @@ class _SearchCarsScreenState extends State<SearchCarsScreen> {
               );
             },
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
@@ -284,78 +289,12 @@ class _SearchCarsScreenState extends State<SearchCarsScreen> {
 
                   // Extra bottom padding for comfortable scrolling
                   const SliverToBoxAdapter(
-                    child: SizedBox(height: 80),
+                    child: SizedBox(height: 24),
                   ),
                 ],
               ),
             );
           },
-        ),
-      ),
-      // Floating Bottom Action Bar (Map View & Sort)
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Map View coming soon')),
-                    );
-                  },
-                  icon: const Icon(Icons.map_outlined, size: 18, color: AppColors.primary),
-                  label: const Text(
-                    'Map View',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    side: const BorderSide(color: AppColors.primary),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: _openSortSheet,
-                  icon: const Icon(Icons.sort_rounded, size: 18),
-                  label: const Text(
-                    'Sort',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
