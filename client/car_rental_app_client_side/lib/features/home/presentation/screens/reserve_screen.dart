@@ -80,7 +80,7 @@ class _ReserveScreenState extends State<ReserveScreen> {
       'Sep',
       'Oct',
       'Nov',
-      'Dec',
+      'Dec'
     ];
     return '${monthNames[date.month - 1]} ${date.day}';
   }
