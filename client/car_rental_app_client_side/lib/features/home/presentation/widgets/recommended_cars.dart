@@ -33,30 +33,14 @@ class RecommendedCars extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-<<<<<<< Updated upstream
-              const Text(
-                'Recommended Cars',
-                style: TextStyle(
-=======
               Text(
                 title,
                 style: const TextStyle(
->>>>>>> Stashed changes
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                 ),
               ),
-<<<<<<< Updated upstream
-              const Text(
-                'See all',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-=======
               trailing ??
                   const Text(
                     'See all',
@@ -66,7 +50,6 @@ class RecommendedCars extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
->>>>>>> Stashed changes
             ],
           ),
         ),

@@ -532,7 +532,7 @@ class VehicleService {
 
     return vehicle;
   }
-<<<<<<< Updated upstream
+
   /**
    * Toggle a vehicle's is_available flag (owner only).
    */
@@ -1114,8 +1114,6 @@ class VehicleService {
 
     return response;
   }
-=======
->>>>>>> Stashed changes
 }
 
 module.exports = new VehicleService();

@@ -258,8 +258,22 @@ const getFilterOptions = async (req, res, next) => {
     const options = await vehicleService.getFilterOptions();
     return res.status(200).json({
       success: true,
-      data: options
+      data: options,
+      filters: options
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const searchVehicles = async (req, res, next) => {
+  try {
+    const params = {
+      ...(req.method === 'POST' ? req.body : req.query),
+      filters: req.body?.filters || req.query?.filters || req.query
+    };
+    const result = await vehicleService.searchVehicles(params);
+    return res.status(200).json(result);
   } catch (error) {
     next(error);
   }
@@ -277,5 +291,6 @@ module.exports = {
   verifyDocumentAdmin,
   uploadMedia,
   uploadDocumentFile,
-  getFilterOptions
+  getFilterOptions,
+  searchVehicles
 };

@@ -36,13 +36,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String? _userName;
   String? _userLocation;
-<<<<<<< Updated upstream
-  LocationModel? _selectedLocationModel;
-=======
 
   // Search form state
-  LocationModel? _selectedLocation;
->>>>>>> Stashed changes
+  LocationModel? _selectedLocationModel;
   String? _pickupLocation;
   String? _pickupDate;
   String? _pickupTime;
@@ -53,10 +49,6 @@ class _HomeScreenState extends State<HomeScreen> {
   TimeOfDay? _selectedPickupTime;
   DateTime? _selectedReturnDate;
   TimeOfDay? _selectedReturnTime;
-
-  // Active search state
-  bool _isSearchActive = false;
-  String? _activeSearchCity;
 
   @override
   void initState() {
@@ -83,10 +75,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void _loadUserInfo() {
     if (AuthService.isAuthenticated && AuthService.currentUser != null) {
       final user = AuthService.currentUser!;
-      final fullName =
-          user['full_name']?.toString() ?? user['fullName']?.toString();
-      final phone =
-          user['phone_number']?.toString() ?? user['phoneNumber']?.toString();
+      final fullName = user['full_name']?.toString() ?? user['fullName']?.toString();
+      final phone = user['phone_number']?.toString() ?? user['phoneNumber']?.toString();
 
       if (fullName != null && fullName.trim().isNotEmpty) {
         _userName = fullName.trim();
@@ -100,7 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Fetches vehicles from the database via backend API with optional search parameters.
+  /// Fetches vehicles from the database via backend API
   Future<List<CarModel>> _fetchVehicles({
     String? city,
     String? startDate,
@@ -119,98 +109,45 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _handleSearch() {
-    if (_pickupLocation == null || _pickupLocation!.trim().isEmpty) {
+    if (_pickupLocation == null ||
+        _pickupDate == null ||
+        _pickupTime == null ||
+        _returnDate == null ||
+        _returnTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select a pickup location'),
+          content: Text('Please fill all search details'),
           behavior: SnackBarBehavior.floating,
         ),
       );
       return;
     }
 
-    if (_selectedPickupDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a pickup date'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
+    final location = _selectedLocationModel ??
+        LocationModel(
+          placeId: '',
+          name: _pickupLocation!,
+          address: _pickupLocation!,
+          latitude: 0.0,
+          longitude: 0.0,
+          city: _pickupLocation!,
+          state: '',
+          country: '',
+        );
 
-    if (_selectedReturnDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a return date'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
+    final params = SearchParameters(
+      location: location,
+      pickupDate: _pickupDate!,
+      pickupTime: _pickupTime!,
+      returnDate: _returnDate!,
+      returnTime: _returnTime!,
+    );
 
-    final today = DateTime.now();
-    final todayMidnight = DateTime(today.year, today.month, today.day);
-    final pickupMidnight = DateTime(_selectedPickupDate!.year, _selectedPickupDate!.month, _selectedPickupDate!.day);
-    final returnMidnight = DateTime(_selectedReturnDate!.year, _selectedReturnDate!.month, _selectedReturnDate!.day);
-
-    if (pickupMidnight.isBefore(todayMidnight)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pickup date cannot be in the past'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
-    if (returnMidnight.isBefore(pickupMidnight)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Return date must be on or after pickup date'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
-    final startDateStr = '${pickupMidnight.year}-${pickupMidnight.month.toString().padLeft(2, '0')}-${pickupMidnight.day.toString().padLeft(2, '0')}';
-    final endDateStr = '${returnMidnight.year}-${returnMidnight.month.toString().padLeft(2, '0')}-${returnMidnight.day.toString().padLeft(2, '0')}';
-
-    final cityQuery = (_selectedLocation != null && _selectedLocation!.city.isNotEmpty)
-        ? _selectedLocation!.city
-        : _pickupLocation!.split(',').first.trim();
-
-    debugPrint('🚀 [HomeScreen.onSearch] Triggering Search: city="$cityQuery", range=[$startDateStr to $endDateStr]');
-
-    setState(() {
-      _isSearchActive = true;
-      _activeSearchCity = cityQuery;
-      _vehiclesFuture = _fetchVehicles(
-        city: cityQuery,
-        startDate: startDateStr,
-        endDate: endDateStr,
-      );
-    });
-  }
-
-  void _clearSearch() {
-    debugPrint('🔄 [HomeScreen] Resetting search filters');
-    setState(() {
-      _isSearchActive = false;
-      _activeSearchCity = null;
-      _pickupLocation = null;
-      _pickupDate = null;
-      _pickupTime = null;
-      _returnDate = null;
-      _returnTime = null;
-      _selectedPickupDate = null;
-      _selectedReturnDate = null;
-      _selectedPickupTime = null;
-      _selectedReturnTime = null;
-      _selectedLocation = null;
-      _vehiclesFuture = _fetchVehicles();
-    });
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SearchCarsScreen(initialParams: params),
+      ),
+    );
   }
 
   void _openCarDetail(CarModel car) async {
@@ -224,20 +161,9 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
 
-    // Refresh vehicle list so booked cars update
     if (mounted) {
       setState(() {
-        if (_isSearchActive && _selectedPickupDate != null && _selectedReturnDate != null) {
-          final startStr = '${_selectedPickupDate!.year}-${_selectedPickupDate!.month.toString().padLeft(2, '0')}-${_selectedPickupDate!.day.toString().padLeft(2, '0')}';
-          final endStr = '${_selectedReturnDate!.year}-${_selectedReturnDate!.month.toString().padLeft(2, '0')}-${_selectedReturnDate!.day.toString().padLeft(2, '0')}';
-          _vehiclesFuture = _fetchVehicles(
-            city: _activeSearchCity,
-            startDate: startStr,
-            endDate: endStr,
-          );
-        } else {
-          _vehiclesFuture = _fetchVehicles();
-        }
+        _vehiclesFuture = _fetchVehicles();
       });
     }
   }
@@ -260,20 +186,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: const Color(0xFFEAF2FF),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
-                Icons.lock_outline_rounded,
-                color: Color(0xFF1E5AA8),
-              ),
+              child: const Icon(Icons.lock_outline_rounded, color: Color(0xFF1E5AA8)),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -290,9 +207,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () => Navigator.of(ctx).pop(true),
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFF1E5AA8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text('Log In / Register'),
           ),
@@ -302,9 +217,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (shouldLogin != true || !mounted) return false;
 
-    final authSuccess = await Navigator.of(
-      context,
-    ).push<bool>(MaterialPageRoute(builder: (_) => const AuthScreen()));
+    final authSuccess = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const AuthScreen()),
+    );
 
     return authSuccess == true;
   }
@@ -316,9 +231,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (authenticated && mounted) {
-      await Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (_) => const CarSpecificationScreen()));
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const CarSpecificationScreen(),
+        ),
+      );
       if (mounted) {
         setState(() {
           _vehiclesFuture = _fetchVehicles();
@@ -329,9 +246,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _handleLogout() async {
     if (!AuthService.isAuthenticated) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('You are not logged in')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You are not logged in')),
+      );
       return;
     }
 
@@ -340,9 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Log Out'),
-        content: const Text(
-          'Are you sure you want to log out of your account?',
-        ),
+        content: const Text('Are you sure you want to log out of your account?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -352,9 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () => Navigator.of(ctx).pop(true),
             style: FilledButton.styleFrom(
               backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text('Log Out'),
           ),
@@ -370,7 +283,7 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _navIndex = 0;
         _loadUserInfo();
-        _clearSearch();
+        _vehiclesFuture = _fetchVehicles();
       });
 
       debugPrint('📱 [HomeScreen] Navigating to Login screen...');
@@ -392,12 +305,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final user = AuthService.currentUser ?? {};
-    final name =
-        user['full_name']?.toString() ?? user['fullName']?.toString() ?? 'User';
-    final phone =
-        user['phone_number']?.toString() ??
-        user['phoneNumber']?.toString() ??
-        '';
+    final name = user['full_name']?.toString() ?? user['fullName']?.toString() ?? 'User';
+    final phone = user['phone_number']?.toString() ?? user['phoneNumber']?.toString() ?? '';
 
     showDialog<void>(
       context: context,
@@ -411,13 +320,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                name,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -426,27 +329,12 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (phone.isNotEmpty) ...[
-              const Text(
-                'Phone Number',
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-              ),
+              const Text('Phone Number', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
               const SizedBox(height: 2),
-              Text(
-                phone,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              Text(phone, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
               const SizedBox(height: 14),
             ],
-            const Text(
-              'Account Status: Active',
-              style: TextStyle(
-                color: AppColors.success,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            const Text('Account Status: Active', style: TextStyle(color: AppColors.success, fontWeight: FontWeight.bold)),
           ],
         ),
         actions: [
@@ -461,9 +349,7 @@ class _HomeScreenState extends State<HomeScreen> {
             },
             style: FilledButton.styleFrom(
               backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text('Log Out'),
           ),
@@ -523,11 +409,7 @@ class _HomeScreenState extends State<HomeScreen> {
               final selectedLocation = await LocationFlow.start(context);
               if (selectedLocation != null && mounted) {
                 setState(() {
-<<<<<<< Updated upstream
                   _selectedLocationModel = selectedLocation;
-=======
-                  _selectedLocation = selectedLocation;
->>>>>>> Stashed changes
                   _pickupLocation = selectedLocation.name;
                 });
               }
@@ -536,50 +418,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onPickupTimeTap: () => _pickTime(isPickup: true),
             onReturnDateTap: () => _pickDate(isPickup: false),
             onReturnTimeTap: () => _pickTime(isPickup: false),
-<<<<<<< Updated upstream
-            onSearch: () {
-              if (_pickupLocation == null ||
-                  _pickupDate == null ||
-                  _pickupTime == null ||
-                  _returnDate == null ||
-                  _returnTime == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please fill all search details'),
-                  ),
-                );
-                return;
-              }
-
-              final location = _selectedLocationModel ??
-                  LocationModel(
-                    placeId: '',
-                    name: _pickupLocation!,
-                    address: _pickupLocation!,
-                    latitude: 0.0,
-                    longitude: 0.0,
-                    city: _pickupLocation!,
-                    state: '',
-                    country: '',
-                  );
-
-              final params = SearchParameters(
-                location: location,
-                pickupDate: _pickupDate!,
-                pickupTime: _pickupTime!,
-                returnDate: _returnDate!,
-                returnTime: _returnTime!,
-              );
-
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => SearchCarsScreen(initialParams: params),
-                ),
-              );
-            },
-=======
             onSearch: _handleSearch,
->>>>>>> Stashed changes
           ),
           const SizedBox(height: 22),
           FutureBuilder<List<CarModel>>(
@@ -607,28 +446,6 @@ class _HomeScreenState extends State<HomeScreen> {
               if (snapshot.hasError) {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-<<<<<<< Updated upstream
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        'Recommended Cars',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      SizedBox(height: 12),
-                      Text(
-                        'Unable to load vehicles. Please try again later.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-=======
                   child: Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -663,7 +480,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ],
                     ),
->>>>>>> Stashed changes
                   ),
                 );
               }
@@ -672,28 +488,6 @@ class _HomeScreenState extends State<HomeScreen> {
               if (cars.isEmpty) {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-<<<<<<< Updated upstream
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        'Recommended Cars',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      SizedBox(height: 12),
-                      Text(
-                        'No cars available at the moment.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-=======
                   child: Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
@@ -713,62 +507,25 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: const Icon(Icons.directions_car_outlined, size: 36, color: AppColors.primary),
                         ),
                         const SizedBox(height: 14),
-                        Text(
-                          _isSearchActive ? 'No cars available for selected criteria' : 'No cars available at the moment',
+                        const Text(
+                          'No cars available at the moment',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                         ),
                         const SizedBox(height: 6),
-                        Text(
-                          _isSearchActive
-                              ? 'Try choosing different dates, another pickup location, or reset filters to browse all cars.'
-                              : 'Check back soon as hosts list new cars regularly.',
+                        const Text(
+                          'Check back soon as hosts list new cars regularly.',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
                         ),
-                        if (_isSearchActive) ...[
-                          const SizedBox(height: 16),
-                          FilledButton.icon(
-                            onPressed: _clearSearch,
-                            icon: const Icon(Icons.refresh_rounded, size: 18),
-                            label: const Text('Show All Cars'),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                          ),
-                        ],
                       ],
                     ),
->>>>>>> Stashed changes
                   ),
                 );
               }
 
-              final title = _isSearchActive
-                  ? 'Available Cars (${cars.length})'
-                  : 'Recommended Cars';
-
-              final trailing = _isSearchActive
-                  ? TextButton.icon(
-                      onPressed: _clearSearch,
-                      icon: const Icon(Icons.close, size: 14, color: AppColors.primary),
-                      label: const Text(
-                        'Clear filter',
-                        style: TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600),
-                      ),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                    )
-                  : null;
-
               return RecommendedCars(
                 cars: cars,
-                title: title,
-                trailing: trailing,
                 onCarTap: _openCarDetail,
                 onBookNow: (car) async {
                   if (AuthService.isAuthenticated &&
@@ -818,7 +575,6 @@ class _HomeScreenState extends State<HomeScreen> {
       if (isPickup) {
         _selectedPickupDate = picked;
         _pickupDate = formatted;
-        // If return date is before new pickup date, auto-bump return date to next day
         if (_selectedReturnDate != null && _selectedReturnDate!.isBefore(picked)) {
           final nextDay = picked.add(const Duration(days: 1));
           _selectedReturnDate = nextDay;
@@ -884,9 +640,9 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         onSupportTap: () {
           Navigator.pop(context);
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Support coming soon')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Support coming soon')),
+          );
         },
         onHostTap: () async {
           Navigator.pop(context);
@@ -894,9 +650,9 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         onSettingsTap: () {
           Navigator.pop(context);
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Settings coming soon')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Settings coming soon')),
+          );
         },
         onHelpTap: () {
           Navigator.pop(context);
