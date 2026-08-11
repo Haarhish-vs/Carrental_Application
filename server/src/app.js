@@ -266,8 +266,18 @@ app.get('/', (req, res) => {
             <ul class="endpoint-list">
               <li class="endpoint-row">
                 <span class="method get">GET</span>
+                <span class="path">/api/cars/filter-options</span>
+                <span class="desc">Dynamic database-driven filter options</span>
+              </li>
+              <li class="endpoint-row">
+                <span class="method post">POST</span>
+                <span class="path">/api/cars/search</span>
+                <span class="desc">Search available cars by location & dates</span>
+              </li>
+              <li class="endpoint-row">
+                <span class="method get">GET</span>
                 <span class="path">/api/vehicles</span>
-                <span class="desc">Search active & available cars</span>
+                <span class="desc">Browse active & available cars</span>
               </li>
               <li class="endpoint-row">
                 <span class="method get">GET</span>
@@ -376,6 +386,7 @@ app.post('/api/vehicles/upload', protectAuth, uploadMiddleware.array('files'), v
 // Endpoint Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/vehicles', vehicleRoutes);
+app.use('/api/cars', vehicleRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/documents', documentRoutes);

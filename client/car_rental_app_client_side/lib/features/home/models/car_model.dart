@@ -12,6 +12,12 @@ class CarModel {
   final String status;
   final bool isAvailable;
   final String ownerId;
+  final String? carType;
+  final double? distanceKm;
+  final String? pickupLocation;
+  final double? depositAmount;
+  final int? minimumRentalDays;
+  final int? reviewsCount;
 
   const CarModel({
     required this.id,
@@ -27,6 +33,12 @@ class CarModel {
     required this.status,
     this.isAvailable = true,
     required this.ownerId,
+    this.carType,
+    this.distanceKm,
+    this.pickupLocation,
+    this.depositAmount,
+    this.minimumRentalDays,
+    this.reviewsCount,
   });
 
   factory CarModel.fromJson(Map<String, dynamic> json) {
@@ -93,6 +105,15 @@ class CarModel {
         json['status']?.toString().toLowerCase() == 'active';
     final String ownerId = json['owner_id']?.toString() ?? json['ownerId']?.toString() ?? '';
 
+    final String? carType = json['car_type']?.toString() ?? json['carType']?.toString();
+    final double? distanceKm = json['distanceKm'] != null
+        ? double.tryParse(json['distanceKm'].toString())
+        : (json['distance_km'] != null ? double.tryParse(json['distance_km'].toString()) : null);
+    final String? pickupLocation = json['pickup_location']?.toString() ?? json['pickupLocation']?.toString();
+    final double? depositAmount = double.tryParse(json['deposit_amount']?.toString() ?? json['depositAmount']?.toString() ?? '');
+    final int? minimumRentalDays = int.tryParse(json['minimum_rental_days']?.toString() ?? json['minimumRentalDays']?.toString() ?? '');
+    final int? reviewsCount = int.tryParse(json['reviews_count']?.toString() ?? json['reviewsCount']?.toString() ?? '');
+
     return CarModel(
       id: id,
       name: name.isNotEmpty ? name : 'Car',
@@ -107,6 +128,12 @@ class CarModel {
       status: status,
       isAvailable: isAvailable,
       ownerId: ownerId,
+      carType: carType,
+      distanceKm: distanceKm,
+      pickupLocation: pickupLocation,
+      depositAmount: depositAmount,
+      minimumRentalDays: minimumRentalDays,
+      reviewsCount: reviewsCount,
     );
   }
 }

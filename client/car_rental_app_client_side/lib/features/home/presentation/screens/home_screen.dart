@@ -5,7 +5,10 @@ import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../../owner/data/services/car_api_service.dart';
 import '../../../owner/presentation/screens/rent_car/car_spefication.dart';
+import '../../../location/data/models/location_model.dart';
 import '../../../location/presentation/location_flow.dart';
+import 'package:car_rental_app_client_side/features/search/data/models/search_parameters.dart';
+import 'package:car_rental_app_client_side/features/search/presentation/screens/search_cars_screen.dart';
 import '../widgets/custom_home_app_bar.dart';
 import '../widgets/hero_search_card.dart';
 import '../widgets/recommended_cars.dart';
@@ -33,6 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String? _userName;
   String? _userLocation;
+  LocationModel? _selectedLocationModel;
   String? _pickupLocation;
   String? _pickupDate;
   String? _pickupTime;
@@ -368,6 +372,7 @@ class _HomeScreenState extends State<HomeScreen> {
               final selectedLocation = await LocationFlow.start(context);
               if (selectedLocation != null && mounted) {
                 setState(() {
+                  _selectedLocationModel = selectedLocation;
                   _pickupLocation = selectedLocation.name;
                 });
               }
@@ -389,6 +394,32 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
                 return;
               }
+
+              final location = _selectedLocationModel ??
+                  LocationModel(
+                    placeId: '',
+                    name: _pickupLocation!,
+                    address: _pickupLocation!,
+                    latitude: 0.0,
+                    longitude: 0.0,
+                    city: _pickupLocation!,
+                    state: '',
+                    country: '',
+                  );
+
+              final params = SearchParameters(
+                location: location,
+                pickupDate: _pickupDate!,
+                pickupTime: _pickupTime!,
+                returnDate: _returnDate!,
+                returnTime: _returnTime!,
+              );
+
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => SearchCarsScreen(initialParams: params),
+                ),
+              );
             },
           ),
           const SizedBox(height: 22),
