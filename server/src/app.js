@@ -5,6 +5,7 @@ const authRoutes = require('./modules/auth/auth.routes');
 const vehicleRoutes = require('./modules/vehicles/vehicle.routes');
 const bookingRoutes = require('./modules/bookings/booking.routes');
 const locationRoutes = require('./modules/locations/location.routes');
+const aiRoutes = require('./modules/ai/ai.routes');
 const errorHandler = require('./shared/middlewares/error.middleware');
 
 const app = express();
@@ -376,6 +377,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/locations', locationRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Unhandled Endpoint Catcher (404)
 app.use((req, res, next) => {
