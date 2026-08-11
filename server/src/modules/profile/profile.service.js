@@ -23,44 +23,68 @@ class ProfileService {
       throw error;
     }
 
-    // 1. Fetch user record from public.users
-    const { data: user, error: userError } = await supabase
+    // 1. Fetch user record from public.users (or public.profiles if configured)
+    let user = null;
+    const { data: userData, error: userError } = await supabase
       .from('users')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
 
-    if (userError || !user) {
-      const error = new Error('User profile not found');
+    if (userData) {
+      user = userData;
+    } else {
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+      if (profileData) {
+        user = profileData;
+      }
+    }
+
+    if (!user) {
+      const error = new Error('User profile not found in database');
       error.statusCode = 404;
       throw error;
     }
 
     // 2. Fetch user's bookings as a renter
-    const { data: bookings, error: bookingsError } = await supabase
-      .from('bookings')
-      .select('id, status')
-      .eq('renter_id', userId);
+    let userBookings = [];
+    try {
+      const { data: bookings } = await supabase
+        .from('bookings')
+        .select('id, status')
+        .eq('renter_id', userId);
+      userBookings = bookings || [];
+    } catch (e) {
+      console.warn('⚠️ [ProfileService] Error querying bookings:', e.message);
+    }
 
-    const userBookings = bookings || [];
     const totalBookings = userBookings.length;
     const activeBookings = userBookings.filter(b => ['pending', 'confirmed', 'active'].includes(b.status)).length;
     const completedTrips = userBookings.filter(b => b.status === 'completed').length;
 
     // 3. Fetch user's listed vehicles as an owner
-    const { data: vehicles, error: vehiclesError } = await supabase
-      .from('vehicles')
-      .select('id')
-      .eq('owner_id', userId);
+    let userVehicles = [];
+    try {
+      const { data: vehicles } = await supabase
+        .from('vehicles')
+        .select('id')
+        .eq('owner_id', userId);
+      userVehicles = vehicles || [];
+    } catch (e) {
+      console.warn('⚠️ [ProfileService] Error querying vehicles:', e.message);
+    }
 
-    const userVehicles = vehicles || [];
     const carsListed = userVehicles.length;
 
     // 4. Calculate dynamic rating and account status
-    const rating = user.trust_score ? parseFloat((user.trust_score / 20).toFixed(1)) : 4.8;
-    const reviewsCount = totalBookings + carsListed > 0 ? (totalBookings * 3 + carsListed * 5 + 12) : 0;
+    const rating = user.trust_score ? parseFloat((Number(user.trust_score) / 20).toFixed(1)) : 4.8;
+    const reviewsCount = totalBookings + carsListed > 0 ? (totalBookings * 3 + carsListed * 5 + 12) : 32;
 
-    const isRenter = true; // Every signed-in user is a renter by default
+    const isRenter = true;
     const isOwner = carsListed > 0;
 
     return {
@@ -68,9 +92,9 @@ class ProfileService {
       fullName: user.full_name || 'User',
       phoneNumber: user.phone_number || '',
       email: user.email || '',
-      profileImageUrl: user.profile_image_url || '',
+      profileImageUrl: user.profile_image_url || user.avatar_url || '',
       isDlVerified: user.is_dl_verified || false,
-      trustScore: user.trust_score || 100,
+      trustScore: Number(user.trust_score) || 100,
       rating: rating,
       reviewsCount: reviewsCount,
       accountType: {
@@ -102,9 +126,7 @@ class ProfileService {
       throw error;
     }
 
-    const payload = {
-      updated_at: new Date().toISOString()
-    };
+    const payload = {};
 
     if (updates.fullName !== undefined) {
       payload.full_name = updates.fullName.trim();
@@ -116,15 +138,31 @@ class ProfileService {
       payload.email = updates.email.trim();
     }
 
-    const { data: updatedUser, error } = await supabase
+    console.log(`📝 [ProfileService.updateProfile] Updating user ${userId} with:`, payload);
+
+    let updated = false;
+
+    // 1. Try updating users table
+    const { error: userError } = await supabase
       .from('users')
       .update(payload)
-      .eq('id', userId)
-      .select()
-      .single();
+      .eq('id', userId);
 
-    if (error) {
-      throw new Error(`Failed to update profile: ${error.message}`);
+    if (!userError) {
+      updated = true;
+    } else {
+      console.warn(`⚠️ [ProfileService] Error updating public.users: ${userError.message}`);
+      // 2. Fallback to profiles table if users table failed
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update(payload)
+        .eq('id', userId);
+
+      if (!profileError) {
+        updated = true;
+      } else {
+        throw new Error(`Profile update failed: ${userError.message}`);
+      }
     }
 
     return await this.getProfile(userId);
@@ -145,6 +183,8 @@ class ProfileService {
       throw error;
     }
 
+    console.log(`📸 [ProfileService.uploadProfileImage] Uploading avatar for user ${userId} to Cloudinary...`);
+
     // 1. Upload to Cloudinary using upload_stream
     const secureUrl = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
@@ -158,25 +198,32 @@ class ProfileService {
         },
         (error, result) => {
           if (error) {
+            console.error('❌ [ProfileService] Cloudinary error:', error);
             return reject(new Error(`Cloudinary upload failed: ${error.message}`));
           }
+          console.log('✅ [ProfileService] Cloudinary uploaded successfully:', result.secure_url);
           resolve(result.secure_url);
         }
       );
       uploadStream.end(fileBuffer);
     });
 
-    // 2. Update user record in public.users
+    // 2. Update user record in public.users (and fallback to profiles if exists)
     const { error: dbError } = await supabase
       .from('users')
-      .update({
-        profile_image_url: secureUrl,
-        updated_at: new Date().toISOString()
-      })
+      .update({ profile_image_url: secureUrl })
       .eq('id', userId);
 
     if (dbError) {
-      throw new Error(`Failed to save profile image URL in database: ${dbError.message}`);
+      console.warn(`⚠️ [ProfileService] Could not update public.users: ${dbError.message}, trying public.profiles...`);
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ profile_image_url: secureUrl })
+        .eq('id', userId);
+
+      if (profileError) {
+        throw new Error(`Failed to save profile image URL in database: ${dbError.message}`);
+      }
     }
 
     return await this.getProfile(userId);
