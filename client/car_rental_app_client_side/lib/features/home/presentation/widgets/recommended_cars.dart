@@ -3,18 +3,21 @@ import '../../../../core/theme/app_colors.dart';
 import '../../models/car_model.dart';
 import 'car_card.dart';
 
-/// Horizontal recommended-cars rail. Swap `cars: DummyData.recommendedCars`
-/// for `cars: apiResponse.cars` later — nothing else in this widget changes.
+/// Horizontal recommended-cars rail displaying real database vehicle results.
 class RecommendedCars extends StatelessWidget {
   final List<CarModel> cars;
   final ValueChanged<CarModel> onCarTap;
   final ValueChanged<CarModel> onBookNow;
+  final String title;
+  final Widget? trailing;
 
   const RecommendedCars({
     super.key,
     required this.cars,
     required this.onCarTap,
     required this.onBookNow,
+    this.title = 'Recommended Cars',
+    this.trailing,
   });
 
   @override
@@ -30,10 +33,23 @@ class RecommendedCars extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Recommended Cars',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-              const Text('See all',
-                  style: TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600)),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              trailing ??
+                  const Text(
+                    'See all',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
             ],
           ),
         ),

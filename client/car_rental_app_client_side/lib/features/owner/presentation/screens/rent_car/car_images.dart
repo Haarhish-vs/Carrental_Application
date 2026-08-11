@@ -34,7 +34,9 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
   List<RentCarImageSlot> get _requiredSlots => rentCarRequiredImageSlots;
 
   List<RentCarImageSlot> get _missingRequiredSlots => _requiredSlots
-      .where((slot) => !_items.any((item) => item.slot == slot && item.isUploaded))
+      .where(
+        (slot) => !_items.any((item) => item.slot == slot && item.isUploaded),
+      )
       .toList();
 
   List<XFile> get _pendingLocalFiles => _items
@@ -60,7 +62,7 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
       final slot = index < _requiredSlots.length
           ? _requiredSlots[index]
           : RentCarImageSlot.additional;
-      
+
       final id = _buildImageId();
       _items.add(
         RentCarUploadImageItem(
@@ -70,7 +72,7 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
           state: RentCarImageUploadState.pending,
         ),
       );
-      
+
       file.readAsBytes().then((bytes) {
         if (!mounted) return;
         setState(() {
@@ -89,11 +91,7 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
           ? _requiredSlots[_items.length]
           : RentCarImageSlot.additional;
       _items.add(
-        RentCarUploadImageItem.remote(
-          id: 'seed_$index',
-          slot: slot,
-          url: url,
-        ),
+        RentCarUploadImageItem.remote(id: 'seed_$index', slot: slot, url: url),
       );
     }
   }
@@ -104,7 +102,9 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
 
   void _showMessage(String message) {
     setState(() => _statusMessage = message);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _handleSourceSelection({RentCarImageSlot? targetSlot}) async {
@@ -163,11 +163,17 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
 
     for (final file in files) {
       if (_items.length + appended.length >= _maxImages) {
-        _showMessage('Maximum $_maxImages images allowed. Extra files were ignored.');
+        _showMessage(
+          'Maximum $_maxImages images allowed. Extra files were ignored.',
+        );
         break;
       }
 
-      final itemSlot = targetSlot ?? (freeSlots.isNotEmpty ? freeSlots.removeAt(0) : RentCarImageSlot.additional);
+      final itemSlot =
+          targetSlot ??
+          (freeSlots.isNotEmpty
+              ? freeSlots.removeAt(0)
+              : RentCarImageSlot.additional);
       final bytes = await file.readAsBytes();
 
       final item = RentCarUploadImageItem.local(
@@ -195,7 +201,9 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
 
   void _upsertImageForSlot(RentCarUploadImageItem newItem) {
     setState(() {
-      final existingIndex = _items.indexWhere((item) => item.slot == newItem.slot);
+      final existingIndex = _items.indexWhere(
+        (item) => item.slot == newItem.slot,
+      );
       if (existingIndex == -1) {
         _items.add(newItem);
       } else {
@@ -255,22 +263,23 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
     });
 
     try {
-      final returnedUrls = await widget.onUploadRequested!(
-        _pendingLocalFiles,
-        (progress) {
-          if (!mounted) {
-            return;
-          }
-          setState(() => _uploadProgress = progress.clamp(0, 1));
-        },
-      );
+      final returnedUrls = await widget.onUploadRequested!(_pendingLocalFiles, (
+        progress,
+      ) {
+        if (!mounted) {
+          return;
+        }
+        setState(() => _uploadProgress = progress.clamp(0, 1));
+      });
 
       if (!mounted) {
         return;
       }
 
       if (returnedUrls.length != _pendingLocalFiles.length) {
-        _showMessage('Upload completed, but the returned URL count did not match the selected files.');
+        _showMessage(
+          'Upload completed, but the returned URL count did not match the selected files.',
+        );
         return;
       }
 
@@ -290,7 +299,9 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
         }
       });
 
-      _showMessage('Images uploaded successfully. Returned URLs are now displayed.');
+      _showMessage(
+        'Images uploaded successfully. Returned URLs are now displayed.',
+      );
     } catch (error) {
       if (!mounted) {
         return;
@@ -326,7 +337,12 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
     }
 
     final missingSlots = _requiredSlots
-        .where((slot) => !_items.any((item) => item.slot == slot && (item.file != null || item.hasRemoteUrl)))
+        .where(
+          (slot) => !_items.any(
+            (item) =>
+                item.slot == slot && (item.file != null || item.hasRemoteUrl),
+          ),
+        )
         .toList();
 
     if (missingSlots.isNotEmpty) {
@@ -334,8 +350,14 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
       return;
     }
 
-    final localFiles = _items.where((item) => item.file != null).map((item) => item.file!).toList();
-    final remoteUrls = _items.where((item) => item.hasRemoteUrl).map((item) => item.uploadedUrl!).toList();
+    final localFiles = _items
+        .where((item) => item.file != null)
+        .map((item) => item.file!)
+        .toList();
+    final remoteUrls = _items
+        .where((item) => item.hasRemoteUrl)
+        .map((item) => item.uploadedUrl!)
+        .toList();
 
     final updatedDraft = widget.draft.copyWith(
       localPhotos: localFiles,
@@ -344,9 +366,9 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
 
     if (!mounted) return;
 
-    Navigator.of(context).push(
-      buildRentCarSlideRoute(CarDocumentsScreen(draft: updatedDraft)),
-    );
+    Navigator.of(
+      context,
+    ).push(buildRentCarSlideRoute(CarDocumentsScreen(draft: updatedDraft)));
   }
 
   @override
@@ -367,7 +389,13 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
             minCount: _minImages,
             maxCount: _maxImages,
             missingSlots: _requiredSlots
-                .where((slot) => !_items.any((item) => item.slot == slot && (item.file != null || item.hasRemoteUrl)))
+                .where(
+                  (slot) => !_items.any(
+                    (item) =>
+                        item.slot == slot &&
+                        (item.file != null || item.hasRemoteUrl),
+                  ),
+                )
                 .toList(),
             onAddSlot: _handleAddSlot,
           ),
@@ -381,7 +409,8 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
               children: [
                 RentCarImageGrid(
                   items: _items,
-                  onPreview: (item) => showRentCarImagePreviewDialog(context, item),
+                  onPreview: (item) =>
+                      showRentCarImagePreviewDialog(context, item),
                   onReplace: _handleReplaceImage,
                   onRemove: _removeImage,
                   onReorder: _reorderImages,

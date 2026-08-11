@@ -181,8 +181,8 @@ describe('Bookings Module Tests', () => {
         .set('Authorization', `Bearer ${testToken}`)
         .send({
           vehicleId: 'vehicle-id',
-          startDate: '2026-08-10',
-          endDate: '2026-08-15'
+          startDate: '2026-12-01',
+          endDate: '2026-12-05'
         });
 
       expect(res.status).toBe(409);

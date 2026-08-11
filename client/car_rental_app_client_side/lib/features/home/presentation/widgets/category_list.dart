@@ -37,7 +37,11 @@ class CategoryList extends StatelessWidget {
                     color: AppColors.primary.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(category.icon, color: AppColors.primary, size: 26),
+                  child: Icon(
+                    category.icon,
+                    color: AppColors.primary,
+                    size: 26,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 SizedBox(
@@ -47,7 +51,11 @@ class CategoryList extends StatelessWidget {
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ),
               ],

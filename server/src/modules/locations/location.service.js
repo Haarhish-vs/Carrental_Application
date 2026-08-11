@@ -342,157 +342,141 @@ const mapGoogleResult = (result, fallbackName = '') => {
  * @param {string|null} sessionToken
  * @returns {Array}
  */
+/**
+ * Searches for location suggestions using OpenStreetMap Nominatim.
+ * Completely free, high accuracy, and requires no API key.
+ *
+ * @param {string} query
+ * @returns {Promise<Array>}
+ */
+const searchLocationsOsm = async (query) => {
+  try {
+    const trimmed = encodeURIComponent(query.trim());
+    const osmUrl = `https://nominatim.openstreetmap.org/search?q=${trimmed}&format=json&addressdetails=1&limit=${MAX_SEARCH_RESULTS}&countrycodes=in`;
+    const response = await fetchWithTimeout(osmUrl, {
+      method: 'GET',
+      headers: { 'User-Agent': 'CarRentalApplication/1.0' },
+    });
+    if (response.ok) {
+      const data = await response.json();
+      if (Array.isArray(data) && data.length > 0) {
+        return data.map((item) => {
+          const lat = parseFloat(item.lat);
+          const lng = parseFloat(item.lon);
+          const addr = item.address || {};
+          const city = addr.city || addr.town || addr.state_district || addr.village || addr.county || '';
+          const state = addr.state || '';
+          const country = addr.country || 'India';
+          const name = item.name || item.display_name.split(',')[0] || city || 'Location';
+
+          return {
+            id: null,
+            placeId: `osm_${item.place_id || `${lat}_${lng}`}`,
+            name,
+            address: item.display_name,
+            latitude: lat,
+            longitude: lng,
+            city,
+            state,
+            country,
+          };
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('OpenStreetMap Nominatim search fallback failed:', err.message);
+  }
+  return [];
+};
+
+/**
+ * Searches for location suggestions using Google Places API (New) Autocomplete
+ * with seamless fallback to OpenStreetMap Nominatim.
+ *
+ * @param {string} query
+ * @param {string|null} sessionToken
+ * @returns {Array}
+ */
 const searchLocations = async (query, sessionToken = null) => {
   if (!query || !query.trim()) {
     return [];
   }
 
-  if (!GOOGLE_MAPS_API_KEY) {
-    throw new Error(
-      'Location service is not configured. Google Maps API key is missing.'
-    );
-  }
-
   const trimmedQuery = query.trim();
 
-  const requestBody = {
-    input: trimmedQuery,
+  // 1. If Google Maps API key exists, try Google Places API (New)
+  if (GOOGLE_MAPS_API_KEY) {
+    try {
+      const requestBody = {
+        input: trimmedQuery,
+        includedPrimaryTypes: ['(cities)'],
+        includedRegionCodes: ['in'],
+        languageCode: 'en',
+        regionCode: 'IN',
+        includeQueryPredictions: false,
+      };
 
-    // Restrict autocomplete to city-level results.
-    includedPrimaryTypes: ['(cities)'],
-
-    // Restrict results to India.
-    includedRegionCodes: ['in'],
-
-    // Prefer English responses.
-    languageCode: 'en',
-
-    // Format/rank results for India.
-    regionCode: 'IN',
-
-    // Do not return query predictions.
-    includeQueryPredictions: false,
-  };
-
-  // Session token is optional.
-  //
-  // If your Flutter frontend already creates a session token,
-  // it can be passed to this method as the second argument.
-  if (sessionToken) {
-    requestBody.sessionToken = sessionToken;
-  }
-
-  let response;
-
-  try {
-    response = await fetchWithTimeout(GOOGLE_AUTOCOMPLETE_URL, {
-      method: 'POST',
-
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
-      },
-
-      body: JSON.stringify(requestBody),
-    });
-  } catch (fetchError) {
-    console.error(
-      `Location autocomplete request failed: ${fetchError.message}`
-    );
-
-    throw new Error(
-      'Failed to reach the location service. Please try again.'
-    );
-  }
-
-  let data;
-
-  try {
-    data = await response.json();
-  } catch (parseError) {
-    console.error(
-      `Location autocomplete returned invalid JSON: ${parseError.message}`
-    );
-
-    throw new Error(
-      'Location service returned an invalid response.'
-    );
-  }
-
-  if (!response.ok) {
-    handleGoogleError(
-      response.status,
-      data,
-      'Places Autocomplete'
-    );
-
-    return [];
-  }
-
-  const suggestions = Array.isArray(data?.suggestions)
-    ? data.suggestions
-    : [];
-
-  const placePredictions = suggestions
-    .filter(
-      (suggestion) =>
-        suggestion?.placePrediction?.placeId
-    )
-    .slice(0, MAX_SEARCH_RESULTS);
-
-  if (placePredictions.length === 0) {
-    return [];
-  }
-
-  // ---------------------------------------------------------------------------
-  // Autocomplete returns place IDs but not the complete location object.
-  //
-  // Therefore, retrieve Place Details (New) for each prediction so that
-  // LocationModel receives:
-  //
-  // placeId
-  // name
-  // address
-  // latitude
-  // longitude
-  // city
-  // state
-  // country
-  // ---------------------------------------------------------------------------
-
-  const locations = await Promise.all(
-    placePredictions.map(async (suggestion) => {
-      const prediction = suggestion.placePrediction;
-
-      const placeId = prediction.placeId;
-
-      const fallbackName =
-        prediction.structuredFormat?.mainText?.text ||
-        prediction.text?.text ||
-        'Unknown';
-
-      try {
-        const place = await getPlaceDetails(
-          placeId,
-          sessionToken
-        );
-
-        if (!place) {
-          return null;
-        }
-
-        return mapGoogleResult(place, fallbackName);
-      } catch (error) {
-        console.error(
-          `Failed to get details for place ${placeId}: ${error.message}`
-        );
-
-        return null;
+      if (sessionToken) {
+        requestBody.sessionToken = sessionToken;
       }
-    })
-  );
 
-  return locations.filter(Boolean);
+      const response = await fetchWithTimeout(GOOGLE_AUTOCOMPLETE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const suggestions = Array.isArray(data?.suggestions) ? data.suggestions : [];
+        const placePredictions = suggestions
+          .filter((suggestion) => suggestion?.placePrediction?.placeId)
+          .slice(0, MAX_SEARCH_RESULTS);
+
+        if (placePredictions.length > 0) {
+          const locations = await Promise.all(
+            placePredictions.map(async (suggestion) => {
+              const prediction = suggestion.placePrediction;
+              const placeId = prediction.placeId;
+              const fallbackName =
+                prediction.structuredFormat?.mainText?.text ||
+                prediction.text?.text ||
+                'Unknown';
+
+              try {
+                const place = await getPlaceDetails(placeId, sessionToken);
+                if (!place) return null;
+                return mapGoogleResult(place, fallbackName);
+              } catch (error) {
+                console.warn(`Place details fallback for ${placeId}:`, error.message);
+                return null;
+              }
+            })
+          );
+
+          const validLocations = locations.filter(Boolean);
+          if (validLocations.length > 0) {
+            return validLocations;
+          }
+        }
+      } else {
+        console.warn(`Google Places autocomplete HTTP ${response.status}, falling back to OpenStreetMap Nominatim`);
+      }
+    } catch (googleError) {
+      console.warn(`Google Places search error: ${googleError.message}, falling back to OpenStreetMap Nominatim`);
+    }
+  }
+
+  // 2. OpenStreetMap Nominatim Fallback (Always reliable, 100% Free, no quota limits)
+  const osmResults = await searchLocationsOsm(trimmedQuery);
+  if (osmResults.length > 0) {
+    return osmResults;
+  }
+
+  return [];
 };
 
 // -----------------------------------------------------------------------------

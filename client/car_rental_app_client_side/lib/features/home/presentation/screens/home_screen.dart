@@ -5,7 +5,10 @@ import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../../owner/data/services/car_api_service.dart';
 import '../../../owner/presentation/screens/rent_car/car_spefication.dart';
+import '../../../location/data/models/location_model.dart';
 import '../../../location/presentation/location_flow.dart';
+import 'package:car_rental_app_client_side/features/search/data/models/search_parameters.dart';
+import 'package:car_rental_app_client_side/features/search/presentation/screens/search_cars_screen.dart';
 import '../widgets/custom_home_app_bar.dart';
 import '../widgets/hero_search_card.dart';
 import '../widgets/recommended_cars.dart';
@@ -34,18 +37,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String? _userName;
   String? _userLocation;
+
+  // Search form state
+  LocationModel? _selectedLocationModel;
   String? _pickupLocation;
   String? _pickupDate;
   String? _pickupTime;
   String? _returnDate;
   String? _returnTime;
 
+  DateTime? _selectedPickupDate;
+  TimeOfDay? _selectedPickupTime;
+  DateTime? _selectedReturnDate;
+  TimeOfDay? _selectedReturnTime;
+
   @override
   void initState() {
     super.initState();
     _loadUserInfo();
     AuthService.authStateNotifier.addListener(_onAuthChanged);
-    _vehiclesFuture = _fetchHomeVehicles();
+    _vehiclesFuture = _fetchVehicles();
   }
 
   @override
@@ -80,10 +91,82 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<List<CarModel>> _fetchHomeVehicles() async {
-    final vehicles = await _carApiService.getVehicles();
+  /// Fetches vehicles from the database via backend API
+  Future<List<CarModel>> _fetchVehicles({
+    String? city,
+    String? startDate,
+    String? endDate,
+  }) async {
+    debugPrint('🔍 [HomeScreen] Querying vehicles -> city: "${city ?? 'ALL'}", startDate: "$startDate", endDate: "$endDate"');
+    final vehicles = await _carApiService.getVehicles(
+      city: city,
+      startDate: startDate,
+      endDate: endDate,
+    );
     final mapped = vehicles.map(CarModel.fromJson).toList();
-    return mapped.where((car) => car.isAvailable).toList();
+    final available = mapped.where((car) => car.isAvailable).toList();
+    debugPrint('🚗 [HomeScreen] Available vehicles loaded: ${available.length}');
+    return available;
+  }
+
+  void _handleSearch() {
+    if (_pickupLocation == null ||
+        _pickupDate == null ||
+        _pickupTime == null ||
+        _returnDate == null ||
+        _returnTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill all search details'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final location = _selectedLocationModel ??
+        LocationModel(
+          placeId: '',
+          name: _pickupLocation!,
+          address: _pickupLocation!,
+          latitude: 0.0,
+          longitude: 0.0,
+          city: _pickupLocation!,
+          state: '',
+          country: '',
+        );
+
+    final params = SearchParameters(
+      location: location,
+      pickupDate: _pickupDate!,
+      pickupTime: _pickupTime!,
+      returnDate: _returnDate!,
+      returnTime: _returnTime!,
+    );
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SearchCarsScreen(initialParams: params),
+      ),
+    );
+  }
+
+  void _openCarDetail(CarModel car) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CarDetailScreen(
+          car: car,
+          initialPickupDate: _selectedPickupDate,
+          initialReturnDate: _selectedReturnDate,
+        ),
+      ),
+    );
+
+    if (mounted) {
+      setState(() {
+        _vehiclesFuture = _fetchVehicles();
+      });
+    }
   }
 
   Future<bool> _ensureAuthenticated({
@@ -156,7 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
       );
       if (mounted) {
         setState(() {
-          _vehiclesFuture = _fetchHomeVehicles();
+          _vehiclesFuture = _fetchVehicles();
         });
       }
     }
@@ -201,7 +284,7 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _navIndex = 0;
         _loadUserInfo();
-        _vehiclesFuture = _fetchHomeVehicles();
+        _vehiclesFuture = _fetchVehicles();
       });
 
       debugPrint('📱 [HomeScreen] Navigating to Login screen...');
@@ -283,7 +366,7 @@ class _HomeScreenState extends State<HomeScreen> {
           onExplorePressed: () {
             setState(() {
               _navIndex = 0;
-              _vehiclesFuture = _fetchHomeVehicles();
+              _vehiclesFuture = _fetchVehicles();
             });
           },
         );
@@ -327,6 +410,7 @@ class _HomeScreenState extends State<HomeScreen> {
               final selectedLocation = await LocationFlow.start(context);
               if (selectedLocation != null && mounted) {
                 setState(() {
+                  _selectedLocationModel = selectedLocation;
                   _pickupLocation = selectedLocation.name;
                 });
               }
@@ -335,20 +419,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onPickupTimeTap: () => _pickTime(isPickup: true),
             onReturnDateTap: () => _pickDate(isPickup: false),
             onReturnTimeTap: () => _pickTime(isPickup: false),
-            onSearch: () {
-              if (_pickupLocation == null ||
-                  _pickupDate == null ||
-                  _pickupTime == null ||
-                  _returnDate == null ||
-                  _returnTime == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please fill all search details'),
-                  ),
-                );
-                return;
-              }
-            },
+            onSearch: _handleSearch,
           ),
           const SizedBox(height: 22),
           FutureBuilder<List<CarModel>>(
@@ -359,7 +430,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: EdgeInsets.symmetric(horizontal: 20),
                   child: SizedBox(
                     height: 250,
-                    child: Center(child: CircularProgressIndicator()),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 14),
+                          Text('Finding available cars...', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                        ],
+                      ),
+                    ),
                   ),
                 );
               }
@@ -367,15 +447,40 @@ class _HomeScreenState extends State<HomeScreen> {
               if (snapshot.hasError) {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text('Recommended Cars',
-                          style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                      SizedBox(height: 12),
-                      Text('Unable to load vehicles. Please try again later.',
-                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                    ],
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.red.shade100),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.redAccent, size: 36),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'Unable to load vehicles',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          snapshot.error.toString().replaceAll('Exception: ', ''),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                        ),
+                        const SizedBox(height: 14),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _vehiclesFuture = _fetchVehicles();
+                            });
+                          },
+                          icon: const Icon(Icons.refresh, size: 16),
+                          label: const Text('Try Again'),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               }
@@ -384,34 +489,45 @@ class _HomeScreenState extends State<HomeScreen> {
               if (cars.isEmpty) {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text('Recommended Cars',
-                          style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                      SizedBox(height: 12),
-                      Text('No cars available at the moment.',
-                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                    ],
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.directions_car_outlined, size: 36, color: AppColors.primary),
+                        ),
+                        const SizedBox(height: 14),
+                        const Text(
+                          'No cars available at the moment',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Check back soon as hosts list new cars regularly.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               }
 
               return RecommendedCars(
                 cars: cars,
-                onCarTap: (car) async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => CarDetailScreen(car: car),
-                    ),
-                  );
-                  // Refresh so booked cars disappear from list
-                  if (mounted) {
-                    setState(() {
-                      _vehiclesFuture = _fetchHomeVehicles();
-                    });
-                  }
-                },
+                onCarTap: _openCarDetail,
                 onBookNow: (car) async {
                   if (AuthService.isAuthenticated &&
                       AuthService.currentUser != null &&
@@ -424,25 +540,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                     return;
                   }
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => CarDetailScreen(car: car),
-                    ),
-                  );
-                  // Refresh so booked cars disappear from list
-                  if (mounted) {
-                    setState(() {
-                      _vehiclesFuture = _fetchHomeVehicles();
-                    });
-                  }
+                  _openCarDetail(car);
                 },
               );
             },
           ),
           const SizedBox(height: 26),
-          BecomeHostBanner(
-            onHostTap: _goHost,
-          ),
+          BecomeHostBanner(onHostTap: _goHost),
           const SizedBox(height: 30),
         ],
       ),
@@ -450,11 +554,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _pickDate({required bool isPickup}) async {
+    final now = DateTime.now();
+    final initialDate = isPickup
+        ? (_selectedPickupDate ?? now)
+        : (_selectedReturnDate ?? (_selectedPickupDate?.add(const Duration(days: 1)) ?? now.add(const Duration(days: 1))));
+
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: initialDate.isBefore(now) ? now : initialDate,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
     );
 
     if (picked == null || !mounted) return;
@@ -465,17 +574,30 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() {
       if (isPickup) {
+        _selectedPickupDate = picked;
         _pickupDate = formatted;
+        if (_selectedReturnDate != null && _selectedReturnDate!.isBefore(picked)) {
+          final nextDay = picked.add(const Duration(days: 1));
+          _selectedReturnDate = nextDay;
+          _returnDate =
+              '${nextDay.day.toString().padLeft(2, '0')}/'
+              '${nextDay.month.toString().padLeft(2, '0')}/${nextDay.year}';
+        }
       } else {
+        _selectedReturnDate = picked;
         _returnDate = formatted;
       }
     });
   }
 
   Future<void> _pickTime({required bool isPickup}) async {
+    final initialTime = isPickup
+        ? (_selectedPickupTime ?? const TimeOfDay(hour: 10, minute: 0))
+        : (_selectedReturnTime ?? const TimeOfDay(hour: 18, minute: 0));
+
     final picked = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.now(),
+      initialTime: initialTime,
     );
 
     if (picked == null || !mounted) return;
@@ -484,8 +606,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() {
       if (isPickup) {
+        _selectedPickupTime = picked;
         _pickupTime = formatted;
       } else {
+        _selectedReturnTime = picked;
         _returnTime = formatted;
       }
     });
@@ -596,15 +720,13 @@ class _HomeScreenState extends State<HomeScreen> {
           _handleLogout();
         },
       ),
-      body: SafeArea(
-        child: _buildBody(),
-      ),
+      body: SafeArea(child: _buildBody()),
       bottomNavigationBar: BottomNavigation(
         currentIndex: _navIndex,
         onHomeTap: () {
           setState(() {
             _navIndex = 0;
-            _vehiclesFuture = _fetchHomeVehicles();
+            _vehiclesFuture = _fetchVehicles();
           });
         },
         onBookingsTap: () {

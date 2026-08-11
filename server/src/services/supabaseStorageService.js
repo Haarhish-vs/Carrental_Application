@@ -1,0 +1,40 @@
+const { supabase } = require('../config/supabase');
+
+class SupabaseStorageService {
+  async uploadFile({ bucket, storagePath, fileBuffer, contentType }) {
+    const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+    if (!bucketError && buckets) {
+      const hasBucket = buckets.some(b => b.name === bucket);
+      if (!hasBucket) {
+        await supabase.storage.createBucket(bucket, {
+          public: true,
+        });
+      }
+    }
+
+    const { data, error } = await supabase.storage.from(bucket).upload(storagePath, fileBuffer, {
+      contentType,
+      upsert: true,
+    });
+
+    if (error) throw error;
+
+    const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(storagePath);
+
+    return publicData.publicUrl;
+  }
+
+  async downloadFile({ bucket, storagePath }) {
+    const { data, error } = await supabase.storage.from(bucket).download(storagePath);
+    if (error) throw error;
+    return data;
+  }
+
+  async deleteFile({ bucket, storagePath }) {
+    const { data, error } = await supabase.storage.from(bucket).remove([storagePath]);
+    if (error) throw error;
+    return data;
+  }
+}
+
+module.exports = new SupabaseStorageService();

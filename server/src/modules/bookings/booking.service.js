@@ -66,6 +66,90 @@ class BookingService {
   }
 
   /**
+   * Automatically transition bookings whose start/end date has passed.
+   */
+  async _autoTransitionBookings() {
+    try {
+      const { data: bookings, error } = await supabase
+        .from('bookings')
+        .select('id, start_date, end_date, status, payment_status, vehicle_id')
+        .not('status', 'in', '("completed","cancelled")');
+
+      if (error || !bookings) return;
+
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const todayStr = `${year}-${month}-${day}`;
+
+      for (const booking of bookings) {
+        let newStatus = null;
+        let cancelledReason = null;
+
+        const startDate = booking.start_date;
+        const endDate = booking.end_date;
+
+        if (booking.status === 'pending' || (booking.status === 'confirmed' && booking.payment_status === 'unpaid')) {
+          if (todayStr > startDate) {
+            newStatus = 'cancelled';
+            cancelledReason = 'Booking request expired (unpaid/unapproved before start date)';
+          }
+        } else if (booking.status === 'confirmed' && booking.payment_status === 'paid') {
+          if (todayStr >= startDate) {
+            if (todayStr > endDate) {
+              newStatus = 'completed';
+            } else {
+              newStatus = 'active';
+            }
+          }
+        } else if (booking.status === 'active') {
+          if (todayStr > endDate) {
+            newStatus = 'completed';
+          }
+        }
+
+        if (newStatus) {
+          if (newStatus === 'cancelled') {
+            await supabase
+              .from('bookings')
+              .update({
+                status: 'cancelled',
+                cancelled_by: 'system',
+                cancelled_at: new Date().toISOString(),
+                cancellation_reason: cancelledReason,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', booking.id);
+
+            await this._restoreVehicleAvailability(booking.vehicle_id);
+          } else if (newStatus === 'active') {
+            await supabase
+              .from('bookings')
+              .update({
+                status: 'active',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', booking.id);
+          } else if (newStatus === 'completed') {
+            await supabase
+              .from('bookings')
+              .update({
+                status: 'completed',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', booking.id);
+
+            await this._restoreVehicleAvailability(booking.vehicle_id);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Error auto transitioning bookings:', e);
+    }
+  }
+
+  /**
    * Check if a vehicle is available for a date range.
    */
   async checkAvailability(vehicleId, startDate, endDate) {
@@ -98,6 +182,7 @@ class BookingService {
    * Fetch renter bookings.
    */
   async getMyBookings(renterId) {
+    await this._autoTransitionBookings();
     const { data, error } = await supabase
       .from('bookings')
       .select(`
@@ -118,6 +203,7 @@ class BookingService {
    * Fetch owner bookings (bookings on vehicles owned by user).
    */
   async getMyVehicleBookings(ownerId) {
+    await this._autoTransitionBookings();
     // We join the vehicles table and perform an inner join filter
     const { data, error } = await supabase
       .from('bookings')
@@ -139,6 +225,7 @@ class BookingService {
    * Fetch a single booking. Must be owner of car or renter.
    */
   async getBookingById(bookingId, userId) {
+    await this._autoTransitionBookings();
     const { data: booking, error } = await supabase
       .from('bookings')
       .select(`

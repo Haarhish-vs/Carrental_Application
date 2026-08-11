@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:car_rental_app_client_side/core/config/api_config.dart';
 import 'package:car_rental_app_client_side/features/auth/services/auth_service.dart';
 
 class CarApiService {
@@ -11,8 +12,8 @@ class CarApiService {
 
   final Dio _dio;
 
-  // Base URL for the Rent-A-Car backend
-  static String baseUrl = 'https://carrental-application-z49a.onrender.com';
+  // Base URL for the Rent-A-Car backend (configured via ApiConfig)
+  static String baseUrl = ApiConfig.baseUrl;
 
   // Static token storage that can be set from elsewhere in the app (e.g., login)
   static String? token;
@@ -48,7 +49,9 @@ class CarApiService {
             '❌ [API Error] Status: ${error.response?.statusCode} | Path: ${error.requestOptions.path} | Error: ${error.message}',
           );
           if (error.response?.statusCode == 401) {
-            debugPrint('⚠️ [CarApiService] 401 Unauthorized. Clearing session...');
+            debugPrint(
+              '⚠️ [CarApiService] 401 Unauthorized. Clearing session...',
+            );
             await AuthService.logout();
           }
           // Implement simple retry functionality for network connection timeouts
@@ -145,20 +148,43 @@ class CarApiService {
     }
   }
 
-  /// Fetch active & available vehicles for browsing on the Home Screen
-  Future<List<Map<String, dynamic>>> getVehicles() async {
+  /// Fetch active & available vehicles with optional location, date range, and vehicle filters.
+  Future<List<Map<String, dynamic>>> getVehicles({
+    String? city,
+    String? location,
+    String? startDate,
+    String? endDate,
+    double? minPrice,
+    double? maxPrice,
+    String? fuelType,
+    String? transmission,
+    int? seats,
+  }) async {
     try {
-      final response = await _dio.get('/api/vehicles');
+      final queryParams = <String, dynamic>{};
+      if (city != null && city.trim().isNotEmpty) queryParams['city'] = city.trim();
+      if (location != null && location.trim().isNotEmpty) queryParams['location'] = location.trim();
+      if (startDate != null && startDate.trim().isNotEmpty) queryParams['startDate'] = startDate.trim();
+      if (endDate != null && endDate.trim().isNotEmpty) queryParams['endDate'] = endDate.trim();
+      if (minPrice != null) queryParams['minPrice'] = minPrice;
+      if (maxPrice != null) queryParams['maxPrice'] = maxPrice;
+      if (fuelType != null && fuelType.trim().isNotEmpty) queryParams['fuelType'] = fuelType.trim();
+      if (transmission != null && transmission.trim().isNotEmpty) queryParams['transmission'] = transmission.trim();
+      if (seats != null) queryParams['seats'] = seats;
+
+      debugPrint('🔍 [CarApiService.getVehicles] GET /api/vehicles with query: $queryParams');
+      final response = await _dio.get('/api/vehicles', queryParameters: queryParams);
       if (response.statusCode == 200 && response.data != null) {
         final success = response.data['success'] as bool? ?? false;
         if (success && response.data['data'] != null) {
           final list = response.data['data'] as List<dynamic>;
+          debugPrint('✅ [CarApiService.getVehicles] Response 200 OK | Available vehicles: ${list.length}');
           return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
         }
       }
       return [];
     } on DioException catch (e) {
-      debugPrint('Error fetching vehicles: ${e.message}');
+      debugPrint('❌ [CarApiService.getVehicles] Error fetching vehicles: ${e.message} (status: ${e.response?.statusCode})');
       return [];
     }
   }
@@ -392,7 +418,10 @@ class CarApiService {
 
   /// Toggle a vehicle's availability (owner only).
   /// Pass [isAvailable] = false to mark as unavailable, true to re-enable.
-  Future<void> toggleVehicleAvailability(String vehicleId, {required bool isAvailable}) async {
+  Future<void> toggleVehicleAvailability(
+    String vehicleId, {
+    required bool isAvailable,
+  }) async {
     try {
       final response = await _dio.patch(
         '/api/vehicles/$vehicleId/availability',
@@ -400,7 +429,9 @@ class CarApiService {
       );
       if (response.statusCode == 200) return;
       throw DioException(
-        requestOptions: RequestOptions(path: '/api/vehicles/$vehicleId/availability'),
+        requestOptions: RequestOptions(
+          path: '/api/vehicles/$vehicleId/availability',
+        ),
         message: response.data?['message'] ?? 'Failed to update availability',
       );
     } on DioException catch (e) {
@@ -494,6 +525,32 @@ class CarApiService {
         requestOptions: RequestOptions(path: '/api/bookings/$bookingId/complete'),
         message: response.data?['message'] ?? 'Failed to complete booking',
       );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// Fetch dynamic filter options from database
+  Future<Map<String, dynamic>> getFilterOptions() async {
+    try {
+      final response = await _dio.get('/api/cars/filter-options');
+      if (response.statusCode == 200 && response.data != null) {
+        return Map<String, dynamic>.from(response.data as Map);
+      }
+      return {};
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// Search available vehicles by location, date/time range, filters, and sort
+  Future<Map<String, dynamic>> searchCars(Map<String, dynamic> payload) async {
+    try {
+      final response = await _dio.post('/api/cars/search', data: payload);
+      if (response.statusCode == 200 && response.data != null) {
+        return Map<String, dynamic>.from(response.data as Map);
+      }
+      throw Exception('Failed to search cars');
     } on DioException catch (e) {
       throw _handleDioError(e);
     }

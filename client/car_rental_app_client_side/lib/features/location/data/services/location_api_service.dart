@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../../core/config/api_config.dart';
+import '../../../auth/services/auth_service.dart';
 import '../models/location_model.dart';
 
 class LocationApiEndpoints {
@@ -24,6 +25,18 @@ class LocationApiService {
 
   LocationApiService({http.Client? client}) : _client = client ?? http.Client();
 
+  Map<String, String> _getAuthHeaders({bool jsonContent = false}) {
+    final headers = <String, String>{};
+    if (jsonContent) {
+      headers['Content-Type'] = 'application/json';
+    }
+    final token = AuthService.currentToken;
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
+  }
+
   /// Decodes a backend response, unwraps the `{success, data}` envelope,
   /// and throws a [LocationApiException] with the backend's own message
   /// when `success` is false or the HTTP status is non-2xx.
@@ -32,7 +45,10 @@ class LocationApiService {
     try {
       body = jsonDecode(response.body) as Map<String, dynamic>;
     } catch (_) {
-      throw LocationApiException(fallbackMessage, statusCode: response.statusCode);
+      throw LocationApiException(
+        fallbackMessage,
+        statusCode: response.statusCode,
+      );
     }
 
     final success = body['success'] as bool? ?? false;
@@ -45,31 +61,48 @@ class LocationApiService {
   }
 
   Future<List<LocationModel>> searchLocations(String query) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.search}')
-        .replace(queryParameters: {'q': query});
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}${LocationApiEndpoints.search}',
+    ).replace(queryParameters: {'q': query});
     final response = await _client.get(uri);
 
     final data = _decodeEnvelope(response, 'Failed to search locations');
     final list = (data as List<dynamic>?) ?? [];
-    return list.map((item) => LocationModel.fromJson(item as Map<String, dynamic>)).toList();
+    return list
+        .map((item) => LocationModel.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
   Future<List<LocationModel>> fetchRecentLocations() async {
+    // If user is not logged in (Guest), do not query the shared backend database
+    final token = AuthService.currentToken;
+    if (token == null || token.isEmpty) {
+      return [];
+    }
+
     final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.recent}');
-    final response = await _client.get(uri);
+    final response = await _client.get(uri, headers: _getAuthHeaders());
 
     final data = _decodeEnvelope(response, 'Failed to fetch recent locations');
     final list = (data as List<dynamic>?) ?? [];
-    return list.map((item) => LocationModel.fromJson(item as Map<String, dynamic>)).toList();
+    return list
+        .map((item) => LocationModel.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
   /// Saves a location the user selected (from search, current location,
   /// or map) into the backend's recent-locations list.
   Future<void> saveRecentLocation(LocationModel location) async {
+    // If user is not logged in (Guest), do not save to shared backend database
+    final token = AuthService.currentToken;
+    if (token == null || token.isEmpty) {
+      return;
+    }
+
     final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.recent}');
     final response = await _client.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: _getAuthHeaders(jsonContent: true),
       body: jsonEncode(location.toJson()),
     );
 
@@ -77,7 +110,9 @@ class LocationApiService {
   }
 
   Future<void> deleteRecentLocation(String id) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.recent}/$id');
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}${LocationApiEndpoints.recent}/$id',
+    );
     final response = await _client.delete(uri);
 
     if (response.statusCode != 200 && response.statusCode != 204) {
@@ -95,55 +130,122 @@ class LocationApiService {
   }
 
   Future<List<LocationModel>> fetchPopularLocations() async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.popular}');
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}${LocationApiEndpoints.popular}',
+    );
     final response = await _client.get(uri);
 
     final data = _decodeEnvelope(response, 'Failed to fetch popular locations');
     final list = (data as List<dynamic>?) ?? [];
-    return list.map((item) => LocationModel.fromJson(item as Map<String, dynamic>)).toList();
+    return list
+        .map((item) => LocationModel.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
-  Future<LocationModel> reverseGeocode(double latitude, double longitude) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}${LocationApiEndpoints.reverseGeocode}');
-    
+  Future<LocationModel> reverseGeocode(
+    double latitude,
+    double longitude,
+  ) async {
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}${LocationApiEndpoints.reverseGeocode}',
+    );
+
     http.Response response;
     try {
-      // 1. Try POST first (standard for deployed backend)
-      response = await _client.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'latitude': latitude,
-          'longitude': longitude,
-          'lat': latitude,
-          'lng': longitude,
-        }),
-      );
+      try {
+        // 1. Try POST first (standard for deployed backend)
+        response = await _client.post(
+          uri,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'latitude': latitude,
+            'longitude': longitude,
+            'lat': latitude,
+            'lng': longitude,
+          }),
+        );
+      } catch (_) {
+        // If network POST failure, try GET
+        final getUri = uri.replace(
+          queryParameters: {'lat': '$latitude', 'lng': '$longitude'},
+        );
+        response = await _client.get(getUri);
+      }
+
+      // 2. If POST returned 404 or 405 Method Not Allowed, fallback to GET
+      if (response.statusCode == 404 || response.statusCode == 405) {
+        final getUri = uri.replace(
+          queryParameters: {'lat': '$latitude', 'lng': '$longitude'},
+        );
+        response = await _client.get(getUri);
+      }
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        if (body['success'] == true && body['data'] != null) {
+          final candidate = LocationModel.fromJson(
+            body['data'] as Map<String, dynamic>,
+            defaultLat: latitude,
+            defaultLng: longitude,
+          );
+          // Only return candidate if it resolved to an actual street/area rather than a fallback placeholder
+          if (candidate.name != 'Selected Location' && !candidate.address.startsWith('Location at ')) {
+            return candidate;
+          }
+        }
+      }
     } catch (_) {
-      // If network POST failure, try GET
-      final getUri = uri.replace(queryParameters: {'lat': '$latitude', 'lng': '$longitude'});
-      response = await _client.get(getUri);
+      // Fallback to direct OpenStreetMap Nominatim
     }
 
-    // 2. If POST returned 404 or 405 Method Not Allowed, fallback to GET
-    if (response.statusCode == 404 || response.statusCode == 405) {
-      final getUri = uri.replace(queryParameters: {'lat': '$latitude', 'lng': '$longitude'});
-      response = await _client.get(getUri);
-    }
-
-    final data = _decodeEnvelope(response, 'Failed to reverse geocode');
-
-    if (data == null) {
-      throw LocationApiException(
-        'No address found for this location',
-        statusCode: response.statusCode,
+    // 2. Direct OpenStreetMap Nominatim reverse geocoding (Real street address, 100% Free)
+    try {
+      final osmUri = Uri.parse(
+        'https://nominatim.openstreetmap.org/reverse?lat=$latitude&lon=$longitude&format=json',
       );
-    }
+      final osmRes = await _client.get(
+        osmUri,
+        headers: {'User-Agent': 'CarRentalApplication/1.0 (Flutter Client)'},
+      );
+      if (osmRes.statusCode == 200) {
+        final osmData = jsonDecode(osmRes.body) as Map<String, dynamic>;
+        final addressObj = (osmData['address'] as Map<String, dynamic>?) ?? {};
+        final suburb = addressObj['suburb'] ?? addressObj['neighbourhood'] ?? addressObj['road'] ?? '';
+        final city = addressObj['city'] ?? addressObj['town'] ?? addressObj['state_district'] ?? addressObj['village'] ?? addressObj['county'] ?? '';
+        final state = addressObj['state'] ?? '';
+        final country = addressObj['country'] ?? 'India';
+        final displayName = osmData['display_name'] as String? ?? '';
+        
+        final name = (osmData['name'] != null && (osmData['name'] as String).isNotEmpty)
+            ? osmData['name'] as String
+            : (suburb.isNotEmpty
+                ? suburb
+                : (displayName.isNotEmpty ? displayName.split(',').first.trim() : (city.isNotEmpty ? city : 'Selected Location')));
 
-    return LocationModel.fromJson(
-      data as Map<String, dynamic>,
-      defaultLat: latitude,
-      defaultLng: longitude,
+        return LocationModel(
+          id: '',
+          placeId: 'osm_${osmData['place_id'] ?? '${latitude}_$longitude'}',
+          name: name,
+          address: displayName.isNotEmpty ? displayName : 'Location at ${latitude.toStringAsFixed(4)}°, ${longitude.toStringAsFixed(4)}°',
+          latitude: latitude,
+          longitude: longitude,
+          city: city,
+          state: state,
+          country: country,
+        );
+      }
+    } catch (_) {}
+
+    return LocationModel(
+      id: '',
+      placeId: 'pin_${latitude}_$longitude',
+      name: 'Selected Location',
+      address: 'Location at ${latitude.toStringAsFixed(4)}°, ${longitude.toStringAsFixed(4)}°',
+      latitude: latitude,
+      longitude: longitude,
+      city: '',
+      state: '',
+      country: 'India',
     );
   }
 

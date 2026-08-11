@@ -124,11 +124,7 @@ class _StepCard extends StatelessWidget {
           CircleAvatar(
             radius: 24,
             backgroundColor: AppColors.primary.withOpacity(0.1),
-            child: Icon(
-              icon,
-              color: AppColors.primary,
-              size: 24,
-            ),
+            child: Icon(icon, color: AppColors.primary, size: 24),
           ),
           const SizedBox(width: 14),
           Expanded(

@@ -126,9 +126,7 @@ class _CarPricingAndAvailabilityScreenState
       deliveryFee: _deliveryFeeController.text.trim(),
     );
 
-    Navigator.of(
-      context,
-    ).push(
+    Navigator.of(context).push(
       buildRentCarSlideRoute(
         CarImagesScreen(
           draft: updatedDraft,
