@@ -3,7 +3,7 @@ class ApiConfig {
 
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://carrental-application-z49a.onrender.com',
+    defaultValue: 'https://carrental-application-749a.onrender.com',
   );
 
   static const String documentVerificationBaseUrl = String.fromEnvironment(
