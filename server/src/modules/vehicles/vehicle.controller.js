@@ -8,12 +8,15 @@ const docVerificationService = require('./document-verification.service');
 const getVehicles = async (req, res, next) => {
   try {
     const filters = req.query;
+    console.log(`📡 [GET /api/vehicles] Incoming query params:`, JSON.stringify(filters));
     const vehicles = await vehicleService.getVehicles(filters);
+    console.log(`✅ [GET /api/vehicles] Returning ${vehicles.length} available vehicles (status 200)`);
     return res.status(200).json({
       success: true,
       data: vehicles
     });
   } catch (error) {
+    console.error(`❌ [GET /api/vehicles] Error:`, error.message);
     return res.status(500).json({
       success: false,
       message: error.message,

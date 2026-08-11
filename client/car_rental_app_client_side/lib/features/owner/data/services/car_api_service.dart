@@ -148,20 +148,43 @@ class CarApiService {
     }
   }
 
-  /// Fetch active & available vehicles for browsing on the Home Screen
-  Future<List<Map<String, dynamic>>> getVehicles() async {
+  /// Fetch active & available vehicles with optional location, date range, and vehicle filters.
+  Future<List<Map<String, dynamic>>> getVehicles({
+    String? city,
+    String? location,
+    String? startDate,
+    String? endDate,
+    double? minPrice,
+    double? maxPrice,
+    String? fuelType,
+    String? transmission,
+    int? seats,
+  }) async {
     try {
-      final response = await _dio.get('/api/vehicles');
+      final queryParams = <String, dynamic>{};
+      if (city != null && city.trim().isNotEmpty) queryParams['city'] = city.trim();
+      if (location != null && location.trim().isNotEmpty) queryParams['location'] = location.trim();
+      if (startDate != null && startDate.trim().isNotEmpty) queryParams['startDate'] = startDate.trim();
+      if (endDate != null && endDate.trim().isNotEmpty) queryParams['endDate'] = endDate.trim();
+      if (minPrice != null) queryParams['minPrice'] = minPrice;
+      if (maxPrice != null) queryParams['maxPrice'] = maxPrice;
+      if (fuelType != null && fuelType.trim().isNotEmpty) queryParams['fuelType'] = fuelType.trim();
+      if (transmission != null && transmission.trim().isNotEmpty) queryParams['transmission'] = transmission.trim();
+      if (seats != null) queryParams['seats'] = seats;
+
+      debugPrint('🔍 [CarApiService.getVehicles] GET /api/vehicles with query: $queryParams');
+      final response = await _dio.get('/api/vehicles', queryParameters: queryParams);
       if (response.statusCode == 200 && response.data != null) {
         final success = response.data['success'] as bool? ?? false;
         if (success && response.data['data'] != null) {
           final list = response.data['data'] as List<dynamic>;
+          debugPrint('✅ [CarApiService.getVehicles] Response 200 OK | Available vehicles: ${list.length}');
           return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
         }
       }
       return [];
     } on DioException catch (e) {
-      debugPrint('Error fetching vehicles: ${e.message}');
+      debugPrint('❌ [CarApiService.getVehicles] Error fetching vehicles: ${e.message} (status: ${e.response?.statusCode})');
       return [];
     }
   }
