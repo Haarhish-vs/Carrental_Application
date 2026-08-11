@@ -18,6 +18,7 @@ import '../widgets/home_drawer.dart';
 import 'car_detail_screen.dart';
 import 'my_bookings_screen.dart';
 import 'my_cars_screen.dart';
+import '../../../support/presentation/screens/support_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -640,8 +641,24 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         onSupportTap: () {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Support coming soon')),
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => SupportScreen(
+                initialSection: SupportSection.support,
+                onGoToBookings: () {
+                  setState(() {
+                    _navIndex = 1;
+                    _vehiclesFuture = _fetchHomeVehicles();
+                  });
+                },
+                onGoToMyCar: () {
+                  setState(() {
+                    _navIndex = 2;
+                  });
+                },
+                onGoToProfile: _showProfileModal,
+              ),
+            ),
           );
         },
         onHostTap: () async {
@@ -656,14 +673,46 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         onHelpTap: () {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Help & FAQs coming soon')),
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => SupportScreen(
+                initialSection: SupportSection.faq,
+                onGoToBookings: () {
+                  setState(() {
+                    _navIndex = 1;
+                    _vehiclesFuture = _fetchHomeVehicles();
+                  });
+                },
+                onGoToMyCar: () {
+                  setState(() {
+                    _navIndex = 2;
+                  });
+                },
+                onGoToProfile: _showProfileModal,
+              ),
+            ),
           );
         },
         onPrivacyTap: () {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Privacy Policy coming soon')),
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => SupportScreen(
+                initialSection: SupportSection.policies,
+                onGoToBookings: () {
+                  setState(() {
+                    _navIndex = 1;
+                    _vehiclesFuture = _fetchHomeVehicles();
+                  });
+                },
+                onGoToMyCar: () {
+                  setState(() {
+                    _navIndex = 2;
+                  });
+                },
+                onGoToProfile: _showProfileModal,
+              ),
+            ),
           );
         },
         onLogoutTap: () {
