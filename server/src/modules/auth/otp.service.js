@@ -26,7 +26,7 @@ class OtpService {
     }
 
     if (recentRequests && recentRequests.length >= 3) {
-      const rateLimitError = new Error('Too many OTP requests. Please wait 15 minutes before trying again.');
+      const rateLimitError = new Error('Too many attempts. Please try again later.');
       rateLimitError.statusCode = 429;
       throw rateLimitError;
     }
@@ -100,8 +100,8 @@ class OtpService {
 
     // Check if code is expired
     if (new Date(currentVerification.expires_at) < new Date()) {
-      const error = new Error('Verification code has expired. Please request a new OTP.');
-      error.statusCode = 400;
+      const error = new Error('OTP expired. Please request a new OTP.');
+      error.statusCode = 410;
       throw error;
     }
 
@@ -116,12 +116,7 @@ class OtpService {
         .update({ attempts: newAttempts })
         .eq('id', currentVerification.id);
 
-      const attemptsLeft = 5 - newAttempts;
-      const error = new Error(
-        attemptsLeft > 0
-          ? `Incorrect OTP. You have ${attemptsLeft} attempts remaining.`
-          : 'Incorrect OTP. Verification code has been locked.'
-      );
+      const error = new Error('Invalid OTP. Please try again.');
       error.statusCode = 400;
       throw error;
     }

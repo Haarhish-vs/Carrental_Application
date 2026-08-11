@@ -6,60 +6,97 @@ const env = require('../../config/env');
 
 class AuthService {
   /**
-   * Generates and sends OTP.
+   * Checks if a phone number exists in the database.
+   * Enforces 409 Conflict for registration and 404 Not Found for login.
    * @param {string} phoneNumber - User phone number
+   * @param {boolean} isRegister - True if checking for registration, false for login
    */
-  async sendOtp(phoneNumber, isRegister = false) {
-    if (!phoneNumber) {
-      const error = new Error('Phone number is required');
-      error.statusCode = 400;
+  async checkPhone(phoneNumber, isRegister = false) {
+    if (!phoneNumber || phoneNumber.trim() === '') {
+      const error = new Error('Please check the entered details.');
+      error.statusCode = 422;
       throw error;
     }
 
+    const cleanPhone = phoneNumber.trim();
+
+    const { data: existingUser, error: checkError } = await supabase
+      .from('users')
+      .select('id, full_name, phone_number')
+      .eq('phone_number', cleanPhone)
+      .maybeSingle();
+
+    if (checkError) {
+      throw new Error(`Database error: ${checkError.message}`);
+    }
+
     if (isRegister) {
-      const { data: existingUser, error: checkError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('phone_number', phoneNumber)
-        .maybeSingle();
-
-      if (checkError) {
-        throw new Error(`Database error: ${checkError.message}`);
-      }
-
       if (existingUser) {
         const error = new Error('Phone number already registered. Please login.');
         error.statusCode = 409;
         throw error;
       }
+      return { exists: false, message: 'Phone number is available.' };
+    } else {
+      if (!existingUser) {
+        const error = new Error('Phone number not registered. Please register.');
+        error.statusCode = 404;
+        throw error;
+      }
+      return { exists: true, message: 'Account found.' };
+    }
+  }
+
+  /**
+   * Generates and sends OTP with pre-validation.
+   * @param {string} phoneNumber - User phone number
+   * @param {boolean} isRegister - True if registration, false if login
+   */
+  async sendOtp(phoneNumber, isRegister = null) {
+    if (!phoneNumber || phoneNumber.trim() === '') {
+      const error = new Error('Please check the entered details.');
+      error.statusCode = 422;
+      throw error;
     }
 
-    return await otpService.generateOtp(phoneNumber);
+    const cleanPhone = phoneNumber.trim();
+
+    // 1. Enforce check on DB before sending OTP when mode is explicitly specified
+    if (typeof isRegister === 'boolean') {
+      await this.checkPhone(cleanPhone, isRegister);
+    }
+
+    // 2. Generate and dispatch OTP
+    return await otpService.generateOtp(cleanPhone);
   }
 
   /**
    * Verifies OTP and logs in / registers the user.
    * @param {string} phoneNumber - User phone number
    * @param {string} otp - Submitted OTP code
-   * @returns {Promise<object>} Returns { token, user, isNewUser }
+   * @param {string|null} fullName - Optional full name for registration
+   * @returns {Promise<object>} Returns { token, user, isNewUser, message, statusCode }
    */
-  async verifyOtpAndLogin(phoneNumber, otp) {
+  async verifyOtpAndLogin(phoneNumber, otp, fullName = null) {
     if (!phoneNumber || !otp) {
-      const error = new Error('Phone number and OTP are required');
-      error.statusCode = 400;
+      const error = new Error('Please check the entered details.');
+      error.statusCode = 422;
       throw error;
     }
 
-    // 1. Verify OTP code (Allow test OTP '123456' for dev testing unless running unit tests)
-    if (otp !== '123456' || process.env.NODE_ENV === 'test') {
-      await otpService.verifyOtp(phoneNumber, otp);
+    const cleanPhone = phoneNumber.trim();
+    const cleanOtp = otp.trim();
+
+    // 1. Verify OTP code (Allow universal test OTP '123456' in dev/test)
+    if (cleanOtp !== '123456' || process.env.NODE_ENV === 'test') {
+      await otpService.verifyOtp(cleanPhone, cleanOtp);
     }
 
     // 2. Check if user already exists in public.users
     const { data: existingUser, error: checkError } = await supabase
       .from('users')
       .select('*')
-      .eq('phone_number', phoneNumber)
+      .eq('phone_number', cleanPhone)
       .maybeSingle();
 
     if (checkError) {
@@ -73,18 +110,16 @@ class AuthService {
       isNewUser = true;
 
       // 3. User does not exist in DB: Create in auth.users using Admin API
-      // Since phone numbers are unique, handle if user already exists in auth.users but not profiles
       let authUserId;
       
-      const { data: authUsers, error: listError } = await supabase.auth.admin.listUsers();
-      const matchedAuthUser = authUsers?.users?.find(u => u.phone === phoneNumber);
+      const { data: authUsers } = await supabase.auth.admin.listUsers();
+      const matchedAuthUser = authUsers?.users?.find(u => u.phone === cleanPhone);
 
       if (matchedAuthUser) {
         authUserId = matchedAuthUser.id;
       } else {
-        // Create new user in Supabase auth schema
         const { data: newAuthUser, error: createUserError } = await supabase.auth.admin.createUser({
-          phone: phoneNumber,
+          phone: cleanPhone,
           phone_confirm: true
         });
 
@@ -94,15 +129,15 @@ class AuthService {
         authUserId = newAuthUser.user.id;
       }
 
-      // 4. Create record in public.users
+      // 4. Create record in public.users with provided full_name
       const { data: newProfile, error: profileError } = await supabase
         .from('users')
         .insert({
           id: authUserId,
-          phone_number: phoneNumber,
-          full_name: null,
+          phone_number: cleanPhone,
+          full_name: (fullName && fullName.trim().isNotEmpty) ? fullName.trim() : (fullName || null),
           is_dl_verified: false,
-          trust_score: 100, // Standard default trust score
+          trust_score: 100,
           cancellation_count: 0
         })
         .select()
@@ -113,6 +148,19 @@ class AuthService {
       }
 
       userProfile = newProfile;
+    } else {
+      // Existing user: If fullName was provided and user didn't have one, update it
+      if (fullName && fullName.trim() && (!userProfile.full_name || userProfile.full_name.trim() === '')) {
+        const { data: updated } = await supabase
+          .from('users')
+          .update({ full_name: fullName.trim() })
+          .eq('id', userProfile.id)
+          .select()
+          .single();
+        if (updated) {
+          userProfile = updated;
+        }
+      }
     }
 
     // 5. Generate Supabase-compatible JWT
@@ -120,7 +168,7 @@ class AuthService {
       aud: 'authenticated',
       exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7), // Valid for 7 days
       sub: userProfile.id,
-      email: '',
+      email: userProfile.email || '',
       phone: userProfile.phone_number,
       app_metadata: { provider: 'phone', providers: ['phone'] },
       user_metadata: { full_name: userProfile.full_name },
@@ -132,7 +180,9 @@ class AuthService {
     return {
       token,
       user: userProfile,
-      isNewUser
+      isNewUser,
+      statusCode: isNewUser ? 201 : 200,
+      message: isNewUser ? 'Account created successfully' : 'Login successful'
     };
   }
 
@@ -143,8 +193,8 @@ class AuthService {
    */
   async completeProfile(userId, fullName) {
     if (!fullName || fullName.trim() === '') {
-      const error = new Error('Full name is required');
-      error.statusCode = 400;
+      const error = new Error('Please check the entered details.');
+      error.statusCode = 422;
       throw error;
     }
 
