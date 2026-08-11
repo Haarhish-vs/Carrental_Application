@@ -6,6 +6,7 @@ import '../../../auth/services/auth_service.dart';
 import '../../../owner/data/services/car_api_service.dart';
 import '../../../owner/presentation/screens/rent_car/car_spefication.dart';
 import '../../../location/presentation/location_flow.dart';
+import '../../../profile/presentation/profile_navigation.dart';
 import '../widgets/custom_home_app_bar.dart';
 import '../widgets/hero_search_card.dart';
 import '../widgets/recommended_cars.dart';
@@ -212,67 +213,22 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _showProfileModal() {
+  Future<void> _showProfileModal() async {
     if (!AuthService.isAuthenticated) {
-      _ensureAuthenticated(
+      await _ensureAuthenticated(
         title: 'User Profile',
         message: 'Please log in or register to view your profile.',
       );
       return;
     }
 
-    final user = AuthService.currentUser ?? {};
-    final name = user['full_name']?.toString() ?? user['fullName']?.toString() ?? 'User';
-    final phone = user['phone_number']?.toString() ?? user['phoneNumber']?.toString() ?? '';
-
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const CircleAvatar(
-              backgroundColor: Color(0xFFEAF2FF),
-              child: Icon(Icons.person, color: Color(0xFF1E5AA8)),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (phone.isNotEmpty) ...[
-              const Text('Phone Number', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-              const SizedBox(height: 2),
-              Text(phone, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 14),
-            ],
-            const Text('Account Status: Active', style: TextStyle(color: AppColors.success, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Close'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              await _handleLogout();
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text('Log Out'),
-          ),
-        ],
-      ),
+    await openProfile(
+      context,
+      onViewTrips: () => setState(() => _navIndex = 1),
+      onViewListings: () => setState(() => _navIndex = 2),
     );
+
+    if (mounted) _loadUserInfo();
   }
 
   Widget _buildBody() {

@@ -21,6 +21,8 @@ SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key-bypasses-rls
 JWT_SECRET=your-supabase-jwt-secret-from-dashboard-settings
 SMS_PROVIDER_API_KEY=mock-sms-key
+# Optional: required only for Google Places / reverse-geocoding endpoints
+GOOGLE_MAPS_API_KEY=your-google-maps-api-key
 ```
 
 > [!IMPORTANT]

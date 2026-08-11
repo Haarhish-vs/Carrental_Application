@@ -3,6 +3,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/widgets/auth_required_view.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../../owner/data/services/car_api_service.dart';
+import '../../../profile/models/trip_insight.dart';
+import '../../../profile/presentation/widgets/trip_insights_card.dart';
 
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key, required this.onExplorePressed});
@@ -282,11 +284,21 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                 );
               }
 
-              return ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                itemCount: bookings.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 16),
-                itemBuilder: (context, index) {
+              final insights = TripInsights.fromBookings(bookings);
+
+              return Column(
+                children: [
+                  if (insights.totalTrips > 0)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                      child: TripInsightsCard(insights: insights),
+                    ),
+                  Expanded(
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      itemCount: bookings.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 16),
+                      itemBuilder: (context, index) {
                   final booking = bookings[index];
                   final car = booking['vehicle'] as Map<String, dynamic>? ?? {};
                   final images = (car['images'] as List<dynamic>?) ?? [];
@@ -494,6 +506,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                     ),
                   );
                 },
+                    ),
+                  ),
+                ],
               );
             },
           ),

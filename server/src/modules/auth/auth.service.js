@@ -111,6 +111,12 @@ class AuthService {
       if (profileError) {
         throw new Error(`Failed to initialize user profile: ${profileError.message}`);
       }
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .upsert({ user_id: authUserId, role: 'customer' }, { onConflict: 'user_id,role' });
+      if (roleError) {
+        throw new Error(`Failed to initialize user capability: ${roleError.message}`);
+      }
 
       userProfile = newProfile;
     }

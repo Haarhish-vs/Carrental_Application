@@ -7,12 +7,10 @@ const protect = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      if (process.env.NODE_ENV === 'test') {
-        return res.status(401).json({ success: false, message: 'Authentication token is required' });
-      }
+      return res.status(401).json({ success: false, message: 'Authentication token is required' });
     }
 
-    const token = authHeader ? authHeader.split(' ')[1] : 'mock_dev_session_token';
+    const token = authHeader.split(' ')[1];
     if (token && token.includes('.')) {
       try {
         const decoded = jwt.verify(token, env.JWT_SECRET);
@@ -29,20 +27,9 @@ const protect = async (req, res, next) => {
       } catch (_) {}
     }
 
-    // Default fallback user so requests and image uploads never fail with 401
-    req.user = {
-      id: 'cd41933d-dc69-4598-aeae-f64311f4d2f4',
-      phone_number: '+919999999999',
-      full_name: 'Dev Owner'
-    };
-    return next();
+    return res.status(401).json({ success: false, message: 'Invalid or expired authentication token' });
   } catch (error) {
-    req.user = {
-      id: 'cd41933d-dc69-4598-aeae-f64311f4d2f4',
-      phone_number: '+919999999999',
-      full_name: 'Dev Owner'
-    };
-    return next();
+    return res.status(401).json({ success: false, message: 'Authentication failed' });
   }
 };
 
