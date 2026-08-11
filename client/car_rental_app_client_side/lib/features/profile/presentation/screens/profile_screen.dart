@@ -407,24 +407,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined, size: 24, color: AppColors.textPrimary),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Settings coming soon')),
-              );
-            },
-          ),
-          const SizedBox(width: 8),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // 1. Avatar & User Greeting
+            // 1. Avatar & User Name
             _buildUserHero(profile),
             const SizedBox(height: 24),
 
@@ -526,28 +515,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Text(
           profile.fullName,
           style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-        ),
-        const SizedBox(height: 4),
-        const Text(
-          'Welcome back!',
-          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.star_rounded, size: 18, color: Colors.amber),
-            const SizedBox(width: 4),
-            Text(
-              profile.rating.toStringAsFixed(1),
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              '(${profile.reviewsCount > 0 ? profile.reviewsCount : 32} reviews)',
-              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-            ),
-          ],
         ),
       ],
     );
