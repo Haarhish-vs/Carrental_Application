@@ -6,9 +6,16 @@ import '../../models/car_model.dart';
 import 'reserve_screen.dart';
 
 class CarDetailScreen extends StatefulWidget {
-  const CarDetailScreen({super.key, required this.car});
+  const CarDetailScreen({
+    super.key,
+    required this.car,
+    this.initialPickupDate,
+    this.initialReturnDate,
+  });
 
   final CarModel car;
+  final DateTime? initialPickupDate;
+  final DateTime? initialReturnDate;
 
   @override
   State<CarDetailScreen> createState() => _CarDetailScreenState();
@@ -574,7 +581,11 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => ReserveScreen(car: widget.car),
+                              builder: (_) => ReserveScreen(
+                                car: widget.car,
+                                initialPickupDate: widget.initialPickupDate,
+                                initialReturnDate: widget.initialReturnDate,
+                              ),
                             ),
                           );
                         },

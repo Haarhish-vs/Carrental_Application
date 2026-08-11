@@ -1,5 +1,16 @@
-const { createWorker } = require('tesseract.js');
-const pdfParse = require('pdf-parse');
+let createWorker;
+try {
+  ({ createWorker } = require('tesseract.js'));
+} catch (e) {
+  createWorker = null;
+}
+
+let pdfParse;
+try {
+  pdfParse = require('pdf-parse');
+} catch (e) {
+  pdfParse = null;
+}
 
 class OCRService {
   async extractText(file) {

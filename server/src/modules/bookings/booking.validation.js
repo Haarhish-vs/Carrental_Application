@@ -93,8 +93,8 @@ const validateBookingCreation = async (vehicleId, renterId, startDateStr, endDat
   }
 
   if (overlappingBookings && overlappingBookings.length > 0) {
-    const error = new Error('This vehicle is already booked for the selected period.');
-    error.statusCode = 400;
+    const error = new Error('Double-booking conflict: This vehicle is already booked for the selected period.');
+    error.statusCode = 409;
     throw error;
   }
 

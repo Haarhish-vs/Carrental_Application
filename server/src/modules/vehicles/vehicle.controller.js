@@ -8,12 +8,15 @@ const docVerificationService = require('./document-verification.service');
 const getVehicles = async (req, res, next) => {
   try {
     const filters = req.query;
+    console.log(`📡 [GET /api/vehicles] Incoming query params:`, JSON.stringify(filters));
     const vehicles = await vehicleService.getVehicles(filters);
+    console.log(`✅ [GET /api/vehicles] Returning ${vehicles.length} available vehicles (status 200)`);
     return res.status(200).json({
       success: true,
       data: vehicles
     });
   } catch (error) {
+    console.error(`❌ [GET /api/vehicles] Error:`, error.message);
     return res.status(500).json({
       success: false,
       message: error.message,
@@ -255,8 +258,22 @@ const getFilterOptions = async (req, res, next) => {
     const options = await vehicleService.getFilterOptions();
     return res.status(200).json({
       success: true,
-      data: options
+      data: options,
+      filters: options
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const searchVehicles = async (req, res, next) => {
+  try {
+    const params = {
+      ...(req.method === 'POST' ? req.body : req.query),
+      filters: req.body?.filters || req.query?.filters || req.query
+    };
+    const result = await vehicleService.searchVehicles(params);
+    return res.status(200).json(result);
   } catch (error) {
     next(error);
   }
@@ -274,5 +291,6 @@ module.exports = {
   verifyDocumentAdmin,
   uploadMedia,
   uploadDocumentFile,
-  getFilterOptions
+  getFilterOptions,
+  searchVehicles
 };

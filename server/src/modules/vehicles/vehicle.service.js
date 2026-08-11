@@ -313,16 +313,20 @@ class VehicleService {
    */
   async getVehicles(filters = {}) {
     await bookingService._autoTransitionBookings();
+    
     // 1. Get dates to check for availability exclusion
     const startStr = filters.startDate || filters.start_date;
     const endStr = filters.endDate || filters.end_date;
     
     let targetStart, targetEnd;
     if (startStr && endStr) {
-      targetStart = startStr;
-      targetEnd = endStr;
+      targetStart = startStr.toString().trim();
+      targetEnd = endStr.toString().trim();
+    } else if (startStr) {
+      targetStart = startStr.toString().trim();
+      targetEnd = targetStart;
     } else {
-      // Manually format local today date as YYYY-MM-DD to avoid ICU locale dependencies
+      // Format local today date as YYYY-MM-DD
       const today = new Date();
       const year = today.getFullYear();
       const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -330,6 +334,9 @@ class VehicleService {
       targetStart = `${year}-${month}-${day}`;
       targetEnd = targetStart;
     }
+
+    const locFilter = (filters.location || filters.city || filters.pickup_location || '').trim();
+    console.log(`🔍 [VehicleService.getVehicles] Search Filters -> Location: "${locFilter || 'ALL'}", Range: [${targetStart} to ${targetEnd}]`);
 
     // 2. Query bookings that overlap with the target range and are active/confirmed/pending
     const { data: overlappingBookings, error: bookingsError } = await supabase
@@ -343,6 +350,7 @@ class VehicleService {
     if (!bookingsError && overlappingBookings) {
       excludedVehicleIds = [...new Set(overlappingBookings.map(b => b.vehicle_id).filter(id => !!id))];
     }
+    console.log(`🚫 [VehicleService.getVehicles] Overlapping bookings: ${overlappingBookings ? overlappingBookings.length : 0}, Excluded vehicle IDs: ${excludedVehicleIds.length}`);
 
     let query = supabase
       .from('vehicles')
@@ -353,16 +361,17 @@ class VehicleService {
         )
       `)
       .eq('is_available', true)
-      .eq('status', 'active'); // Only show active, available cars on home screen
+      .eq('status', 'active'); // Only show active, available cars
 
     // Only override status filter if client explicitly passes one
     if (filters.status) {
       query = query.eq('status', filters.status);
     }
 
-    // Apply Filters
-    if (filters.city) {
-      query = query.ilike('city', filters.city.trim());
+    // Apply Location / City Filters
+    if (locFilter) {
+      const primaryLoc = locFilter.split(',')[0].trim();
+      query = query.ilike('city', `%${primaryLoc}%`);
     }
     if (filters.minPrice) {
       query = query.gte('price_per_day', parseFloat(filters.minPrice));
@@ -390,13 +399,19 @@ class VehicleService {
 
     const { data, error } = await query;
     if (error) {
+      console.error(`❌ [VehicleService.getVehicles] DB query error: ${error.message}`);
       throw new Error(`Failed to retrieve vehicles: ${error.message}`);
     }
 
     let resultData = data || [];
+    const totalDbMatches = resultData.length;
+
+    // Filter out vehicles that have active/overlapping bookings for the requested date range
     if (resultData && excludedVehicleIds.length > 0) {
       resultData = resultData.filter(vehicle => !excludedVehicleIds.includes(vehicle.id));
     }
+
+    console.log(`🚗 [VehicleService.getVehicles] DB Results: ${totalDbMatches} -> Available vehicles returned: ${resultData.length}`);
 
     if (resultData && resultData.length > 0) {
       await Promise.all(resultData.map(async (vehicle) => {
@@ -450,6 +465,8 @@ class VehicleService {
   }
 
   /**
+   * Retrieve a single vehicle by ID.
+   */
   async getVehicleById(vehicleId, currentUserId = null) {
     const { data: vehicle, error: fetchError } = await supabase
       .from('vehicles')
@@ -487,9 +504,7 @@ class VehicleService {
     vehicle.ac = !desc.includes('no ac') && !desc.includes('no air conditioning');
     vehicle.navigation = !desc.includes('no gps') && !desc.includes('no navigation');
 
-    // Expose owner phone number only if:
-    // 1. Current user is the owner themselves
-    // 2. Or the current user has a confirmed/active booking for this vehicle
+    // Expose owner phone number only if authorized
     let canViewPhone = false;
 
     if (currentUserId) {
@@ -510,15 +525,14 @@ class VehicleService {
       }
     }
 
-    // Strip owner phone number if unauthorized
     if (!canViewPhone && vehicle.owner) {
-      // Create a shallow copy and delete phone
       vehicle.owner = { ...vehicle.owner };
       delete vehicle.owner.phone_number;
     }
 
     return vehicle;
   }
+
   /**
    * Toggle a vehicle's is_available flag (owner only).
    */
