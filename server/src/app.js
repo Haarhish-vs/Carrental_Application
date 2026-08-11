@@ -6,6 +6,7 @@ const vehicleRoutes = require('./modules/vehicles/vehicle.routes');
 const bookingRoutes = require('./modules/bookings/booking.routes');
 const locationRoutes = require('./modules/locations/location.routes');
 const documentRoutes = require('./modules/documents/document.routes');
+const profileRoutes = require('./modules/profile/profile.routes');
 const carCompatRoutes = require('./modules/vehicles/car-compat.routes');
 const errorHandler = require('./shared/middlewares/error.middleware');
 
@@ -390,6 +391,7 @@ app.use('/api/cars', vehicleRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/documents', documentRoutes);
+app.use('/api/profile', profileRoutes);
 app.use('/api/cars', carCompatRoutes);
 
 // Unhandled Endpoint Catcher (404)
