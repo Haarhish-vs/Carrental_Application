@@ -3,8 +3,6 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../../auth/services/auth_service.dart';
-import '../../../home/presentation/screens/my_bookings_screen.dart';
-import '../../../home/presentation/screens/my_cars_screen.dart';
 import '../../data/models/user_profile_model.dart';
 import '../../data/services/profile_api_service.dart';
 
@@ -440,13 +438,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             // 4. My Activity Section
             _buildMyActivitySection(profile),
-            const SizedBox(height: 24),
-
-            // 5. Menu List Actions
-            _buildMenuList(context),
             const SizedBox(height: 28),
 
-            // 6. Logout Button
+            // 5. Logout Button
             FilledButton.icon(
               onPressed: _handleLogout,
               icon: const Icon(Icons.logout_rounded, size: 20, color: Colors.white),
@@ -888,94 +882,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       height: 45,
       width: 1,
       color: const Color(0xFFF1F3F5),
-    );
-  }
-
-  Widget _buildMenuList(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.02), blurRadius: 10, offset: Offset(0, 4)),
-        ],
-      ),
-      child: Column(
-        children: [
-          _buildMenuItem(
-            icon: Icons.confirmation_number_outlined,
-            title: 'My Bookings',
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => MyBookingsScreen(
-                    onExplorePressed: () => Navigator.pop(context),
-                  ),
-                ),
-              );
-            },
-          ),
-          const Divider(height: 1, indent: 64, endIndent: 16, color: Color(0xFFF1F3F5)),
-          _buildMenuItem(
-            icon: Icons.directions_car_outlined,
-            title: 'My Cars',
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => MyCarsScreen(
-                    onListCarPressed: () => Navigator.pop(context),
-                  ),
-                ),
-              );
-            },
-          ),
-          const Divider(height: 1, indent: 64, endIndent: 16, color: Color(0xFFF1F3F5)),
-          _buildMenuItem(
-            icon: Icons.favorite_border_rounded,
-            title: 'Saved Cars',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Saved cars coming soon')),
-              );
-            },
-          ),
-          const Divider(height: 1, indent: 64, endIndent: 16, color: Color(0xFFF1F3F5)),
-          _buildMenuItem(
-            icon: Icons.help_outline_rounded,
-            title: 'Help & Support',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Help & Support coming soon')),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      leading: Container(
-        width: 38,
-        height: 38,
-        decoration: const BoxDecoration(
-          color: Color(0xFFEAF2FF),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, color: AppColors.primary, size: 20),
-      ),
-      title: Text(
-        title,
-        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-      ),
-      trailing: const Icon(Icons.chevron_right_rounded, size: 22, color: Color(0xFFB0B7C3)),
     );
   }
 }
