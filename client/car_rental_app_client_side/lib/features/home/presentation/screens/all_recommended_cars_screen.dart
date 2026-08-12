@@ -75,7 +75,7 @@ class AllRecommendedCarsScreen extends StatelessWidget {
                 crossAxisCount: 2,
                 mainAxisSpacing: 16,
                 crossAxisSpacing: 16,
-                childAspectRatio: 0.65,
+                childAspectRatio: 0.54,
               ),
               itemCount: cars.length,
               itemBuilder: (context, index) {

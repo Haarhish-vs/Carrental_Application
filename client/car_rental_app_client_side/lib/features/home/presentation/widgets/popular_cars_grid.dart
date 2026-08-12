@@ -52,7 +52,7 @@ class PopularCarsGrid extends StatelessWidget {
                 crossAxisCount: crossAxisCount,
                 mainAxisSpacing: 14,
                 crossAxisSpacing: 14,
-                childAspectRatio: 0.65,
+                childAspectRatio: 0.54,
               ),
               itemBuilder: (context, index) {
                 final car = cars[index];

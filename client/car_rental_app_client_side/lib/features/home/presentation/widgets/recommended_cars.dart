@@ -60,7 +60,7 @@ class RecommendedCars extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 280,
+          height: 295,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
