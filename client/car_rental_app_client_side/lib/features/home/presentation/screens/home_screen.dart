@@ -18,6 +18,7 @@ import '../widgets/home_drawer.dart';
 import 'car_detail_screen.dart';
 import 'my_bookings_screen.dart';
 import 'my_cars_screen.dart';
+import '../../../support/presentation/screens/support_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -640,8 +641,38 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         onSupportTap: () {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Support coming soon')),
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => SupportScreen(
+              initialSection: SupportSection.support,
+              onGoToHome: () {
+                Navigator.pop(context);
+                setState(() {
+                  _navIndex = 0;
+                  _vehiclesFuture = _fetchVehicles();
+                });
+              },
+              onGoToBookings: () {
+                Navigator.pop(context);
+                setState(() {
+                  _navIndex = 1;
+                });
+              },
+              onGoToMyCar: () {
+                Navigator.pop(context);
+                setState(() {
+                  _navIndex = 2;
+                });
+              },
+              onGoToHost: () async {
+                Navigator.pop(context);
+                await _goHost();
+              },
+              onGoToProfile: () {
+                Navigator.pop(context);
+                _showProfileModal();
+              },
+            )),
           );
         },
         onHostTap: () async {
@@ -656,14 +687,74 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         onHelpTap: () {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Help & FAQs coming soon')),
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => SupportScreen(
+              initialSection: SupportSection.faq,
+              onGoToHome: () {
+                Navigator.pop(context);
+                setState(() {
+                  _navIndex = 0;
+                  _vehiclesFuture = _fetchVehicles();
+                });
+              },
+              onGoToBookings: () {
+                Navigator.pop(context);
+                setState(() {
+                  _navIndex = 1;
+                });
+              },
+              onGoToMyCar: () {
+                Navigator.pop(context);
+                setState(() {
+                  _navIndex = 2;
+                });
+              },
+              onGoToHost: () async {
+                Navigator.pop(context);
+                await _goHost();
+              },
+              onGoToProfile: () {
+                Navigator.pop(context);
+                _showProfileModal();
+              },
+            )),
           );
         },
         onPrivacyTap: () {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Privacy Policy coming soon')),
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => SupportScreen(
+              initialSection: SupportSection.policies,
+              onGoToHome: () {
+                Navigator.pop(context);
+                setState(() {
+                  _navIndex = 0;
+                  _vehiclesFuture = _fetchVehicles();
+                });
+              },
+              onGoToBookings: () {
+                Navigator.pop(context);
+                setState(() {
+                  _navIndex = 1;
+                });
+              },
+              onGoToMyCar: () {
+                Navigator.pop(context);
+                setState(() {
+                  _navIndex = 2;
+                });
+              },
+              onGoToHost: () async {
+                Navigator.pop(context);
+                await _goHost();
+              },
+              onGoToProfile: () {
+                Navigator.pop(context);
+                _showProfileModal();
+              },
+            )),
           );
         },
         onLogoutTap: () {
