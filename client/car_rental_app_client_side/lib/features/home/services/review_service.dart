@@ -45,7 +45,18 @@ class ReviewService {
   static Future<List<ReviewModel>> getReviews(String carId) async {
     try {
       final String? data = await _storage.read(key: _getKey(carId));
-      if (data == null || data.isEmpty) return [];
+      if (data == null || data.isEmpty) {
+        return [
+          ReviewModel(
+            id: 'default_review_1',
+            carId: carId,
+            userName: 'Raja',
+            rating: 4.5,
+            feedback: 'Great car! The owner was very cooperative and the car was clean and smooth.',
+            createdAt: DateTime.now().subtract(const Duration(days: 2)),
+          )
+        ];
+      }
 
       final List<dynamic> jsonList = jsonDecode(data);
       return jsonList.map((e) => ReviewModel.fromJson(e)).toList();

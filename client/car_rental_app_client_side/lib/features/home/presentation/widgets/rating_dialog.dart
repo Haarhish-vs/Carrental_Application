@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../services/review_service.dart';
+import '../../../owner/data/services/car_api_service.dart';
 import 'package:car_rental_app_client_side/features/auth/services/auth_service.dart';
-import 'dart:math';
 
 class RatingDialog extends StatefulWidget {
   final String carId;
+  final String bookingId;
   final VoidCallback onSubmitted;
 
   const RatingDialog({
     super.key,
     required this.carId,
+    required this.bookingId,
     required this.onSubmitted,
   });
 
@@ -38,28 +39,34 @@ class _RatingDialogState extends State<RatingDialog> {
     final user = AuthService.currentUser;
     final userName = user?['full_name']?.toString() ?? user?['fullName']?.toString() ?? 'Renter';
 
-    final review = ReviewModel(
-      id: Random().nextInt(9999999).toString(),
-      carId: widget.carId,
-      userName: userName,
-      rating: _selectedStars.toDouble(),
-      feedback: _feedbackController.text.trim(),
-      createdAt: DateTime.now(),
-    );
+    try {
+      await CarApiService().submitReview(
+        vehicleId: widget.carId,
+        bookingId: widget.bookingId,
+        rating: _selectedStars.toDouble(),
+        feedback: _feedbackController.text.trim(),
+      );
+      
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+      });
 
-    await ReviewService.addReview(review);
-
-    if (!mounted) return;
-    setState(() {
-      _isSubmitting = false;
-    });
-
-    Navigator.of(context).pop();
-    widget.onSubmitted();
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Thank you for your feedback!'), backgroundColor: AppColors.success),
-    );
+      Navigator.of(context).pop();
+      widget.onSubmitted();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Thank you for your feedback!'), backgroundColor: AppColors.success),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    }
   }
 
   @override

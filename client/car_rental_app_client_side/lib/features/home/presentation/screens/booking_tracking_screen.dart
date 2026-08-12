@@ -312,6 +312,7 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
       barrierDismissible: false,
       builder: (context) => RatingDialog(
         carId: carId,
+        bookingId: widget.booking['id']?.toString() ?? '',
         onSubmitted: () {
           // You can handle post-submission logic here if needed
         },
@@ -695,17 +696,6 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
                     label: const Text('Start Trip', style: TextStyle(fontWeight: FontWeight.bold)),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      minimumSize: const Size(0, 54),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                  ),
-                ] else if (status == 'active' && isOwner) ...[
-                  FilledButton.icon(
-                    onPressed: () => _handleCompleteTrip(booking['id']),
-                    icon: const Icon(Icons.check_circle_outline),
-                    label: const Text('Complete Trip', style: TextStyle(fontWeight: FontWeight.bold)),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.success,
                       minimumSize: const Size(0, 54),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),

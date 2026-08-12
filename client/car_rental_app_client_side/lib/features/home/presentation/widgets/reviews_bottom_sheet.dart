@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../services/review_service.dart';
+import '../../../owner/data/services/car_api_service.dart';
 
 class ReviewsBottomSheet extends StatefulWidget {
   final String carId;
@@ -21,12 +21,12 @@ class ReviewsBottomSheet extends StatefulWidget {
 }
 
 class _ReviewsBottomSheetState extends State<ReviewsBottomSheet> {
-  late Future<List<ReviewModel>> _reviewsFuture;
+  late Future<List<Map<String, dynamic>>> _reviewsFuture;
 
   @override
   void initState() {
     super.initState();
-    _reviewsFuture = ReviewService.getReviews(widget.carId);
+    _reviewsFuture = CarApiService().getVehicleReviews(widget.carId);
   }
 
   String _formatDate(DateTime dt) {
@@ -64,7 +64,7 @@ class _ReviewsBottomSheetState extends State<ReviewsBottomSheet> {
           ),
           const Divider(height: 32),
           Expanded(
-            child: FutureBuilder<List<ReviewModel>>(
+            child: FutureBuilder<List<Map<String, dynamic>>>(
               future: _reviewsFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -86,6 +86,14 @@ class _ReviewsBottomSheetState extends State<ReviewsBottomSheet> {
                   separatorBuilder: (context, index) => const Divider(height: 32),
                   itemBuilder: (context, index) {
                     final review = reviews[index];
+                    final renter = review['renter'] as Map<String, dynamic>?;
+                    final userName = renter?['full_name'] ?? 'Unknown User';
+                    final rating = (review['rating'] as num?)?.toDouble() ?? 0.0;
+                    final feedback = review['feedback'] ?? '';
+                    final createdAt = review['created_at'] != null 
+                        ? DateTime.parse(review['created_at']) 
+                        : DateTime.now();
+
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -93,7 +101,7 @@ class _ReviewsBottomSheetState extends State<ReviewsBottomSheet> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              review.userName,
+                              userName,
                               style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
@@ -101,7 +109,7 @@ class _ReviewsBottomSheetState extends State<ReviewsBottomSheet> {
                               ),
                             ),
                             Text(
-                              _formatDate(review.createdAt),
+                              _formatDate(createdAt),
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: AppColors.textSecondary,
@@ -113,7 +121,7 @@ class _ReviewsBottomSheetState extends State<ReviewsBottomSheet> {
                         Row(
                           children: List.generate(5, (i) {
                             return Icon(
-                              i < review.rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                              i < rating ? Icons.star_rounded : Icons.star_outline_rounded,
                               size: 16,
                               color: AppColors.rating,
                             );
@@ -121,7 +129,7 @@ class _ReviewsBottomSheetState extends State<ReviewsBottomSheet> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          review.feedback,
+                          feedback,
                           style: const TextStyle(
                             fontSize: 14,
                             color: AppColors.textPrimary,
