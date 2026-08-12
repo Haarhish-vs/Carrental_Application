@@ -19,5 +19,6 @@ router.patch('/:id/pay', protect, bookingController.confirmPayment);
 router.patch('/:id/start', protect, bookingController.startBooking);
 router.patch('/:id/complete', protect, bookingController.completeBooking);
 router.patch('/:id/cancel', protect, bookingController.cancelBooking);
+router.patch('/:id/location', protect, bookingController.updateBookingLocation);
 
 module.exports = router;

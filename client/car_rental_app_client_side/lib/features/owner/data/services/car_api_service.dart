@@ -519,6 +519,18 @@ class CarApiService {
     }
   }
 
+  /// Update real-time GPS location during rental trip.
+  Future<void> updateBookingLocation(String bookingId, double lat, double lng) async {
+    try {
+      await _dio.patch(
+        '/api/bookings/$bookingId/location',
+        data: {'lat': lat, 'lng': lng},
+      );
+    } on DioException catch (e) {
+      debugPrint('⚠️ Error updating booking location: ${e.message}');
+    }
+  }
+
   /// Start a booking trip.
   Future<void> startBooking(String bookingId) async {
     try {

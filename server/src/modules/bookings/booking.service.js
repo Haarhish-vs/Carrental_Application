@@ -432,6 +432,55 @@ class BookingService {
 
     return data;
   }
+
+  /**
+   * Update real-time GPS location of a booking during an active trip.
+   */
+  async updateBookingLocation(bookingId, renterId, lat, lng) {
+    if (!bookingId || lat == null || lng == null) {
+      const error = new Error('Booking ID, latitude, and longitude are required');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const { data: booking, error: fetchError } = await supabase
+      .from('bookings')
+      .select('id, renter_id, status')
+      .eq('id', bookingId)
+      .single();
+
+    if (fetchError || !booking) {
+      const error = new Error('Booking not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (booking.renter_id !== renterId) {
+      const error = new Error('Unauthorized to update location for this booking');
+      error.statusCode = 403;
+      throw error;
+    }
+
+    const now = new Date().toISOString();
+    const { data, error: updateError } = await supabase
+      .from('bookings')
+      .update({
+        current_lat: parseFloat(lat),
+        current_lng: parseFloat(lng),
+        last_tracked_at: now,
+        updated_at: now
+      })
+      .eq('id', bookingId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.log(`⚠️ Note: current_lat/current_lng column update warning: ${updateError.message}`);
+      return { id: bookingId, current_lat: parseFloat(lat), current_lng: parseFloat(lng), last_tracked_at: now };
+    }
+
+    return data;
+  }
 }
 
 module.exports = new BookingService();

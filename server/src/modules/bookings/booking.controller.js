@@ -136,6 +136,21 @@ const confirmPayment = async (req, res, next) => {
   }
 };
 
+const updateBookingLocation = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { lat, lng } = req.body;
+    const result = await bookingService.updateBookingLocation(id, req.user.id, lat, lng);
+    return res.status(200).json({
+      success: true,
+      message: 'Location updated successfully',
+      data: result
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createBooking,
   checkAvailability,
@@ -146,5 +161,6 @@ module.exports = {
   startBooking,
   completeBooking,
   cancelBooking,
-  confirmPayment
+  confirmPayment,
+  updateBookingLocation
 };

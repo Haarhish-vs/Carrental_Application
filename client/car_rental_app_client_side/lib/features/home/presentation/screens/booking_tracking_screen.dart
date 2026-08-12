@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:latlong2/latlong.dart';
+import '../../../../core/services/location_tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../../owner/data/services/car_api_service.dart';
@@ -54,6 +57,12 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
     if (bookingId.isEmpty || !mounted) return;
     _apiService.getBookingById(bookingId).then((data) {
       if (mounted && data.isNotEmpty) {
+        final status = data['status']?.toString().toLowerCase();
+        if (status == 'active') {
+          LocationTrackingService().startTracking(bookingId);
+        } else {
+          LocationTrackingService().stopTracking();
+        }
         setState(() {
           _bookingFuture = Future.value(data);
         });
@@ -64,6 +73,7 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
   @override
   void dispose() {
     _pollTimer?.cancel();
+    LocationTrackingService().stopTracking();
     super.dispose();
   }
 
@@ -314,6 +324,105 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildLiveMapCard(Map<String, dynamic> booking) {
+    final lat = double.tryParse(booking['current_lat']?.toString() ?? '');
+    final lng = double.tryParse(booking['current_lng']?.toString() ?? '');
+    final vehicle = booking['vehicle'] as Map<String, dynamic>?;
+    final vehicleLat = double.tryParse(vehicle?['location_lat']?.toString() ?? '');
+    final vehicleLng = double.tryParse(vehicle?['location_lng']?.toString() ?? '');
+
+    final targetLat = lat ?? vehicleLat ?? 13.0827; // Default lat
+    final targetLng = lng ?? vehicleLng ?? 80.2707; // Default lng
+    final centerPoint = LatLng(targetLat, targetLng);
+
+    final String lastTracked = booking['last_tracked_at'] != null
+        ? _formatDateTime(booking['last_tracked_at'].toString())
+        : 'Live GPS Active';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.my_location_rounded, color: AppColors.primary, size: 20),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Live Vehicle GPS Tracking',
+                  style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: const [
+                    Icon(Icons.circle, color: AppColors.success, size: 8),
+                    SizedBox(width: 4),
+                    Text('LIVE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.success)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Last updated: $lastTracked',
+            style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: SizedBox(
+              height: 170,
+              child: FlutterMap(
+                options: MapOptions(
+                  initialCenter: centerPoint,
+                  initialZoom: 14.0,
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.example.car_rental_app_client_side',
+                  ),
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: centerPoint,
+                        width: 40,
+                        height: 40,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
+                          ),
+                          child: const Icon(Icons.directions_car_rounded, color: Colors.white, size: 20),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -577,6 +686,11 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
+                ],
+
+                // 2.5. Live Vehicle Location Tracking Map Card (for active or confirmed rentals)
+                if (status == 'active' || status == 'confirmed') ...[
+                  _buildLiveMapCard(booking),
                 ],
 
                 // 3. Stepper Timeline (Flipkart style)
