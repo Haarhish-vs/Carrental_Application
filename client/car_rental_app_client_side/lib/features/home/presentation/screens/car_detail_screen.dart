@@ -3,6 +3,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../models/car_model.dart';
+import '../../../wishlist/presentation/controllers/wishlist_controller.dart';
 import 'reserve_screen.dart';
 
 class CarDetailScreen extends StatefulWidget {
@@ -147,25 +148,34 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                         right: 16,
                         child: Row(
                           children: [
-                            CircleAvatar(
-                              backgroundColor: Colors.white.withOpacity(0.9),
-                              radius: 20,
-                              child: IconButton(
-                                icon: Icon(
-                                  _isLiked
-                                      ? Icons.favorite
-                                      : Icons.favorite_border,
-                                  color: _isLiked
-                                      ? Colors.red
-                                      : Colors.grey.shade700,
-                                  size: 18,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _isLiked = !_isLiked;
-                                  });
-                                },
-                              ),
+                            AnimatedBuilder(
+                              animation: WishlistController.instance,
+                              builder: (context, _) {
+                                final isWishlisted = WishlistController.instance.isWishlisted(widget.car.id);
+                                return CircleAvatar(
+                                  backgroundColor: Colors.white.withOpacity(0.9),
+                                  radius: 20,
+                                  child: IconButton(
+                                    icon: Icon(
+                                      isWishlisted
+                                          ? Icons.favorite_rounded
+                                          : Icons.favorite_border_rounded,
+                                      color: isWishlisted
+                                          ? Colors.redAccent
+                                          : Colors.grey.shade700,
+                                      size: 20,
+                                    ),
+                                    onPressed: () {
+                                      WishlistController.instance.toggleWishlist(
+                                        widget.car.id,
+                                        context: context,
+                                        carName: widget.car.name,
+                                      );
+                                    },
+                                    tooltip: isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist',
+                                  ),
+                                );
+                              },
                             ),
                             const SizedBox(width: 12),
                             CircleAvatar(

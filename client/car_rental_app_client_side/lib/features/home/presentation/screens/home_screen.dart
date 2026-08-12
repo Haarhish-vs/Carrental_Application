@@ -19,6 +19,7 @@ import 'car_detail_screen.dart';
 import 'my_bookings_screen.dart';
 import 'my_cars_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
+import '../../../wishlist/presentation/screens/wishlist_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -355,8 +356,8 @@ class _HomeScreenState extends State<HomeScreen> {
               _scaffoldKey.currentState?.openDrawer();
             },
             onFavoriteTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Favorites coming soon')),
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const WishlistScreen()),
               );
             },
             onProfileTap: _openProfileScreen,
@@ -597,8 +598,8 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         onFavoritesTap: () {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Favorites coming soon')),
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const WishlistScreen()),
           );
         },
         onSupportTap: () {
