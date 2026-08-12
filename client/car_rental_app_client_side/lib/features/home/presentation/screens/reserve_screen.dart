@@ -772,15 +772,16 @@ class _ReserveScreenState extends State<ReserveScreen> {
                           ),
                         );
 
-                        try {
-                          final pickupStr = pickupDateTime.toIso8601String().split('T')[0];
-                          final startCal = DateTime(pickupDateTime.year, pickupDateTime.month, pickupDateTime.day);
-                          final endCal = DateTime(returnDateTime.year, returnDateTime.month, returnDateTime.day);
+                          try {
+                          final pickupStr = pickupDateTime.toIso8601String();
                           
-                          final returnDt = endCal.difference(startCal).inDays == 0
+                          // If pickup and return are on the same calendar day but different times, we still use the exact returnDateTime.
+                          // If they are exactly the same date/time (e.g. 10:00 to 10:00 same day), it's a 24-hour rental.
+                          final returnDt = pickupDateTime.isAtSameMomentAs(returnDateTime)
                               ? pickupDateTime.add(const Duration(days: 1))
                               : returnDateTime;
-                          final returnStr = returnDt.toIso8601String().split('T')[0];
+                              
+                          final returnStr = returnDt.toIso8601String();
 
                           await _apiService.createBooking(
                             vehicleId: widget.car.id,

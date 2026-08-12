@@ -25,24 +25,16 @@ const validateBookingCreation = async (vehicleId, renterId, startDateStr, endDat
     throw error;
   }
 
-  // Convert to date-only representation at midnight to prevent local time errors
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const startMidnight = new Date(start);
-  startMidnight.setHours(0, 0, 0, 0);
-  
-  const endMidnight = new Date(end);
-  endMidnight.setHours(0, 0, 0, 0);
 
-  if (startMidnight < today) {
-    const error = new Error('Booking start date cannot be in the past');
+  if (start < today) {
+    const error = new Error('Booking start date/time cannot be in the past');
     error.statusCode = 400;
     throw error;
   }
 
-  if (startMidnight > endMidnight) {
-    const error = new Error('Booking end date must be on or after start date');
+  if (start >= end) {
+    const error = new Error('Booking end date/time must be strictly after the start date/time');
     error.statusCode = 400;
     throw error;
   }

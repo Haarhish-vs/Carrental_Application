@@ -188,8 +188,7 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
           const SnackBar(content: Text('Images uploaded successfully!'), backgroundColor: AppColors.success),
         );
         
-        // Trigger automated demo flow since we can't change backend state as renter
-        _startDemoFlow(widget.booking['vehicle']?['id']?.toString() ?? widget.booking['vehicle_id']?.toString() ?? '');
+        // Removed automated demo flow. Now relies on exact time and backend states.
       }
     } catch (e) {
       if (mounted) {
@@ -288,23 +287,7 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
     );
   }
 
-  void _startDemoFlow(String carId) async {
-    // 1. Wait 1.5 seconds, then make Trip Started green
-    await Future.delayed(const Duration(milliseconds: 1500));
-    if (!mounted) return;
-    setState(() {
-      _demoTripStarted = true;
-    });
-
-    // 2. Wait 1.5 seconds, then make Trip Completed green
-    await Future.delayed(const Duration(milliseconds: 1500));
-    if (!mounted) return;
-    setState(() {
-      _demoTripCompleted = true;
-    });
-
-    // 3. Wait 1 second, then show Rating dialog
-    await Future.delayed(const Duration(milliseconds: 1000));
+  void _triggerRatingDialog(String carId) {
     if (!mounted) return;
     
     showDialog(
@@ -314,7 +297,7 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
         carId: carId,
         bookingId: widget.booking['id']?.toString() ?? '',
         onSubmitted: () {
-          // You can handle post-submission logic here if needed
+          _refresh();
         },
       ),
     );
@@ -459,15 +442,19 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
           final renterId = booking['renter_id']?.toString() ?? '';
           final isOwner = currentUserId == ownerId;
 
+          final now = DateTime.now();
+          final bool isPickupReached = now.isAfter(rawStart);
+          final bool isDropoffReached = now.isAfter(rawEnd);
+
           // Track states: requested, accepted, paid, active, completed
           bool requested = true;
           bool accepted = status == 'confirmed' || status == 'active' || status == 'completed';
           bool paid = paymentStatus == 'paid' && accepted;
-          bool active = status == 'active' || status == 'completed' || _demoTripStarted || _demoTripCompleted;
-          bool completed = status == 'completed' || _demoTripCompleted;
+          bool active = status == 'active' || status == 'completed';
+          bool completed = status == 'completed' || (active && isDropoffReached);
           bool cancelled = status == 'cancelled';
           
-          bool tripStartedGreen = isOwner ? active : (active && _imagesUploaded);
+          bool tripStartedGreen = isOwner ? active : (paid && _imagesUploaded);
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
@@ -605,7 +592,7 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
                       if (!isOwner)
                         _buildUploadImagesStep(
                           isDone: _imagesUploaded,
-                          isActive: paid && !_imagesUploaded,
+                          isActive: paid && !_imagesUploaded && isPickupReached,
                           onTap: _handleUploadImages,
                         ),
                       _buildStepNode(
@@ -696,6 +683,17 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
                     label: const Text('Start Trip', style: TextStyle(fontWeight: FontWeight.bold)),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.primary,
+                      minimumSize: const Size(0, 54),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                ] else if (completed && !isOwner) ...[
+                  FilledButton.icon(
+                    onPressed: () => _triggerRatingDialog(vehicle['id']?.toString() ?? ''),
+                    icon: const Icon(Icons.star_rate_rounded),
+                    label: const Text('Leave a Review', style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.amber,
                       minimumSize: const Size(0, 54),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),

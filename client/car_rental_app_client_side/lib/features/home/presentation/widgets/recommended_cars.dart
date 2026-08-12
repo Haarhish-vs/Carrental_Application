@@ -8,6 +8,7 @@ class RecommendedCars extends StatelessWidget {
   final List<CarModel> cars;
   final ValueChanged<CarModel> onCarTap;
   final ValueChanged<CarModel> onBookNow;
+  final VoidCallback? onSeeAllTap;
   final String title;
   final Widget? trailing;
 
@@ -16,6 +17,7 @@ class RecommendedCars extends StatelessWidget {
     required this.cars,
     required this.onCarTap,
     required this.onBookNow,
+    this.onSeeAllTap,
     this.title = 'Recommended Cars',
     this.trailing,
   });
@@ -42,12 +44,15 @@ class RecommendedCars extends StatelessWidget {
                 ),
               ),
               trailing ??
-                  const Text(
-                    'See all',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w600,
+                  GestureDetector(
+                    onTap: onSeeAllTap,
+                    child: const Text(
+                      'See all',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
             ],

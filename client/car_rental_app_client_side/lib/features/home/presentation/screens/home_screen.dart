@@ -18,6 +18,7 @@ import '../widgets/home_drawer.dart';
 import 'car_detail_screen.dart';
 import 'my_bookings_screen.dart';
 import 'my_cars_screen.dart';
+import 'all_recommended_cars_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -118,7 +119,24 @@ class _HomeScreenState extends State<HomeScreen> {
     final mapped = vehicles.map(CarModel.fromJson).toList();
     final available = mapped.where((car) => car.isAvailable).toList();
     debugPrint('🚗 [HomeScreen] Available vehicles loaded: ${available.length}');
-    return available;
+    
+    // Sort by ratings (highest first)
+    try {
+      final ratings = await Future.wait(
+        available.map((car) => _carApiService.getAverageRating(car.id))
+      );
+      
+      final paired = List.generate(
+        available.length, 
+        (i) => MapEntry(available[i], ratings[i] ?? 0.0)
+      );
+      
+      paired.sort((a, b) => b.value.compareTo(a.value));
+      return paired.map((e) => e.key).toList();
+    } catch (e) {
+      debugPrint('⚠️ Error sorting by rating: $e');
+      return available;
+    }
   }
 
   void _handleSearch() {
@@ -512,6 +530,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     return;
                   }
                   _openCarDetail(car);
+                },
+                onSeeAllTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AllRecommendedCarsScreen(
+                        cars: cars,
+                        initialPickupDate: _selectedPickupDate,
+                        initialReturnDate: _selectedReturnDate,
+                      ),
+                    ),
+                  );
                 },
               );
             },
