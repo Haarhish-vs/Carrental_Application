@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
@@ -23,6 +24,7 @@ class BookingTrackingScreen extends StatefulWidget {
 class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
   final CarApiService _apiService = CarApiService();
   late Future<Map<String, dynamic>> _bookingFuture;
+  Timer? _pollTimer;
 
   bool _imagesUploaded = false;
   bool _isLoadingImages = false;
@@ -35,6 +37,34 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
     super.initState();
     _refresh();
     _checkImagesUploaded();
+    _startAutoPolling();
+  }
+
+  void _startAutoPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (mounted) {
+        _silentRefresh();
+      }
+    });
+  }
+
+  void _silentRefresh() {
+    final bookingId = widget.booking['id']?.toString() ?? '';
+    if (bookingId.isEmpty || !mounted) return;
+    _apiService.getBookingById(bookingId).then((data) {
+      if (mounted && data.isNotEmpty) {
+        setState(() {
+          _bookingFuture = Future.value(data);
+        });
+      }
+    }).catchError((_) {});
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _checkImagesUploaded() async {

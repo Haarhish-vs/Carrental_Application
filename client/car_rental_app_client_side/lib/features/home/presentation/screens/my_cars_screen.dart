@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/widgets/auth_required_view.dart';
@@ -17,16 +18,39 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
   final CarApiService _apiService = CarApiService();
   late Future<List<Map<String, dynamic>>> _carsFuture;
   late Future<List<Map<String, dynamic>>> _requestsFuture;
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     AuthService.authStateNotifier.addListener(_onAuthChanged);
     _refresh();
+    _startAutoPolling();
+  }
+
+  void _startAutoPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (mounted) {
+        _silentRefresh();
+      }
+    });
+  }
+
+  void _silentRefresh() {
+    if (!mounted) return;
+    _apiService.getMyListings().then((cars) {
+      if (mounted) setState(() { _carsFuture = Future.value(cars); });
+    }).catchError((_) {});
+
+    _apiService.getMyVehicleBookings().then((requests) {
+      if (mounted) setState(() { _requestsFuture = Future.value(requests); });
+    }).catchError((_) {});
   }
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     AuthService.authStateNotifier.removeListener(_onAuthChanged);
     super.dispose();
   }

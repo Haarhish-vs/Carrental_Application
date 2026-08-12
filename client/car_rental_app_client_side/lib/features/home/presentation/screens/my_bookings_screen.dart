@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/widgets/auth_required_view.dart';
@@ -19,16 +20,39 @@ class MyBookingsScreen extends StatefulWidget {
 class _MyBookingsScreenState extends State<MyBookingsScreen> {
   final CarApiService _apiService = CarApiService();
   late Future<List<Map<String, dynamic>>> _bookingsFuture;
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     AuthService.authStateNotifier.addListener(_onAuthChanged);
     _refreshBookings();
+    _startAutoPolling();
+  }
+
+  void _startAutoPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (mounted) {
+        _silentRefresh();
+      }
+    });
+  }
+
+  void _silentRefresh() {
+    if (!mounted) return;
+    _apiService.getMyBookings().then((list) {
+      if (mounted) {
+        setState(() {
+          _bookingsFuture = Future.value(list);
+        });
+      }
+    }).catchError((_) {});
   }
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     AuthService.authStateNotifier.removeListener(_onAuthChanged);
     super.dispose();
   }
