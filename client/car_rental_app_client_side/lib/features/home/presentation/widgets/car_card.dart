@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../models/car_model.dart';
 import '../../../wishlist/presentation/controllers/wishlist_controller.dart';
+import '../../../owner/data/services/car_api_service.dart';
+import '../widgets/reviews_bottom_sheet.dart';
 
 /// Reusable car card used by both Recommended Cars and Popular Cars.
 /// Tapping the card fires onCarTap; tapping the button fires onBookNow —
@@ -73,38 +75,56 @@ class CarCard extends StatelessWidget {
                   Positioned(
                     top: 8,
                     left: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.95),
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
-                          const SizedBox(width: 3),
-                          Text(
-                            car.rating > 0 ? car.rating.toStringAsFixed(1) : 'New',
-                            style: const TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                            ),
+                    child: FutureBuilder<List<Map<String, dynamic>>>(
+                      future: CarApiService().getVehicleReviews(car.id),
+                      builder: (context, snapshot) {
+                        final reviews = snapshot.data ?? [];
+                        final count = reviews.length;
+                        double avgRating = 0.0;
+                        if (count > 0) {
+                          double total = 0;
+                          for (var r in reviews) {
+                            total += (r['rating'] as num?)?.toDouble() ?? 0.0;
+                          }
+                          avgRating = total / count;
+                        }
+
+                        final displayRating = count > 0 ? avgRating.toStringAsFixed(1) : 'New';
+
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.95),
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
                           ),
-                          if (car.reviewsCount != null && car.reviewsCount! > 0) ...[
-                            const SizedBox(width: 2),
-                            Text(
-                              '(${car.reviewsCount})',
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: AppColors.textSecondary,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
+                              const SizedBox(width: 3),
+                              Text(
+                                displayRating,
+                                style: const TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
                               ),
-                            ),
-                          ],
-                        ],
-                      ),
+                              if (count > 0) ...[
+                                const SizedBox(width: 2),
+                                Text(
+                                  '($count)',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   ),
 
@@ -282,6 +302,48 @@ class CarCard extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 10),
+                    FutureBuilder<List<Map<String, dynamic>>>(
+                      future: CarApiService().getVehicleReviews(car.id),
+                      builder: (context, snapshot) {
+                        final reviews = snapshot.data ?? [];
+                        final count = reviews.length;
+                        final String buttonLabel = count > 0 ? '$count Reviews' : 'View Reviews';
+
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            InkWell(
+                              onTap: () => ReviewsBottomSheet.show(context, car.id),
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.rate_review_outlined, size: 12, color: AppColors.primary),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      buttonLabel,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),

@@ -4,6 +4,30 @@ const bookingService = require('../bookings/booking.service');
 
 class VehicleService {
   /**
+   * Helper to fetch real rating and reviews count from the `reviews` table in Supabase.
+   */
+  async _getVehicleReviewStats(vehicleId) {
+    try {
+      const { data: reviews, error } = await supabase
+        .from('reviews')
+        .select('rating')
+        .eq('vehicle_id', vehicleId);
+
+      if (error || !reviews || reviews.length === 0) {
+        return { rating: 0, reviewsCount: 0 };
+      }
+
+      const total = reviews.reduce((sum, r) => sum + Number(r.rating || 0), 0);
+      const count = reviews.length;
+      const avg = parseFloat((total / count).toFixed(1));
+
+      return { rating: avg, reviewsCount: count };
+    } catch (e) {
+      console.error(`Error calculating reviews stats for vehicle ${vehicleId}:`, e);
+      return { rating: 0, reviewsCount: 0 };
+    }
+  }
+  /**
    * Helper to map client payload (which can be camelCase from Flutter/React Native UI) to database columns.
    */
   _mapPayload(input) {
@@ -415,13 +439,10 @@ class VehicleService {
 
     if (resultData && resultData.length > 0) {
       await Promise.all(resultData.map(async (vehicle) => {
-        const { count } = await supabase
-          .from('bookings')
-          .select('id', { count: 'exact', head: true })
-          .eq('vehicle_id', vehicle.id);
+        const stats = await this._getVehicleReviewStats(vehicle.id);
         
-        vehicle.reviews_count = count || 0;
-        vehicle.rating = vehicle.owner && vehicle.owner.trust_score ? parseFloat((vehicle.owner.trust_score / 20).toFixed(1)) : 4.5;
+        vehicle.reviews_count = stats.reviewsCount;
+        vehicle.rating = stats.rating;
         
         const desc = (vehicle.vehicle_description || '').toLowerCase();
         vehicle.ac = !desc.includes('no ac') && !desc.includes('no air conditioning');
@@ -492,13 +513,10 @@ class VehicleService {
     }
 
     // Dynamic fields mapping
-    const { count } = await supabase
-      .from('bookings')
-      .select('id', { count: 'exact', head: true })
-      .eq('vehicle_id', vehicleId);
+    const stats = await this._getVehicleReviewStats(vehicleId);
     
-    vehicle.reviews_count = count || 0;
-    vehicle.rating = vehicle.owner && vehicle.owner.trust_score ? parseFloat((vehicle.owner.trust_score / 20).toFixed(1)) : 4.5;
+    vehicle.reviews_count = stats.reviewsCount;
+    vehicle.rating = stats.rating;
     
     const desc = (vehicle.vehicle_description || '').toLowerCase();
     vehicle.ac = !desc.includes('no ac') && !desc.includes('no air conditioning');
@@ -962,21 +980,36 @@ class VehicleService {
     });
 
     // 10. Enrich Vehicle Objects with Ratings, Specs & Clean Formatting
-    const enrichedCars = await Promise.all(
-      vehiclesList.map(async (vehicle) => {
-        const { count } = await supabase
-          .from('bookings')
-          .select('id', { count: 'exact', head: true })
-          .eq('vehicle_id', vehicle.id);
+    const vehicleIds = vehiclesList.map(v => v.id).filter(Boolean);
+    let reviewStatsMap = {};
 
-        const reviewsCount = count || 0;
-        const rating = vehicle.owner && vehicle.owner.trust_score
-          ? parseFloat((vehicle.owner.trust_score / 20).toFixed(1))
-          : 4.5;
+    if (vehicleIds.length > 0) {
+      const { data: reviewsData } = await supabase
+        .from('reviews')
+        .select('vehicle_id, rating')
+        .in('vehicle_id', vehicleIds);
 
-        const desc = (vehicle.vehicle_description || '').toLowerCase();
-        const ac = !desc.includes('no ac') && !desc.includes('no air conditioning');
-        const navigation = !desc.includes('no gps') && !desc.includes('no navigation');
+      if (reviewsData && reviewsData.length > 0) {
+        reviewsData.forEach(r => {
+          if (!reviewStatsMap[r.vehicle_id]) {
+            reviewStatsMap[r.vehicle_id] = { total: 0, count: 0 };
+          }
+          reviewStatsMap[r.vehicle_id].total += Number(r.rating || 0);
+          reviewStatsMap[r.vehicle_id].count += 1;
+        });
+      }
+    }
+
+    const enrichedCars = vehiclesList.map((vehicle) => {
+      const rev = reviewStatsMap[vehicle.id];
+      const rating = rev && rev.count > 0
+        ? parseFloat((rev.total / rev.count).toFixed(1))
+        : 0;
+      const reviewsCount = rev ? rev.count : 0;
+
+      const desc = (vehicle.vehicle_description || '').toLowerCase();
+      const ac = !desc.includes('no ac') && !desc.includes('no air conditioning');
+      const navigation = !desc.includes('no gps') && !desc.includes('no navigation');
 
         const brand = vehicle.brand || '';
         const model = vehicle.model || '';
@@ -1035,10 +1068,8 @@ class VehicleService {
           availabilityTo: vehicle.availability_to,
           availability_to: vehicle.availability_to,
           createdAt: vehicle.created_at,
-          created_at: vehicle.created_at
         };
-      })
-    );
+      });
 
     // 11. Sorting
     enrichedCars.sort((a, b) => {

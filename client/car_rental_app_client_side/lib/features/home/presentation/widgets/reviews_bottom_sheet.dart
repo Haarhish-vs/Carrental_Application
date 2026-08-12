@@ -87,7 +87,11 @@ class _ReviewsBottomSheetState extends State<ReviewsBottomSheet> {
                   itemBuilder: (context, index) {
                     final review = reviews[index];
                     final renter = review['renter'] as Map<String, dynamic>?;
-                    final userName = renter?['full_name'] ?? 'Unknown User';
+                    final userName = (renter?['full_name']?.toString().isNotEmpty == true)
+                        ? renter!['full_name'].toString()
+                        : ((renter?['fullName']?.toString().isNotEmpty == true)
+                            ? renter!['fullName'].toString()
+                            : 'Verified Renter');
                     final rating = (review['rating'] as num?)?.toDouble() ?? 0.0;
                     final feedback = review['feedback'] ?? '';
                     final createdAt = review['created_at'] != null 

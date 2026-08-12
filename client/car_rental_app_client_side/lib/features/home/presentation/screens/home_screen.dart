@@ -122,21 +122,27 @@ class _HomeScreenState extends State<HomeScreen> {
     final available = mapped.where((car) => car.isAvailable).toList();
     debugPrint('🚗 [HomeScreen] Available vehicles loaded: ${available.length}');
     
-    // Sort by ratings (highest first)
+    // Update exact ratings & review counts from database
     try {
-      final ratings = await Future.wait(
-        available.map((car) => _carApiService.getAverageRating(car.id))
-      );
-      
-      final paired = List.generate(
-        available.length, 
-        (i) => MapEntry(available[i], ratings[i] ?? 0.0)
-      );
-      
-      paired.sort((a, b) => b.value.compareTo(a.value));
-      return paired.map((e) => e.key).toList();
+      final updatedList = await Future.wait(available.map((car) async {
+        final reviews = await _carApiService.getVehicleReviews(car.id);
+        if (reviews.isNotEmpty) {
+          double total = 0;
+          for (var r in reviews) {
+            total += (r['rating'] as num?)?.toDouble() ?? 0.0;
+          }
+          final avg = double.parse((total / reviews.length).toStringAsFixed(1));
+          return car.copyWith(rating: avg, reviewsCount: reviews.length);
+        } else {
+          return car.copyWith(rating: 0.0, reviewsCount: 0);
+        }
+      }));
+
+      final sorted = List<CarModel>.from(updatedList);
+      sorted.sort((a, b) => b.rating.compareTo(a.rating));
+      return sorted;
     } catch (e) {
-      debugPrint('⚠️ Error sorting by rating: $e');
+      debugPrint('⚠️ Error updating ratings: $e');
       return available;
     }
   }
