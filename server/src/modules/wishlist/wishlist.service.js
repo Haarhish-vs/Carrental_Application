@@ -143,19 +143,45 @@ class WishlistService {
       throw new Error(`Failed to fetch user wishlist: ${error.message}`);
     }
 
-    // Extract vehicles and attach wishlisted timestamp and calculated fields
+    // Fetch average ratings and review counts from reviews table
+    const vehicleIds = (rows || []).map(r => r.vehicles?.id).filter(Boolean);
+    let reviewsMap = {};
+
+    if (vehicleIds.length > 0) {
+      const { data: reviewsData } = await supabase
+        .from('reviews')
+        .select('vehicle_id, rating')
+        .in('vehicle_id', vehicleIds);
+
+      if (reviewsData && reviewsData.length > 0) {
+        reviewsData.forEach(r => {
+          if (!reviewsMap[r.vehicle_id]) {
+            reviewsMap[r.vehicle_id] = { total: 0, count: 0 };
+          }
+          reviewsMap[r.vehicle_id].total += Number(r.rating || 0);
+          reviewsMap[r.vehicle_id].count += 1;
+        });
+      }
+    }
+
+    // Extract vehicles and attach wishlisted timestamp and dynamic fields
     const vehicles = (rows || [])
       .filter(row => row.vehicles != null)
       .map(row => {
         const v = row.vehicles;
-        const rating = v.owner && v.owner.trust_score ? parseFloat((v.owner.trust_score / 20).toFixed(1)) : 4.5;
+        const rev = reviewsMap[v.id];
+        const dynamicRating = rev && rev.count > 0
+          ? parseFloat((rev.total / rev.count).toFixed(1))
+          : (v.rating ? parseFloat(v.rating) : 0.0);
+        const reviewsCount = rev ? rev.count : (v.reviews_count || 0);
         const desc = (v.vehicle_description || '').toLowerCase();
         const ac = !desc.includes('no ac') && !desc.includes('no air conditioning');
         const navigation = !desc.includes('no gps') && !desc.includes('no navigation');
 
         return {
           ...v,
-          rating,
+          rating: dynamicRating,
+          reviews_count: reviewsCount,
           ac,
           navigation,
           wishlist_id: row.id,
