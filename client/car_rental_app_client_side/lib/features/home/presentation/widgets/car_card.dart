@@ -85,6 +85,7 @@ class CarCard extends StatelessWidget {
                                 car.id,
                                 context: context,
                                 carName: car.name,
+                                carModel: car,
                               );
                             },
                             borderRadius: BorderRadius.circular(20),

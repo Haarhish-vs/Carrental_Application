@@ -170,6 +170,7 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                                         widget.car.id,
                                         context: context,
                                         carName: widget.car.name,
+                                        carModel: widget.car,
                                       );
                                     },
                                     tooltip: isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist',

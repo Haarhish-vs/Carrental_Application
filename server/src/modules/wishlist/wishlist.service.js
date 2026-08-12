@@ -114,60 +114,44 @@ class WishlistService {
       throw error;
     }
 
-    // Query wishlists joined with vehicles
+    // Query wishlists joined with vehicles and owner for trust score
     const { data: rows, error } = await supabase
       .from('wishlists')
       .select(`
         id,
         created_at,
         vehicles:vehicle_id (
-          id,
-          brand,
-          model,
-          variant,
-          manufacturing_year,
-          registration_number,
-          fuel_type,
-          transmission,
-          mileage,
-          seats,
-          color,
-          engine_capacity,
-          odometer_reading,
-          vehicle_description,
-          price_per_day,
-          deposit_amount,
-          minimum_rental_days,
-          pickup_location,
-          availability_from,
-          availability_to,
-          delivery_fee,
-          images,
-          city,
-          state,
-          car_type,
-          rating,
-          reviews_count,
-          status,
-          is_available,
-          owner_id,
-          created_at
+          *,
+          owner:users (
+            id,
+            full_name,
+            trust_score
+          )
         )
       `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (error) {
+      console.error(`❌ [WishlistService.getUserWishlist] Error: ${error.message}`);
       throw new Error(`Failed to fetch user wishlist: ${error.message}`);
     }
 
-    // Extract vehicles and attach wishlisted timestamp
+    // Extract vehicles and attach wishlisted timestamp and calculated fields
     const vehicles = (rows || [])
       .filter(row => row.vehicles != null)
       .map(row => {
         const v = row.vehicles;
+        const rating = v.owner && v.owner.trust_score ? parseFloat((v.owner.trust_score / 20).toFixed(1)) : 4.5;
+        const desc = (v.vehicle_description || '').toLowerCase();
+        const ac = !desc.includes('no ac') && !desc.includes('no air conditioning');
+        const navigation = !desc.includes('no gps') && !desc.includes('no navigation');
+
         return {
           ...v,
+          rating,
+          ac,
+          navigation,
           wishlist_id: row.id,
           wishlisted_at: row.created_at,
           is_wishlisted: true

@@ -15,14 +15,15 @@ class WishlistScreen extends StatefulWidget {
 }
 
 class _WishlistScreenState extends State<WishlistScreen> {
-  final WishlistController _controller = WishlistController();
-  late Future<List<CarModel>> _wishlistFuture;
+  final WishlistController _controller = WishlistController.instance;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
     _controller.addListener(_onControllerUpdated);
+    if (AuthService.isAuthenticated) {
+      _controller.fetchWishlistCars(forceRefresh: true);
+    }
   }
 
   @override
@@ -33,19 +34,18 @@ class _WishlistScreenState extends State<WishlistScreen> {
 
   void _onControllerUpdated() {
     if (mounted) {
-      setState(() {});
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {});
+        }
+      });
     }
   }
 
-  void _loadData() {
-    _wishlistFuture = _controller.fetchWishlistCars();
-  }
-
   Future<void> _handleRefresh() async {
-    setState(() {
-      _loadData();
-    });
-    await _wishlistFuture;
+    try {
+      await _controller.fetchWishlistCars(forceRefresh: true);
+    } catch (_) {}
   }
 
   void _openCarDetail(CarModel car) async {
@@ -54,9 +54,6 @@ class _WishlistScreenState extends State<WishlistScreen> {
         builder: (_) => CarDetailScreen(car: car),
       ),
     );
-    if (mounted) {
-      _handleRefresh();
-    }
   }
 
   @override
@@ -112,96 +109,95 @@ class _WishlistScreenState extends State<WishlistScreen> {
       body: SafeArea(
         child: !isAuthenticated
             ? _buildGuestView()
-            : FutureBuilder<List<CarModel>>(
-                future: _wishlistFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(color: AppColors.primary),
-                          SizedBox(height: 16),
-                          Text(
-                            'Loading your favorite cars...',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
+            : _buildContent(),
+      ),
+    );
+  }
 
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.error_outline_rounded,
-                              size: 48,
-                              color: Colors.redAccent,
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'Failed to load wishlist',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              snapshot.error.toString().replaceAll('Exception: ', ''),
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            FilledButton.icon(
-                              onPressed: _handleRefresh,
-                              icon: const Icon(Icons.refresh, size: 18),
-                              label: const Text('Try Again'),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-
-                  final cars = snapshot.data ?? [];
-                  if (cars.isEmpty) {
-                    return _buildEmptyView();
-                  }
-
-                  return RefreshIndicator(
-                    color: AppColors.primary,
-                    onRefresh: _handleRefresh,
-                    child: ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
-                      itemCount: cars.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 16),
-                      itemBuilder: (context, index) {
-                        final car = cars[index];
-                        return _buildWishlistCarCard(car);
-                      },
-                    ),
-                  );
-                },
+  Widget _buildContent() {
+    if (_controller.isLoading && _controller.wishlistCars.isEmpty && !_controller.hasLoadedCars) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(color: AppColors.primary),
+            SizedBox(height: 16),
+            Text(
+              'Loading your favorite cars...',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
               ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_controller.errorMessage != null && _controller.wishlistCars.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline_rounded,
+                size: 48,
+                color: Colors.redAccent,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Failed to load wishlist',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _controller.errorMessage ?? 'An unexpected error occurred.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: _handleRefresh,
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('Try Again'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final cars = _controller.wishlistCars;
+    if (cars.isEmpty) {
+      return _buildEmptyView();
+    }
+
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: _handleRefresh,
+      child: ListView.separated(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
+        itemCount: cars.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 16),
+        itemBuilder: (context, index) {
+          final car = cars[index];
+          return _buildWishlistCarCard(car);
+        },
       ),
     );
   }
@@ -426,13 +422,13 @@ class _WishlistScreenState extends State<WishlistScreen> {
                       color: Colors.redAccent,
                       size: 20,
                     ),
-                    onPressed: () async {
-                      await _controller.toggleWishlist(
+                    onPressed: () {
+                      _controller.toggleWishlist(
                         car.id,
                         context: context,
                         carName: car.name,
+                        carModel: car,
                       );
-                      _handleRefresh();
                     },
                     tooltip: 'Remove from Wishlist',
                   ),
