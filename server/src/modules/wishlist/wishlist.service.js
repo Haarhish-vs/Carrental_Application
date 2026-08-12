@@ -16,10 +16,10 @@ class WishlistService {
       throw error;
     }
 
-    // 1. Check if vehicle exists
+    // 1. Check if vehicle exists and ensure user is not the owner
     const { data: vehicle, error: vehicleError } = await supabase
       .from('vehicles')
-      .select('id, brand, model')
+      .select('id, brand, model, owner_id')
       .eq('id', vehicleId)
       .maybeSingle();
 
@@ -30,6 +30,12 @@ class WishlistService {
     if (!vehicle) {
       const error = new Error('Vehicle not found');
       error.statusCode = 404;
+      throw error;
+    }
+
+    if (vehicle.owner_id === userId) {
+      const error = new Error('You cannot add your own vehicle to your wishlist');
+      error.statusCode = 400;
       throw error;
     }
 

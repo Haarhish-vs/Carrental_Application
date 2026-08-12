@@ -4,7 +4,6 @@ import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../../home/models/car_model.dart';
 import '../../../home/presentation/screens/car_detail_screen.dart';
-import '../../../home/presentation/screens/reserve_screen.dart';
 import '../controllers/wishlist_controller.dart';
 
 class WishlistScreen extends StatefulWidget {
@@ -396,13 +395,23 @@ class _WishlistScreenState extends State<WishlistScreen> {
                       const Icon(Icons.star_rounded, size: 15, color: Colors.amber),
                       const SizedBox(width: 4),
                       Text(
-                        car.rating.toStringAsFixed(1),
+                        car.rating > 0 ? car.rating.toStringAsFixed(1) : 'New',
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
                         ),
                       ),
+                      if (car.reviewsCount != null && car.reviewsCount! > 0) ...[
+                        const SizedBox(width: 3),
+                        Text(
+                          '(${car.reviewsCount})',
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -530,26 +539,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                         ),
                         const SizedBox(width: 8),
                         ElevatedButton(
-                          onPressed: () {
-                            if (AuthService.isAuthenticated &&
-                                AuthService.currentUser != null &&
-                                AuthService.currentUser!['id'] == car.ownerId) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('You cannot book your own vehicle'),
-                                  backgroundColor: Colors.redAccent,
-                                ),
-                              );
-                              return;
-                            }
-
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ReserveScreen(car: car),
-                              ),
-                            );
-                          },
+                          onPressed: () => _openCarDetail(car),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,

@@ -123,6 +123,37 @@ class WishlistController extends ChangeNotifier {
   }) async {
     if (vehicleId.isEmpty) return false;
 
+    // Prevent owner from wishlisting their own vehicle
+    final currentUserId = AuthService.currentUser?['id']?.toString() ??
+        AuthService.currentUser?['userId']?.toString();
+    if (currentUserId != null &&
+        carModel != null &&
+        carModel.ownerId == currentUserId &&
+        !_wishlistIds.contains(vehicleId)) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.info_outline_rounded, color: Colors.amber, size: 18),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'You cannot add your own vehicle to wishlist',
+                    style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Color(0xFF103B66),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      return false;
+    }
+
     // 1. Auth Guard: prompt login if guest
     if (!AuthService.isAuthenticated) {
       final shouldLogin = await showDialog<bool>(

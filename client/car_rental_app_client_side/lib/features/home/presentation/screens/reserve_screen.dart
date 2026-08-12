@@ -435,11 +435,59 @@ class _ReserveScreenState extends State<ReserveScreen> {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    '${widget.car.rating.toStringAsFixed(1)} (128 trips)',
+                                    widget.car.reviewsCount != null && widget.car.reviewsCount! > 0
+                                        ? '${widget.car.rating.toStringAsFixed(1)} (${widget.car.reviewsCount} reviews)'
+                                        : (widget.car.rating > 0
+                                            ? '${widget.car.rating.toStringAsFixed(1)} (Rated)'
+                                            : 'New Car'),
                                     style: const TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
                                       color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              // Location & Availability
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.location_on_rounded,
+                                    size: 14,
+                                    color: AppColors.primary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      (widget.car.pickupLocation != null && widget.car.pickupLocation!.trim().isNotEmpty)
+                                          ? '${widget.car.pickupLocation}, ${widget.car.city}'
+                                          : widget.car.city,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: widget.car.isAvailable
+                                          ? AppColors.success.withValues(alpha: 0.1)
+                                          : Colors.red.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      widget.car.isAvailable ? 'Available' : 'Booked',
+                                      style: TextStyle(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: widget.car.isAvailable ? AppColors.success : Colors.redAccent,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -850,7 +898,7 @@ class _ReserveScreenState extends State<ReserveScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Pay Now',
+                      'Request to Book',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

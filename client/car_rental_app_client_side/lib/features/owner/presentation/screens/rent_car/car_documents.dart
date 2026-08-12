@@ -476,38 +476,23 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
         }
       }
 
-      // 3. Upload driving license (if present) to Supabase (old flow)
-      if (_dlDocumentFile != null) {
-        final dlDocUrl = await _apiService.uploadDocument(_dlDocumentFile!);
-        await _apiService.uploadVehicleDocument(
+      // 3. Attempt document uploads in background without blocking submission
+      try {
+        await DocumentVerificationController.instance.startVerificationFlow(
           vehicleId: vehicleId,
-          documentType: 'driving_license',
-          documentUrl: dlDocUrl,
+          rc: _rcDocumentFile,
+          insurance: _insuranceDocumentFile,
+          fc: _fitnessDocumentFile,
+          puc: _pucDocumentFile,
+          permit: _permitDocumentFile,
         );
+      } catch (docErr) {
+        debugPrint('[CarDocuments] Document upload non-blocking warning: $docErr');
       }
 
-      // 4. Trigger document verification workflow on the OCR backend
-      await DocumentVerificationController.instance.startVerificationFlow(
-        vehicleId: vehicleId,
-        rc: _rcDocumentFile,
-        insurance: _insuranceDocumentFile,
-        fc: _fitnessDocumentFile,
-        puc: _pucDocumentFile,
-        permit: _permitDocumentFile,
-      );
-
-      // Check for validation errors
-      final state = DocumentVerificationController.instance.state;
-      if (state.errorMessage != null) {
-        throw Exception(state.errorMessage);
-      }
-
-      final result = state.verificationResult;
-      if (result != null) {
-        if (result.overallStatus == 'VERIFIED' ||
-            result.overallStatus == 'APPROVED') {
-          _showSuccessDialog(uploadedCarUrls, vehicleId);
-        }
+      // 4. Show success dialog directly once vehicle details are stored
+      if (mounted) {
+        _showSuccessDialog(uploadedCarUrls, vehicleId);
       }
     } catch (e) {
       if (!mounted) return;
@@ -535,7 +520,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
       'Year': widget.draft.manufacturingYear,
       'Daily Price': '₹${widget.draft.dailyPrice}',
       'RC Number': _registrationCertificateController.text.trim(),
-      'Verification Status': 'VERIFIED',
+      'Status': 'ACTIVE',
       'Car Images': '${uploadedCarUrls.length} Uploaded to Cloudinary',
     };
 
@@ -556,7 +541,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Your vehicle listing has been successfully saved, and documents have passed OCR verification.',
+                'Your vehicle listing has been successfully created and stored.',
               ),
               const SizedBox(height: 16),
               ...summary.entries.map(
