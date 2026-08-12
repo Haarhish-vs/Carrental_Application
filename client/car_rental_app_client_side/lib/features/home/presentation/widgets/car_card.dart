@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../models/car_model.dart';
+import '../../../wishlist/presentation/controllers/wishlist_controller.dart';
+import '../../services/review_service.dart';
 import '../../../owner/data/services/car_api_service.dart';
 import '../widgets/reviews_bottom_sheet.dart';
 
@@ -58,6 +60,63 @@ class CarCard extends StatelessWidget {
                       height: 110,
                       width: double.infinity,
                       fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        height: 110,
+                        width: double.infinity,
+                        color: const Color(0xFFF1F5F9),
+                        child: const Icon(
+                          Icons.directions_car_rounded,
+                          size: 40,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Wishlist Heart Button (Top Left)
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: AnimatedBuilder(
+                      animation: WishlistController.instance,
+                      builder: (context, _) {
+                        final isWishlisted = WishlistController.instance.isWishlisted(car.id);
+                        return Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              WishlistController.instance.toggleWishlist(
+                                car.id,
+                                context: context,
+                                carName: car.name,
+                                carModel: car,
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.92),
+                                shape: BoxShape.circle,
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black12,
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                isWishlisted
+                                    ? Icons.favorite_rounded
+                                    : Icons.favorite_border_rounded,
+                                size: 16,
+                                color: isWishlisted
+                                    ? Colors.redAccent
+                                    : Colors.grey.shade700,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
 
