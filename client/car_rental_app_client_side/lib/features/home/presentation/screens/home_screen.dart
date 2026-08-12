@@ -19,6 +19,7 @@ import 'car_detail_screen.dart';
 import 'my_bookings_screen.dart';
 import 'my_cars_screen.dart';
 import '../../../support/presentation/screens/support_screen.dart';
+import 'all_recommended_cars_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -101,16 +102,42 @@ class _HomeScreenState extends State<HomeScreen> {
     String? startDate,
     String? endDate,
   }) async {
-    debugPrint('🔍 [HomeScreen] Querying vehicles -> city: "${city ?? 'ALL'}", startDate: "$startDate", endDate: "$endDate"');
+    // Default to a 1-year window if no dates are provided to exclude any car with an active/future booking
+    final now = DateTime.now();
+    final defaultStart = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final nextYear = now.add(const Duration(days: 365));
+    final defaultEnd = '${nextYear.year}-${nextYear.month.toString().padLeft(2, '0')}-${nextYear.day.toString().padLeft(2, '0')}';
+
+    final queryStart = startDate ?? defaultStart;
+    final queryEnd = endDate ?? defaultEnd;
+
+    debugPrint('🔍 [HomeScreen] Querying vehicles -> city: "${city ?? 'ALL'}", startDate: "$queryStart", endDate: "$queryEnd"');
     final vehicles = await _carApiService.getVehicles(
       city: city,
-      startDate: startDate,
-      endDate: endDate,
+      startDate: queryStart,
+      endDate: queryEnd,
     );
     final mapped = vehicles.map(CarModel.fromJson).toList();
     final available = mapped.where((car) => car.isAvailable).toList();
     debugPrint('🚗 [HomeScreen] Available vehicles loaded: ${available.length}');
-    return available;
+    
+    // Sort by ratings (highest first)
+    try {
+      final ratings = await Future.wait(
+        available.map((car) => _carApiService.getAverageRating(car.id))
+      );
+      
+      final paired = List.generate(
+        available.length, 
+        (i) => MapEntry(available[i], ratings[i] ?? 0.0)
+      );
+      
+      paired.sort((a, b) => b.value.compareTo(a.value));
+      return paired.map((e) => e.key).toList();
+    } catch (e) {
+      debugPrint('⚠️ Error sorting by rating: $e');
+      return available;
+    }
   }
 
   void _handleSearch() {
@@ -504,6 +531,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     return;
                   }
                   _openCarDetail(car);
+                },
+                onSeeAllTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AllRecommendedCarsScreen(
+                        cars: cars,
+                        initialPickupDate: _selectedPickupDate,
+                        initialReturnDate: _selectedReturnDate,
+                      ),
+                    ),
+                  );
                 },
               );
             },

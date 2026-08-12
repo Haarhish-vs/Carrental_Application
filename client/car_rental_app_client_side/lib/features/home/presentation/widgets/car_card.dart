@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../models/car_model.dart';
+import '../../../owner/data/services/car_api_service.dart';
+import '../widgets/reviews_bottom_sheet.dart';
 
 /// Reusable car card used by both Recommended Cars and Popular Cars.
 /// Tapping the card fires onCarTap; tapping the button fires onBookNow —
@@ -58,38 +60,7 @@ class CarCard extends StatelessWidget {
                       fit: BoxFit.cover,
                     ),
                   ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.star_rounded,
-                            size: 14,
-                            color: AppColors.rating,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            car.rating.toString(),
-                            style: const TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+
                   // Unavailable banner
                   if (!available)
                     Positioned(
@@ -216,6 +187,45 @@ class CarCard extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 10),
+                    FutureBuilder<double?>(
+                      future: CarApiService().getAverageRating(car.id),
+                      builder: (context, snapshot) {
+                        final rating = snapshot.data;
+                        if (rating == null) {
+                          return const SizedBox(height: 16); // space holder
+                        }
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Row(
+                              children: List.generate(5, (index) {
+                                return Icon(
+                                  index < rating.round()
+                                      ? Icons.star_rounded
+                                      : Icons.star_outline_rounded,
+                                  size: 14,
+                                  color: AppColors.rating,
+                                );
+                              }),
+                            ),
+                            GestureDetector(
+                              onTap: () => ReviewsBottomSheet.show(context, car.id),
+                              child: const Text(
+                                'View Reviews',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),

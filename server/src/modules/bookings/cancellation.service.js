@@ -24,7 +24,6 @@ class CancellationService {
     const now = new Date();
     // Parse start_date. Assuming start of day local/UTC for calculations
     const startDate = new Date(booking.start_date);
-    startDate.setHours(0, 0, 0, 0); // start of day
 
     const timeDiffMs = startDate.getTime() - now.getTime();
     const hoursBeforeStart = timeDiffMs / (1000 * 60 * 60);

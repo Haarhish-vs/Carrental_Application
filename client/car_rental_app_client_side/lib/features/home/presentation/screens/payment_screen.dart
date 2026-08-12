@@ -100,25 +100,30 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
       if (!mounted) return;
 
-      // Save booking to database (best-effort — don't block on DB error)
+      // Save booking payment to database
       try {
-        final pickupStr = widget.pickupDateTime.toIso8601String().split('T')[0];
-        final startCal = DateTime(
-          widget.pickupDateTime.year,
-          widget.pickupDateTime.month,
-          widget.pickupDateTime.day,
-        );
-        final endCal = DateTime(
-          widget.returnDateTime.year,
-          widget.returnDateTime.month,
-          widget.returnDateTime.day,
-        );
+        if (widget.bookingId != null && widget.bookingId!.isNotEmpty) {
+          // Update the payment status of the existing booking
+          await _carApiService.confirmBookingPayment(widget.bookingId!);
+        } else {
+          // Fallback just in case (should not happen in current flow)
+          final pickupStr = widget.pickupDateTime.toIso8601String().split('T')[0];
+          final startCal = DateTime(
+            widget.pickupDateTime.year,
+            widget.pickupDateTime.month,
+            widget.pickupDateTime.day,
+          );
+          final endCal = DateTime(
+            widget.returnDateTime.year,
+            widget.returnDateTime.month,
+            widget.returnDateTime.day,
+          );
 
-        // For same-day booking, send next day as endDate to satisfy backend constraint
-        final returnDt = endCal.difference(startCal).inDays == 0
-            ? widget.pickupDateTime.add(const Duration(days: 1))
-            : widget.returnDateTime;
-        final returnStr = returnDt.toIso8601String().split('T')[0];
+          // For same-day booking, send next day as endDate to satisfy backend constraint
+          final returnDt = endCal.difference(startCal).inDays == 0
+              ? widget.pickupDateTime.add(const Duration(days: 1))
+              : widget.returnDateTime;
+          final returnStr = returnDt.toIso8601String().split('T')[0];
 
           await _carApiService.createBooking(
             vehicleId: widget.car.id,
@@ -126,10 +131,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
             endDate: returnStr,
             totalPrice: total,
           );
+        }
       } catch (dbError) {
         // Log but don't show to user — payment already succeeded
         debugPrint(
-          '⚠️ DB booking save failed (payment already done): $dbError',
+          '⚠️ DB booking update failed (payment already done): $dbError',
         );
       }
 

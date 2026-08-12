@@ -78,33 +78,29 @@ class BookingService {
       if (error || !bookings) return;
 
       const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const todayStr = `${year}-${month}-${day}`;
 
       for (const booking of bookings) {
         let newStatus = null;
         let cancelledReason = null;
 
-        const startDate = booking.start_date;
-        const endDate = booking.end_date;
+        const startDate = new Date(booking.start_date);
+        const endDate = new Date(booking.end_date);
 
         if (booking.status === 'pending' || (booking.status === 'confirmed' && booking.payment_status === 'unpaid')) {
-          if (todayStr > startDate) {
+          if (now > startDate) {
             newStatus = 'cancelled';
-            cancelledReason = 'Booking request expired (unpaid/unapproved before start date)';
+            cancelledReason = 'Booking request expired (unpaid/unapproved before start time)';
           }
         } else if (booking.status === 'confirmed' && booking.payment_status === 'paid') {
-          if (todayStr >= startDate) {
-            if (todayStr > endDate) {
+          if (now >= startDate) {
+            if (now >= endDate) {
               newStatus = 'completed';
             } else {
               newStatus = 'active';
             }
           }
         } else if (booking.status === 'active') {
-          if (todayStr > endDate) {
+          if (now >= endDate) {
             newStatus = 'completed';
           }
         }
