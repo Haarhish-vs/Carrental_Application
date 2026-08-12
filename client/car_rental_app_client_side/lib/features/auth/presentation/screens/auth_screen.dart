@@ -76,18 +76,36 @@ class _AuthScreenState extends State<AuthScreen> {
     });
   }
 
+  void _showToast(String message, {bool isSuccess = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+        backgroundColor: isSuccess ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
   Future<void> _handleSendOtp() async {
     final phone = _phoneController.text.trim();
     if (phone.length < 8) {
+      _showToast('Please check the entered details.');
       setState(
-        () => _errorMessage =
-            'Please enter a valid phone number (e.g. 9876543210)',
+        () => _errorMessage = 'Please enter a valid phone number (e.g. 9876543210)',
       );
       return;
     }
 
-    if (_currentMode == AuthMode.register &&
-        _nameController.text.trim().isEmpty) {
+    if (_currentMode == AuthMode.register && _nameController.text.trim().isEmpty) {
+      _showToast('Please check the entered details.');
       setState(() => _errorMessage = 'Please enter your full name to register');
       return;
     }
@@ -100,38 +118,13 @@ class _AuthScreenState extends State<AuthScreen> {
     try {
       final fullPhone = phone.startsWith('+') ? phone : '+91$phone';
 
-      // 1. If in Register mode, FIRST check if phone number already exists in DB
-      if (_currentMode == AuthMode.register) {
-        debugPrint(
-          '📝 [Register Flow] Checking if phone number $fullPhone is already registered...',
-        );
-        final alreadyRegistered = await _authService.isPhoneRegistered(
-          fullPhone,
-        );
-
-        if (alreadyRegistered) {
-          debugPrint(
-            '⚠️ [Register Flow] Phone number $fullPhone is already registered! Blocking OTP dispatch.',
-          );
-          if (!mounted) return;
-          setState(() {
-            _isLoading = false;
-            _errorMessage =
-                'This phone number is already registered. Please login.';
-          });
-          return; // DO NOT SEND OTP, DO NOT OPEN OTP SCREEN
-        }
-        debugPrint(
-          '✅ [Register Flow] Phone number $fullPhone is new. Proceeding to generate & send OTP...',
-        );
-      }
-
-      // 2. Phone is new (or in Login mode): Request OTP from backend
+      // Request OTP from backend (Backend validates DB FIRST: 409 for existing on register, 404 for not found on login)
       final devOtp = await _authService.sendOtp(
         fullPhone,
         isRegister: _currentMode == AuthMode.register,
       );
 
+      _showToast('OTP sent successfully', isSuccess: true);
       _startResendTimer();
 
       if (!mounted) return;
@@ -144,9 +137,11 @@ class _AuthScreenState extends State<AuthScreen> {
       });
     } catch (e) {
       if (!mounted) return;
+      final msg = e.toString().replaceAll('Exception:', '').trim();
       setState(() {
-        _errorMessage = e.toString().replaceAll('Exception:', '').trim();
+        _errorMessage = msg;
       });
+      _showToast(msg, isSuccess: false);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -155,15 +150,14 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _handleVerifyOtp() async {
     final otp = _otpController.text.trim();
     if (otp.length < 4) {
+      _showToast('Please check the entered details.');
       setState(() => _errorMessage = 'Please enter the 6-digit OTP code');
       return;
     }
 
     final phone = _phoneController.text.trim();
     final fullPhone = phone.startsWith('+') ? phone : '+91$phone';
-    final name = _currentMode == AuthMode.register
-        ? _nameController.text.trim()
-        : null;
+    final name = _currentMode == AuthMode.register ? _nameController.text.trim() : null;
 
     setState(() {
       _isLoading = true;
@@ -180,24 +174,12 @@ class _AuthScreenState extends State<AuthScreen> {
 
       if (!mounted) return;
 
-      // Existing user detection during registration
-      if (result['alreadyExists'] == true) {
-        debugPrint(
-          '🔍 [AuthScreen] Phone number already registered! Switching to Login tab.',
-        );
-        setState(() {
-          _currentMode = AuthMode.login;
-          _currentStep = 0;
-          _otpController.clear();
-          _errorMessage = 'Phone number already exists. Please login.';
-        });
-        return;
-      }
+      final successMsg = result['message']?.toString() ??
+          (_currentMode == AuthMode.register ? 'Account created successfully' : 'Login successful');
 
-      // Successful registration or login
-      debugPrint(
-        '✅ [AuthScreen] Auth flow successfully completed. Navigating to Home/caller.',
-      );
+      _showToast(successMsg, isSuccess: true);
+
+      debugPrint('✅ [AuthScreen] Auth flow successfully completed: $successMsg');
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop(true);
       } else {
@@ -207,9 +189,11 @@ class _AuthScreenState extends State<AuthScreen> {
       }
     } catch (e) {
       if (!mounted) return;
+      final msg = e.toString().replaceAll('Exception:', '').trim();
       setState(() {
-        _errorMessage = e.toString().replaceAll('Exception:', '').trim();
+        _errorMessage = msg;
       });
+      _showToast(msg, isSuccess: false);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

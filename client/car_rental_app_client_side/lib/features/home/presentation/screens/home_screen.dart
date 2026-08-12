@@ -19,6 +19,7 @@ import 'car_detail_screen.dart';
 import 'my_bookings_screen.dart';
 import 'my_cars_screen.dart';
 import '../../../support/presentation/screens/support_screen.dart';
+import '../../../profile/presentation/screens/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -37,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String? _userName;
   String? _userLocation;
+  String? _profileImageUrl;
 
   // Search form state
   LocationModel? _selectedLocationModel;
@@ -78,6 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final user = AuthService.currentUser!;
       final fullName = user['full_name']?.toString() ?? user['fullName']?.toString();
       final phone = user['phone_number']?.toString() ?? user['phoneNumber']?.toString();
+      _profileImageUrl = user['profile_image_url']?.toString() ?? user['profileImageUrl']?.toString();
 
       if (fullName != null && fullName.trim().isNotEmpty) {
         _userName = fullName.trim();
@@ -88,6 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } else {
       _userName = null;
+      _profileImageUrl = null;
     }
   }
 
@@ -296,67 +300,25 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _showProfileModal() {
+  Future<void> _openProfileScreen() async {
     if (!AuthService.isAuthenticated) {
-      _ensureAuthenticated(
+      final loggedIn = await _ensureAuthenticated(
         title: 'User Profile',
         message: 'Please log in or register to view your profile.',
       );
-      return;
+      if (!loggedIn || !mounted) return;
     }
 
-    final user = AuthService.currentUser ?? {};
-    final name = user['full_name']?.toString() ?? user['fullName']?.toString() ?? 'User';
-    final phone = user['phone_number']?.toString() ?? user['phoneNumber']?.toString() ?? '';
-
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const CircleAvatar(
-              backgroundColor: Color(0xFFEAF2FF),
-              child: Icon(Icons.person, color: Color(0xFF1E5AA8)),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (phone.isNotEmpty) ...[
-              const Text('Phone Number', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-              const SizedBox(height: 2),
-              Text(phone, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 14),
-            ],
-            const Text('Account Status: Active', style: TextStyle(color: AppColors.success, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Close'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              await _handleLogout();
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text('Log Out'),
-          ),
-        ],
-      ),
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ProfileScreen()),
     );
+
+    if (mounted) {
+      setState(() {
+        _loadUserInfo();
+        _vehiclesFuture = _fetchVehicles();
+      });
+    }
   }
 
   Widget _buildBody() {
@@ -389,6 +351,7 @@ class _HomeScreenState extends State<HomeScreen> {
           CustomHomeAppBar(
             userName: _userName,
             location: _userLocation,
+            profileImageUrl: _profileImageUrl,
             onMenuTap: () {
               _scaffoldKey.currentState?.openDrawer();
             },
@@ -397,7 +360,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SnackBar(content: Text('Favorites coming soon')),
               );
             },
-            onProfileTap: _showProfileModal,
+            onProfileTap: _openProfileScreen,
           ),
           const SizedBox(height: 10),
           HeroSearchCard(
@@ -625,7 +588,7 @@ class _HomeScreenState extends State<HomeScreen> {
         userLocation: _userLocation,
         onProfileTap: () {
           Navigator.pop(context);
-          _showProfileModal();
+          _openProfileScreen();
         },
         onTripsTap: () {
           Navigator.pop(context);

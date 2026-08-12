@@ -61,17 +61,12 @@ class AuthService {
   /// Called on app startup in main.dart before runApp.
   /// Checks for stored JWT, retrieves it from secure storage, and calls /api/auth/me to validate session.
   static Future<bool> tryAutoLogin() async {
-    debugPrint(
-      '📥 [Auth] Checking encrypted secure storage for existing session token...',
-    );
+    debugPrint('📥 [Auth] Checking secure storage for existing session token...');
     try {
       final savedToken = await _storage.read(key: _tokenKey);
       final savedUserJson = await _storage.read(key: _userKey);
 
       if (savedToken != null && savedToken.isNotEmpty) {
-        debugPrint(
-          '📥 [Auth] Token retrieval successful: Length=${savedToken.length} characters',
-        );
         currentToken = savedToken;
         CarApiService.token = savedToken;
 
@@ -79,16 +74,10 @@ class AuthService {
           try {
             currentUser = jsonDecode(savedUserJson) as Map<String, dynamic>;
             authStateNotifier.value = currentUser;
-            debugPrint(
-              '📥 [Auth] Cached user profile restored from secure storage: ${currentUser?['full_name'] ?? currentUser?['phone_number']}',
-            );
           } catch (_) {}
         }
 
         // Validate token against backend /api/auth/me
-        debugPrint(
-          '🌐 [Auth] Validating session with backend endpoint /api/auth/me...',
-        );
         final authService = AuthService();
         final freshUser = await authService.getMe();
         if (freshUser != null) {
@@ -98,16 +87,10 @@ class AuthService {
           );
           return true;
         } else {
-          debugPrint(
-            '❌ [Auth] Auto-login FAILED: /api/auth/me returned null/invalid response. Removing stale token.',
-          );
+          debugPrint('❌ [Auth] Stale or invalid session. Clearing storage...');
           await logout();
           return false;
         }
-      } else {
-        debugPrint(
-          'ℹ️ [Auth] No stored authentication token found. Starting in Guest mode.',
-        );
       }
     } catch (e) {
       debugPrint('⚠️ [Auth] Auto-login error reading secure storage: $e');
@@ -121,9 +104,6 @@ class AuthService {
     String token,
     Map<String, dynamic> user,
   ) async {
-    debugPrint(
-      '💾 [Auth] Saving JWT token and user profile to FlutterSecureStorage...',
-    );
     currentToken = token;
     currentUser = user;
     CarApiService.token = token;
@@ -131,49 +111,24 @@ class AuthService {
 
     await _storage.write(key: _tokenKey, value: token);
     await _storage.write(key: _userKey, value: jsonEncode(user));
-    debugPrint(
-      '💾 [Auth] Token save complete for user: ${user['full_name'] ?? user['phone_number']}',
-    );
   }
 
-  /// Checks whether a phone number is already registered in the backend database.
-  /// Returns true if already registered, false if new.
-  Future<bool> isPhoneRegistered(String phoneNumber) async {
-    final formattedPhone = phoneNumber.startsWith('+')
-        ? phoneNumber
-        : '+91$phoneNumber';
-    debugPrint(
-      '🔍 [Auth] Checking backend database if phone is already registered: $formattedPhone...',
-    );
+  /// Checks if a phone number exists in the backend DB (409 for register, 404 for login).
+  Future<void> checkPhone(String phoneNumber, {required bool isRegister}) async {
+    final formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : '+91$phoneNumber';
     try {
-      final response = await _dio.post(
-        '/api/auth/verify-otp',
-        data: {'phoneNumber': formattedPhone, 'otp': '123456'},
+      await _dio.post(
+        '/api/auth/check-phone',
+        data: {'phoneNumber': formattedPhone, 'isRegister': isRegister},
       );
-
-      if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'] as Map<String, dynamic>?;
-        final isNewUser = data?['isNewUser'] as bool? ?? false;
-        final isExisting = !isNewUser;
-        debugPrint(
-          '🔍 [Auth] Phone check response for $formattedPhone: isExistingUser=$isExisting (isNewUser=$isNewUser)',
-        );
-        return isExisting;
-      }
-      return false;
     } on DioException catch (e) {
-      debugPrint(
-        '🔍 [Auth] Phone check encountered error: ${e.response?.data ?? e.message}',
-      );
-      return false;
+      throw _mapDioError(e);
     }
   }
 
-  /// Send OTP to phone number
-  Future<String?> sendOtp(String phoneNumber, {bool isRegister = false}) async {
-    final formattedPhone = phoneNumber.startsWith('+')
-        ? phoneNumber
-        : '+91$phoneNumber';
+  /// Send OTP to phone number with strict DB validation before sending
+  Future<String?> sendOtp(String phoneNumber, {required bool isRegister}) async {
+    final formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : '+91$phoneNumber';
     debugPrint(
       '📨 [Auth] Requesting OTP for ${isRegister ? 'REGISTRATION' : 'LOGIN'} to phone: $formattedPhone',
     );
@@ -186,19 +141,11 @@ class AuthService {
 
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] as Map<String, dynamic>?;
-        final rawOtp = data?['otp']?.toString();
-        debugPrint(
-          '📨 [Auth] OTP sent successfully! ${rawOtp != null ? '(Dev OTP: $rawOtp)' : ''}',
-        );
-        return rawOtp;
+        return data?['otp']?.toString();
       }
-      debugPrint(
-        '❌ [Auth] Failed to send OTP: Status code ${response.statusCode}',
-      );
       throw Exception('Failed to send OTP');
     } on DioException catch (e) {
-      debugPrint('❌ [Auth] Send OTP error: ${e.response?.data ?? e.message}');
-      throw _handleError(e);
+      throw _mapDioError(e);
     }
   }
 
@@ -209,9 +156,7 @@ class AuthService {
     String? fullName,
     bool isRegister = false,
   }) async {
-    final formattedPhone = phoneNumber.startsWith('+')
-        ? phoneNumber
-        : '+91$phoneNumber';
+    final formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : '+91$phoneNumber';
     debugPrint(
       '🔐 [Auth] Verifying OTP ($otp) for phone: $formattedPhone (Mode: ${isRegister ? 'REGISTER' : 'LOGIN'})',
     );
@@ -219,78 +164,41 @@ class AuthService {
     try {
       final response = await _dio.post(
         '/api/auth/verify-otp',
-        data: {'phoneNumber': formattedPhone, 'otp': otp.trim()},
+        data: {
+          'phoneNumber': formattedPhone,
+          'otp': otp.trim(),
+          if (fullName != null && fullName.trim().isNotEmpty) 'fullName': fullName.trim(),
+        },
       );
 
-      if (response.statusCode == 200 && response.data != null) {
+      if ((response.statusCode == 200 || response.statusCode == 201) && response.data != null) {
         final data = response.data['data'] as Map<String, dynamic>;
         final token = data['token'] as String;
-        var user = Map<String, dynamic>.from(data['user'] as Map);
-        final isNewUser = data['isNewUser'] as bool? ?? false;
-
-        debugPrint(
-          '🔐 [Auth] OTP verification result: isNewUser=$isNewUser, userId=${user['id']}',
-        );
-
-        // Check if existing user is trying to register
-        if (isRegister && !isNewUser) {
-          debugPrint(
-            '🔍 [Auth] Existing user detected! User attempted to register with an already registered phone: $formattedPhone',
-          );
-          return {
-            'alreadyExists': true,
-            'token': token,
-            'user': user,
-            'isNewUser': false,
-          };
-        }
-
-        // Set token in memory for completeProfile call if registration provided a name
-        currentToken = token;
-        CarApiService.token = token;
-
-        if (fullName != null && fullName.trim().isNotEmpty) {
-          debugPrint(
-            '📝 [Auth] Completing profile with full name "$fullName" for new user...',
-          );
-          try {
-            final updatedUser = await completeProfile(fullName.trim());
-            user = updatedUser;
-          } catch (e) {
-            debugPrint(
-              '⚠️ [Auth] Error updating profile name during registration: $e',
-            );
-          }
-        }
+        final user = Map<String, dynamic>.from(data['user'] as Map);
+        final isNewUser = data['isNewUser'] as bool? ?? (response.statusCode == 201);
+        final message = response.data['message']?.toString() ??
+            (isNewUser ? 'Account created successfully' : 'Login successful');
 
         // Persist token and user in encrypted secure storage
         await persistSession(token, user);
-        debugPrint(
-          '✅ [Auth] Login/Registration SUCCESS! Active user: ${user['full_name'] ?? user['phone_number']}',
-        );
+        debugPrint('✅ [Auth] Auth SUCCESS: ${user['full_name'] ?? user['phone_number']}');
 
         return {
-          'alreadyExists': false,
           'token': token,
           'user': user,
           'isNewUser': isNewUser,
+          'message': message,
+          'statusCode': response.statusCode,
         };
       }
-      debugPrint('❌ [Auth] Invalid response format during OTP verification');
       throw Exception('Invalid OTP verification response');
     } on DioException catch (e) {
-      debugPrint(
-        '❌ [Auth] OTP verification failed: ${e.response?.data ?? e.message}',
-      );
-      throw _handleError(e);
+      throw _mapDioError(e);
     }
   }
 
   /// Complete profile with full name
   Future<Map<String, dynamic>> completeProfile(String fullName) async {
-    debugPrint(
-      '📝 [Auth] Calling /api/auth/complete-profile with name "$fullName"...',
-    );
     try {
       final response = await _dio.post(
         '/api/auth/complete-profile',
@@ -303,24 +211,17 @@ class AuthService {
         if (currentToken != null) {
           await persistSession(currentToken!, user);
         }
-        debugPrint(
-          '✅ [Auth] Profile name updated successfully: ${user['full_name']}',
-        );
         return user;
       }
       throw Exception('Failed to update profile name');
     } on DioException catch (e) {
-      debugPrint(
-        '❌ [Auth] Profile completion error: ${e.response?.data ?? e.message}',
-      );
-      throw _handleError(e);
+      throw _mapDioError(e);
     }
   }
 
   /// Fetch authenticated user profile from /api/auth/me
   Future<Map<String, dynamic>?> getMe() async {
     if (!isAuthenticated) return null;
-    debugPrint('🌐 [Auth] GET /api/auth/me request initiated...');
     try {
       final response = await _dio.get('/api/auth/me');
       if (response.statusCode == 200 && response.data != null) {
@@ -332,57 +233,74 @@ class AuthService {
           if (currentToken != null) {
             await _storage.write(key: _userKey, value: jsonEncode(user));
           }
-          debugPrint(
-            '🌐 [Auth] GET /api/auth/me profile load SUCCESS for: ${user['full_name'] ?? user['phone_number']}',
-          );
           return user;
         }
       }
-      debugPrint(
-        '⚠️ [Auth] GET /api/auth/me failed with status code ${response.statusCode}',
-      );
       return null;
-    } on DioException catch (e) {
-      debugPrint('❌ [Auth] GET /api/auth/me error: ${e.message}');
+    } on DioException {
       return null;
     }
   }
 
   /// Logout: Clears encrypted storage, tokens, user data, and notifies listeners.
   static Future<void> logout() async {
-    final userName =
-        currentUser?['full_name'] ?? currentUser?['phone_number'] ?? 'User';
-    debugPrint('🚪 [Auth] Logging out user "$userName"...');
-    debugPrint(
-      '🚪 [Auth] Token removal started: Clearing JWT token and cached user data from FlutterSecureStorage...',
-    );
-
+    debugPrint('🚪 [Auth] Clearing session and secure storage...');
     currentToken = null;
     currentUser = null;
     CarApiService.token = null;
     authStateNotifier.value = null;
-    debugPrint(
-      '🔄 [Auth] Auth-state reset complete: currentToken=null, currentUser=null, CarApiService.token=null.',
-    );
 
     try {
       await _storage.deleteAll();
-      debugPrint(
-        '🚪 [Auth] Token removal SUCCESS: All encrypted keys wiped from FlutterSecureStorage.',
-      );
     } catch (e) {
-      debugPrint('⚠️ [Auth] Error clearing secure storage on logout: $e');
+      debugPrint('⚠️ [Auth] Error clearing secure storage: $e');
     }
-    debugPrint('🚪 [Auth] Logout flow completed successfully.');
   }
 
-  Exception _handleError(DioException error) {
-    if (error.response != null && error.response?.data is Map) {
-      final msg = error.response?.data['message'];
-      if (msg != null) return Exception(msg.toString());
+  /// Maps backend HTTP status codes & Dio exceptions to exact required user-facing messages
+  Exception _mapDioError(DioException error) {
+    if (error.response != null) {
+      final status = error.response?.statusCode;
+      final responseData = error.response?.data;
+      final serverMsg = responseData is Map ? responseData['message']?.toString() : null;
+
+      // Exact HTTP status code mapping
+      switch (status) {
+        case 201:
+          return Exception('Account created successfully');
+        case 200:
+          return Exception(serverMsg ?? 'Login successful');
+        case 409:
+          return Exception('Phone number already registered. Please login.');
+        case 404:
+          return Exception('Phone number not registered. Please register.');
+        case 400:
+          return Exception('Invalid OTP. Please try again.');
+        case 410:
+          return Exception('OTP expired. Please request a new OTP.');
+        case 429:
+          return Exception('Too many attempts. Please try again later.');
+        case 401:
+          return Exception('Session expired. Please login again.');
+        case 403:
+          return Exception("You don't have permission to perform this action.");
+        case 422:
+          return Exception('Please check the entered details.');
+        case 500:
+          return Exception('Something went wrong. Please try again.');
+        default:
+          return Exception(serverMsg ?? 'Something went wrong. Please try again.');
+      }
     }
-    return Exception(
-      error.message ?? 'Authentication failed. Please check your connection.',
-    );
+
+    switch (error.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+      case DioExceptionType.connectionError:
+        return Exception('Unable to connect. Check your internet connection.');
+      default:
+        return Exception('Unable to connect. Check your internet connection.');
+    }
   }
 }

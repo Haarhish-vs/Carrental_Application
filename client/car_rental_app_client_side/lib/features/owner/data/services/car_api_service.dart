@@ -239,6 +239,23 @@ class CarApiService {
     }
   }
 
+  /// Fetch a single vehicle's full details including dynamic owner info.
+  Future<Map<String, dynamic>?> getVehicleDetails(String vehicleId) async {
+    try {
+      final response = await _dio.get('/api/vehicles/$vehicleId');
+      if (response.statusCode == 200 && response.data != null) {
+        final success = response.data['success'] as bool? ?? false;
+        if (success && response.data['data'] != null) {
+          return Map<String, dynamic>.from(response.data['data'] as Map);
+        }
+      }
+      return null;
+    } on DioException catch (e) {
+      debugPrint('⚠️ [CarApiService] Error fetching vehicle details: ${e.message}');
+      return null;
+    }
+  }
+
   /// Fetch the logged-in user's listed vehicles.
   Future<List<Map<String, dynamic>>> getMyListings() async {
     try {

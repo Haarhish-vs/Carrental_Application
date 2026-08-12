@@ -5,6 +5,8 @@ const authController = require('./auth.controller');
 const { protect } = require('../../shared/middlewares/auth.middleware');
 
 // Public OTP auth endpoints
+router.post('/check-phone', authController.checkPhone);
+router.post('/register/check', authController.checkPhone);
 router.post('/send-otp', authController.sendOtp);
 router.post('/verify-otp', authController.verifyOtp);
 

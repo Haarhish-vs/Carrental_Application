@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../../auth/services/auth_service.dart';
+import '../../../owner/data/services/car_api_service.dart';
 import '../../models/car_model.dart';
 import 'reserve_screen.dart';
 
@@ -23,8 +24,58 @@ class CarDetailScreen extends StatefulWidget {
 
 class _CarDetailScreenState extends State<CarDetailScreen> {
   final PageController _pageController = PageController();
+  final CarApiService _carApiService = CarApiService();
   int _currentImageIndex = 0;
   bool _isLiked = false;
+
+  String? _ownerName;
+  String? _ownerImageUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _initOwnerData();
+    _fetchDynamicOwnerDetails();
+  }
+
+  void _initOwnerData() {
+    _ownerName = widget.car.ownerName;
+    _ownerImageUrl = widget.car.ownerImageUrl;
+
+    // Check if the current user is the owner of this car
+    if (widget.car.ownerId.isNotEmpty &&
+        AuthService.currentUser != null &&
+        widget.car.ownerId == AuthService.currentUser?['id']) {
+      _ownerName ??= AuthService.currentUser?['full_name']?.toString() ?? 'Car Owner';
+      _ownerImageUrl ??= AuthService.currentUser?['profile_image_url']?.toString();
+    }
+  }
+
+  Future<void> _fetchDynamicOwnerDetails() async {
+    try {
+      final details = await _carApiService.getVehicleDetails(widget.car.id);
+      if (details != null && details['owner'] != null && details['owner'] is Map) {
+        final ownerMap = Map<String, dynamic>.from(details['owner'] as Map);
+        final name = ownerMap['full_name']?.toString() ?? ownerMap['fullName']?.toString();
+        final image = ownerMap['profile_image_url']?.toString() ??
+            ownerMap['profileImageUrl']?.toString() ??
+            ownerMap['avatar_url']?.toString();
+
+        if (mounted) {
+          setState(() {
+            if (name != null && name.trim().isNotEmpty) {
+              _ownerName = name.trim();
+            }
+            if (image != null && image.trim().isNotEmpty) {
+              _ownerImageUrl = image.trim();
+            }
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('ℹ️ [CarDetailScreen] Using initial owner data: $e');
+    }
+  }
 
   @override
   void dispose() {
@@ -319,59 +370,67 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                         ),
                         const SizedBox(height: 20),
 
-                        // Host Info Card
-                        Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.grey.shade100),
-                          ),
-                          child: Row(
-                            children: [
-                              const CircleAvatar(
-                                radius: 24,
-                                backgroundImage: NetworkImage(
-                                  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
-                                ),
+                        // Host Info Card (Dynamic owner information)
+                        Builder(
+                          builder: (context) {
+                            final displayOwnerName = _ownerName?.isNotEmpty == true
+                                ? _ownerName!
+                                : (widget.car.ownerName?.isNotEmpty == true
+                                    ? widget.car.ownerName!
+                                    : 'Car Owner');
+                            final displayOwnerImage = _ownerImageUrl?.isNotEmpty == true
+                                ? _ownerImageUrl
+                                : widget.car.ownerImageUrl;
+
+                            return Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: Colors.grey.shade100),
                               ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Hosted by Michael',
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.textPrimary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Row(
+                              child: Row(
+                                children: [
+                                  _buildOwnerAvatar(displayOwnerImage, displayOwnerName),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const Icon(
-                                          Icons.check_circle_rounded,
-                                          size: 14,
-                                          color: AppColors.success,
-                                        ),
-                                        const SizedBox(width: 4),
                                         Text(
-                                          'Verified Owner',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey.shade500,
-                                            fontWeight: FontWeight.w500,
+                                          'Hosted by $displayOwnerName',
+                                          style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.textPrimary,
                                           ),
+                                        ),
+                                        const SizedBox(height: 3),
+                                        Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.check_circle_rounded,
+                                              size: 14,
+                                              color: AppColors.success,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'Verified Owner',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey.shade500,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            );
+                          },
                         ),
                         const SizedBox(height: 24),
 
@@ -611,6 +670,67 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildOwnerAvatar(String? imageUrl, String displayName) {
+    final hasValidUrl = imageUrl != null &&
+        imageUrl.trim().isNotEmpty &&
+        (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'));
+
+    if (hasValidUrl) {
+      return CircleAvatar(
+        radius: 24,
+        backgroundColor: const Color(0xFFEAF2FF),
+        child: ClipOval(
+          child: Image.network(
+            imageUrl,
+            width: 48,
+            height: 48,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildInitialsAvatar(displayName);
+            },
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return const Center(
+                child: SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+    }
+
+    return _buildInitialsAvatar(displayName);
+  }
+
+  Widget _buildInitialsAvatar(String displayName) {
+    final initial = displayName.trim().isNotEmpty
+        ? displayName.trim()[0].toUpperCase()
+        : 'O';
+
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: const BoxDecoration(
+        color: Color(0xFFEAF2FF),
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          initial,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary,
+          ),
+        ),
       ),
     );
   }

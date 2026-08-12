@@ -1,12 +1,26 @@
 // auth.controller.js
 const authService = require('./auth.service');
 
+const checkPhone = async (req, res, next) => {
+  try {
+    const { phoneNumber, isRegister } = req.body;
+    const result = await authService.checkPhone(phoneNumber, isRegister);
+
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const sendOtp = async (req, res, next) => {
   try {
     const { phoneNumber, isRegister } = req.body;
     const rawOtp = await authService.sendOtp(phoneNumber, isRegister);
     
-    // In development or test, we return the raw OTP in response so client tests can use it
     const responseData = {};
     if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
       responseData.otp = rawOtp;
@@ -24,12 +38,12 @@ const sendOtp = async (req, res, next) => {
 
 const verifyOtp = async (req, res, next) => {
   try {
-    const { phoneNumber, otp } = req.body;
-    const result = await authService.verifyOtpAndLogin(phoneNumber, otp);
+    const { phoneNumber, otp, fullName } = req.body;
+    const result = await authService.verifyOtpAndLogin(phoneNumber, otp, fullName);
 
-    return res.status(200).json({
+    return res.status(result.statusCode || 200).json({
       success: true,
-      message: 'Verification successful',
+      message: result.message,
       data: {
         token: result.token,
         user: result.user,
@@ -62,6 +76,7 @@ const getMe = async (req, res, next) => {
   try {
     return res.status(200).json({
       success: true,
+      message: 'User session verified',
       data: {
         user: req.user
       }
@@ -72,6 +87,7 @@ const getMe = async (req, res, next) => {
 };
 
 module.exports = {
+  checkPhone,
   sendOtp,
   verifyOtp,
   completeProfile,
