@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../models/car_model.dart';
 import '../../../wishlist/presentation/controllers/wishlist_controller.dart';
+import '../../services/review_service.dart';
+import '../widgets/reviews_bottom_sheet.dart';
 
 /// Reusable car card used by both Recommended Cars and Popular Cars.
 /// Tapping the card fires onCarTap; tapping the button fires onBookNow —
@@ -275,6 +277,45 @@ class CarCard extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 10),
+                    FutureBuilder<double?>(
+                      future: ReviewService.getAverageRating(car.id),
+                      builder: (context, snapshot) {
+                        final rating = snapshot.data;
+                        if (rating == null) {
+                          return const SizedBox(height: 16); // space holder
+                        }
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Row(
+                              children: List.generate(5, (index) {
+                                return Icon(
+                                  index < rating.round()
+                                      ? Icons.star_rounded
+                                      : Icons.star_outline_rounded,
+                                  size: 14,
+                                  color: AppColors.rating,
+                                );
+                              }),
+                            ),
+                            GestureDetector(
+                              onTap: () => ReviewsBottomSheet.show(context, car.id),
+                              child: const Text(
+                                'View Reviews',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),

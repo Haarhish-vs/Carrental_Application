@@ -18,6 +18,8 @@ class CarModel {
   final double? depositAmount;
   final int? minimumRentalDays;
   final int? reviewsCount;
+  final String? ownerName;
+  final String? ownerImageUrl;
 
   const CarModel({
     required this.id,
@@ -39,7 +41,57 @@ class CarModel {
     this.depositAmount,
     this.minimumRentalDays,
     this.reviewsCount,
+    this.ownerName,
+    this.ownerImageUrl,
   });
+
+  CarModel copyWith({
+    String? id,
+    String? name,
+    String? imageUrl,
+    List<String>? images,
+    String? transmission,
+    String? fuelType,
+    int? seats,
+    double? rating,
+    double? pricePerDay,
+    String? city,
+    String? status,
+    bool? isAvailable,
+    String? ownerId,
+    String? carType,
+    double? distanceKm,
+    String? pickupLocation,
+    double? depositAmount,
+    int? minimumRentalDays,
+    int? reviewsCount,
+    String? ownerName,
+    String? ownerImageUrl,
+  }) {
+    return CarModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      imageUrl: imageUrl ?? this.imageUrl,
+      images: images ?? this.images,
+      transmission: transmission ?? this.transmission,
+      fuelType: fuelType ?? this.fuelType,
+      seats: seats ?? this.seats,
+      rating: rating ?? this.rating,
+      pricePerDay: pricePerDay ?? this.pricePerDay,
+      city: city ?? this.city,
+      status: status ?? this.status,
+      isAvailable: isAvailable ?? this.isAvailable,
+      ownerId: ownerId ?? this.ownerId,
+      carType: carType ?? this.carType,
+      distanceKm: distanceKm ?? this.distanceKm,
+      pickupLocation: pickupLocation ?? this.pickupLocation,
+      depositAmount: depositAmount ?? this.depositAmount,
+      minimumRentalDays: minimumRentalDays ?? this.minimumRentalDays,
+      reviewsCount: reviewsCount ?? this.reviewsCount,
+      ownerName: ownerName ?? this.ownerName,
+      ownerImageUrl: ownerImageUrl ?? this.ownerImageUrl,
+    );
+  }
 
   factory CarModel.fromJson(Map<String, dynamic> json) {
     final String id = json['id']?.toString() ?? '';
@@ -114,6 +166,17 @@ class CarModel {
     final int? minimumRentalDays = int.tryParse(json['minimum_rental_days']?.toString() ?? json['minimumRentalDays']?.toString() ?? '');
     final int? reviewsCount = int.tryParse(json['reviews_count']?.toString() ?? json['reviewsCount']?.toString() ?? '');
 
+    String? ownerName;
+    String? ownerImageUrl;
+    if (json['owner'] is Map) {
+      final ownerMap = json['owner'] as Map;
+      ownerName = ownerMap['full_name']?.toString() ?? ownerMap['fullName']?.toString();
+      ownerImageUrl = ownerMap['profile_image_url']?.toString() ?? ownerMap['profileImageUrl']?.toString() ?? ownerMap['avatar_url']?.toString();
+    } else {
+      ownerName = json['owner_name']?.toString() ?? json['ownerName']?.toString();
+      ownerImageUrl = json['owner_image_url']?.toString() ?? json['ownerImageUrl']?.toString();
+    }
+
     return CarModel(
       id: id,
       name: name.isNotEmpty ? name : 'Car',
@@ -134,6 +197,8 @@ class CarModel {
       depositAmount: depositAmount,
       minimumRentalDays: minimumRentalDays,
       reviewsCount: reviewsCount,
+      ownerName: ownerName,
+      ownerImageUrl: ownerImageUrl,
     );
   }
 }

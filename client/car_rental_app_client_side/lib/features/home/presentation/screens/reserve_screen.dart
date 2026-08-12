@@ -815,7 +815,7 @@ class _ReserveScreenState extends State<ReserveScreen> {
                                   TextButton(
                                     onPressed: () {
                                       Navigator.pop(ctx); // Close dialog
-                                      Navigator.pop(context); // Pop reserve screen
+                                      Navigator.of(context).popUntil((route) => route.isFirst); // Pop to home screen
                                     },
                                     child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold)),
                                   ),
