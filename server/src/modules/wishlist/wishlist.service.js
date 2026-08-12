@@ -172,8 +172,8 @@ class WishlistService {
         const rev = reviewsMap[v.id];
         const dynamicRating = rev && rev.count > 0
           ? parseFloat((rev.total / rev.count).toFixed(1))
-          : (v.rating ? parseFloat(v.rating) : 0.0);
-        const reviewsCount = rev ? rev.count : (v.reviews_count || 0);
+          : 0.0;
+        const reviewsCount = rev ? rev.count : 0;
         const desc = (v.vehicle_description || '').toLowerCase();
         const ac = !desc.includes('no ac') && !desc.includes('no air conditioning');
         const navigation = !desc.includes('no gps') && !desc.includes('no navigation');
