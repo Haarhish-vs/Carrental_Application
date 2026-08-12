@@ -100,11 +100,20 @@ class _HomeScreenState extends State<HomeScreen> {
     String? startDate,
     String? endDate,
   }) async {
-    debugPrint('🔍 [HomeScreen] Querying vehicles -> city: "${city ?? 'ALL'}", startDate: "$startDate", endDate: "$endDate"');
+    // Default to a 1-year window if no dates are provided to exclude any car with an active/future booking
+    final now = DateTime.now();
+    final defaultStart = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final nextYear = now.add(const Duration(days: 365));
+    final defaultEnd = '${nextYear.year}-${nextYear.month.toString().padLeft(2, '0')}-${nextYear.day.toString().padLeft(2, '0')}';
+
+    final queryStart = startDate ?? defaultStart;
+    final queryEnd = endDate ?? defaultEnd;
+
+    debugPrint('🔍 [HomeScreen] Querying vehicles -> city: "${city ?? 'ALL'}", startDate: "$queryStart", endDate: "$queryEnd"');
     final vehicles = await _carApiService.getVehicles(
       city: city,
-      startDate: startDate,
-      endDate: endDate,
+      startDate: queryStart,
+      endDate: queryEnd,
     );
     final mapped = vehicles.map(CarModel.fromJson).toList();
     final available = mapped.where((car) => car.isAvailable).toList();
