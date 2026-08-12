@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../models/car_model.dart';
 import '../../../wishlist/presentation/controllers/wishlist_controller.dart';
-import '../../services/review_service.dart';
-import '../../../owner/data/services/car_api_service.dart';
-import '../widgets/reviews_bottom_sheet.dart';
 
 /// Reusable car card used by both Recommended Cars and Popular Cars.
 /// Tapping the card fires onCarTap; tapping the button fires onBookNow —
@@ -72,10 +69,49 @@ class CarCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Wishlist Heart Button (Top Left)
+                  // Rating Badge (Top Left)
                   Positioned(
                     top: 8,
                     left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.95),
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
+                          const SizedBox(width: 3),
+                          Text(
+                            car.rating > 0 ? car.rating.toStringAsFixed(1) : 'New',
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          if (car.reviewsCount != null && car.reviewsCount! > 0) ...[
+                            const SizedBox(width: 2),
+                            Text(
+                              '(${car.reviewsCount})',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Wishlist Heart Button (Top Right)
+                  Positioned(
+                    top: 8,
+                    right: 8,
                     child: AnimatedBuilder(
                       animation: WishlistController.instance,
                       builder: (context, _) {
@@ -246,45 +282,6 @@ class CarCard extends StatelessWidget {
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 10),
-                    FutureBuilder<double?>(
-                      future: CarApiService().getAverageRating(car.id),
-                      builder: (context, snapshot) {
-                        final rating = snapshot.data;
-                        if (rating == null) {
-                          return const SizedBox(height: 16); // space holder
-                        }
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Row(
-                              children: List.generate(5, (index) {
-                                return Icon(
-                                  index < rating.round()
-                                      ? Icons.star_rounded
-                                      : Icons.star_outline_rounded,
-                                  size: 14,
-                                  color: AppColors.rating,
-                                );
-                              }),
-                            ),
-                            GestureDetector(
-                              onTap: () => ReviewsBottomSheet.show(context, car.id),
-                              child: const Text(
-                                'View Reviews',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.bold,
-                                  decoration: TextDecoration.underline,
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
                     ),
                   ],
                 ),

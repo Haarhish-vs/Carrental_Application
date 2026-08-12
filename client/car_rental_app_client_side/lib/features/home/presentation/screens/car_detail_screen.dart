@@ -363,20 +363,23 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              widget.car.rating.toStringAsFixed(1),
+                              widget.car.rating > 0 ? widget.car.rating.toStringAsFixed(1) : 'New',
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.textPrimary,
                               ),
                             ),
-                            Text(
-                              widget.car.reviewsCount != null && widget.car.reviewsCount! > 0
-                                  ? ' - ${widget.car.reviewsCount} reviews'
-                                  : ' - No reviews yet',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade500,
+                            Flexible(
+                              child: Text(
+                                widget.car.reviewsCount != null && widget.car.reviewsCount! > 0
+                                    ? ' - ${widget.car.reviewsCount} reviews'
+                                    : ' - No reviews yet',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -635,7 +638,7 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                           physics: const NeverScrollableScrollPhysics(),
                           crossAxisSpacing: 12,
                           mainAxisSpacing: 12,
-                          childAspectRatio: 2.2,
+                          childAspectRatio: 1.8,
                           children: [
                             _buildSpecCard(
                               Icons.local_gas_station_outlined,

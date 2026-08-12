@@ -192,15 +192,26 @@ class _SupportScreenState extends State<SupportScreen> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            const Icon(Icons.verified_user_outlined, size: 14, color: Colors.blueGrey),
-                            const SizedBox(width: 4),
-                            const Text('Secure & Reliable', style: TextStyle(fontSize: 10, color: Colors.blueGrey, fontWeight: FontWeight.w600)),
-                            const SizedBox(width: 12),
-                            const Icon(Icons.bolt, size: 14, color: Colors.blueGrey),
-                            const SizedBox(width: 4),
-                            const Text('Quick Response', style: TextStyle(fontSize: 10, color: Colors.blueGrey, fontWeight: FontWeight.w600)),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 6,
+                          children: const [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.verified_user_outlined, size: 14, color: Colors.blueGrey),
+                                SizedBox(width: 4),
+                                Text('Secure & Reliable', style: TextStyle(fontSize: 10, color: Colors.blueGrey, fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.bolt, size: 14, color: Colors.blueGrey),
+                                SizedBox(width: 4),
+                                Text('Quick Response', style: TextStyle(fontSize: 10, color: Colors.blueGrey, fontWeight: FontWeight.w600)),
+                              ],
+                            ),
                           ],
                         ),
                         const SizedBox(height: 16),
@@ -434,13 +445,15 @@ class _SupportScreenState extends State<SupportScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  key: _faqKey,
-                  'Frequently Asked Questions',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                Expanded(
+                  child: Text(
+                    key: _faqKey,
+                    'Frequently Asked Questions',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
                   ),
                 ),
                 TextButton(
