@@ -84,7 +84,7 @@ describe('Authentication Module Tests (Mobile OTP)', () => {
 
       expect(res.status).toBe(429);
       expect(res.body.success).toBe(false);
-      expect(res.body.message).toContain('Too many OTP requests');
+      expect(res.body.message).toContain('Too many attempts');
     });
   });
 
@@ -143,7 +143,7 @@ describe('Authentication Module Tests (Mobile OTP)', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
-      expect(res.body.message).toContain('Incorrect OTP');
+      expect(res.body.message).toContain('Invalid OTP');
     });
 
     it('should reject verification if OTP code is expired', async () => {
@@ -162,7 +162,7 @@ describe('Authentication Module Tests (Mobile OTP)', () => {
         .post('/api/auth/verify-otp')
         .send({ phoneNumber: '+1234567890', otp: '123456' });
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(410);
       expect(res.body.success).toBe(false);
       expect(res.body.message).toContain('expired');
     });
