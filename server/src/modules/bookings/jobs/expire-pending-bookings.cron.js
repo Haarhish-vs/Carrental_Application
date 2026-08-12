@@ -4,18 +4,18 @@ const { supabase } = require('../../../config/supabase');
 
 /**
  * Searches for bookings in 'pending' status that are 'unpaid'
- * and created more than 15 minutes ago, and cancels them.
+ * and created more than 24 hours ago, and cancels them.
  */
 const expirePendingBookings = async () => {
   try {
-    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
     const { data: staleBookings, error: fetchError } = await supabase
       .from('bookings')
       .select('id, total_price, deposit_amount')
       .eq('status', 'pending')
       .eq('payment_status', 'unpaid')
-      .lt('created_at', fifteenMinutesAgo);
+      .lt('created_at', twentyFourHoursAgo);
 
     if (fetchError) {
       console.error('[Cron Job Expiry Error] Fetching stale bookings failed:', fetchError.message);

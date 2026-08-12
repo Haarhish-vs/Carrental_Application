@@ -86,10 +86,14 @@ class BookingService {
         const startDate = new Date(booking.start_date);
         const endDate = new Date(booking.end_date);
 
+        // Set start day end to 23:59:59 so same-day bookings do not expire during the day
+        const startDayEnd = new Date(startDate);
+        startDayEnd.setHours(23, 59, 59, 999);
+
         if (booking.status === 'pending' || (booking.status === 'confirmed' && booking.payment_status === 'unpaid')) {
-          if (now > startDate) {
+          if (now > startDayEnd) {
             newStatus = 'cancelled';
-            cancelledReason = 'Booking request expired (unpaid/unapproved before start time)';
+            cancelledReason = 'Booking request expired (unpaid/unapproved before start date)';
           }
         } else if (booking.status === 'confirmed' && booking.payment_status === 'paid') {
           if (now >= startDate) {
