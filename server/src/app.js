@@ -9,6 +9,7 @@ const documentRoutes = require('./modules/documents/document.routes');
 const profileRoutes = require('./modules/profile/profile.routes');
 const wishlistRoutes = require('./modules/wishlist/wishlist.routes');
 const carCompatRoutes = require('./modules/vehicles/car-compat.routes');
+const reviewRoutes = require('./modules/reviews/review.routes');
 const errorHandler = require('./shared/middlewares/error.middleware');
 
 const app = express();
@@ -396,6 +397,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/favorites', wishlistRoutes);
 app.use('/api/cars', carCompatRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // Unhandled Endpoint Catcher (404)
 app.use((req, res, next) => {

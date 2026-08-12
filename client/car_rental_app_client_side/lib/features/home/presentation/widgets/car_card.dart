@@ -3,6 +3,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../models/car_model.dart';
 import '../../../wishlist/presentation/controllers/wishlist_controller.dart';
 import '../../services/review_service.dart';
+import '../../../owner/data/services/car_api_service.dart';
 import '../widgets/reviews_bottom_sheet.dart';
 
 /// Reusable car card used by both Recommended Cars and Popular Cars.
@@ -118,39 +119,7 @@ class CarCard extends StatelessWidget {
                       },
                     ),
                   ),
-                  // Rating Badge (Top Right)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.star_rounded,
-                            size: 14,
-                            color: AppColors.rating,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            car.rating.toString(),
-                            style: const TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+
                   // Unavailable banner
                   if (!available)
                     Positioned(
@@ -280,7 +249,7 @@ class CarCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     FutureBuilder<double?>(
-                      future: ReviewService.getAverageRating(car.id),
+                      future: CarApiService().getAverageRating(car.id),
                       builder: (context, snapshot) {
                         final rating = snapshot.data;
                         if (rating == null) {
