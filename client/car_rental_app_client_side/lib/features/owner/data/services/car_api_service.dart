@@ -573,6 +573,58 @@ class CarApiService {
     }
   }
 
+  /// Fetch all reviews for a specific vehicle
+  Future<List<Map<String, dynamic>>> getVehicleReviews(String vehicleId) async {
+    try {
+      final response = await _dio.get('/api/reviews/vehicle/$vehicleId');
+      if (response.statusCode == 200 && response.data != null) {
+        final list = response.data as List<dynamic>;
+        return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      debugPrint('Error fetching reviews: ${e.message}');
+      return [];
+    }
+  }
+
+  /// Fetch average rating for a vehicle
+  Future<double?> getAverageRating(String vehicleId) async {
+    final reviews = await getVehicleReviews(vehicleId);
+    if (reviews.isEmpty) return null;
+    double total = 0;
+    for (var r in reviews) {
+      total += (r['rating'] as num?)?.toDouble() ?? 0.0;
+    }
+    return total / reviews.length;
+  }
+
+  /// Submit a new review
+  Future<Map<String, dynamic>> submitReview({
+    required String vehicleId,
+    required String bookingId,
+    required double rating,
+    required String feedback,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/api/reviews',
+        data: {
+          'vehicle_id': vehicleId,
+          'booking_id': bookingId,
+          'rating': rating,
+          'feedback': feedback,
+        },
+      );
+      if (response.statusCode == 201 && response.data != null) {
+        return response.data as Map<String, dynamic>;
+      }
+      throw Exception('Failed to submit review');
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
   Exception _handleDioError(DioException error) {
     String message = 'An unexpected error occurred';
     if (error.response != null) {

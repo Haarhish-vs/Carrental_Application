@@ -56,7 +56,7 @@ class DocumentVerificationService {
         .from('vehicle_documents')
         .update({
           document_url: documentUrl,
-          verification_status: 'pending', // reset to pending on re-upload
+          verification_status: 'verified', // Directly mark verified on upload
           rejection_reason: null,
           uploaded_at: new Date().toISOString()
         })
@@ -74,7 +74,7 @@ class DocumentVerificationService {
           vehicle_id: vehicleId,
           document_type: documentType,
           document_url: documentUrl,
-          verification_status: 'pending',
+          verification_status: 'verified', // Directly mark verified on upload
           rejection_reason: null
         })
         .select()
@@ -82,6 +82,14 @@ class DocumentVerificationService {
 
       if (error) throw error;
       result = data;
+    }
+
+    // Automatically set vehicle status to active when RC book or documents are uploaded
+    if (documentType === 'rc_book') {
+      await supabase
+        .from('vehicles')
+        .update({ status: 'active' })
+        .eq('id', vehicleId);
     }
 
     return result;

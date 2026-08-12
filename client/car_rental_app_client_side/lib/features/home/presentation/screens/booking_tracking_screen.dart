@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../../owner/data/services/car_api_service.dart';
 import '../../models/car_model.dart';
 import 'payment_screen.dart';
+import '../widgets/rating_dialog.dart';
 
 class BookingTrackingScreen extends StatefulWidget {
   const BookingTrackingScreen({
@@ -21,10 +24,26 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
   final CarApiService _apiService = CarApiService();
   late Future<Map<String, dynamic>> _bookingFuture;
 
+  bool _imagesUploaded = false;
+  bool _isLoadingImages = false;
+  bool _demoTripStarted = false;
+  bool _demoTripCompleted = false;
+  final _storage = const FlutterSecureStorage();
+
   @override
   void initState() {
     super.initState();
     _refresh();
+    _checkImagesUploaded();
+  }
+
+  Future<void> _checkImagesUploaded() async {
+    final value = await _storage.read(key: 'images_uploaded_${widget.booking['id']}');
+    if (mounted && value == 'true') {
+      setState(() {
+        _imagesUploaded = true;
+      });
+    }
   }
 
   void _refresh() {
@@ -131,6 +150,156 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  // Upload Images Action Handler
+  Future<void> _handleUploadImages() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final List<XFile> images = await picker.pickMultiImage();
+      
+      if (images.isEmpty) return;
+      
+      if (images.length != 4) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select exactly 4 images of the car.'), backgroundColor: Colors.orange),
+        );
+        return;
+      }
+
+      setState(() {
+        _isLoadingImages = true;
+      });
+
+      // Upload to Cloudinary using existing API
+      await _apiService.uploadFiles(images, (progress) {});
+
+      // Mark as uploaded
+      await _storage.write(key: 'images_uploaded_${widget.booking['id']}', value: 'true');
+      
+      if (mounted) {
+        setState(() {
+          _imagesUploaded = true;
+          _isLoadingImages = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Images uploaded successfully!'), backgroundColor: AppColors.success),
+        );
+        
+        // Removed automated demo flow. Now relies on exact time and backend states.
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingImages = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error uploading images: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Widget _buildUploadImagesStep({
+    required bool isDone,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Icon(
+              isDone ? Icons.check_circle_rounded : (isActive ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded),
+              color: isDone ? AppColors.success : (isActive ? AppColors.primary : Colors.grey.shade300),
+              size: 24,
+            ),
+            Container(
+              width: 2.5,
+              height: 90,
+              color: isDone ? AppColors.success : Colors.grey.shade200,
+            ),
+          ],
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: GestureDetector(
+            onTap: isActive && !isDone ? onTap : null,
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 24),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDone ? AppColors.success.withOpacity(0.05) : (isActive ? const Color(0xFFF4F8FF) : Colors.grey.shade50),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: isDone ? AppColors.success.withOpacity(0.3) : (isActive ? const Color(0xFFD6E4FF) : Colors.grey.shade200)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: isDone ? AppColors.success.withOpacity(0.1) : (isActive ? Colors.white : Colors.grey.shade100),
+                      shape: BoxShape.circle,
+                    ),
+                    child: _isLoadingImages 
+                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                        : Icon(
+                            isDone ? Icons.check : Icons.cloud_upload_outlined,
+                            color: isDone ? AppColors.success : (isActive ? AppColors.primary : Colors.grey.shade400),
+                            size: 24,
+                          ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isDone ? 'Images Uploaded' : 'Upload car images',
+                          style: TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.bold,
+                            color: isDone ? AppColors.success : (isActive ? const Color(0xFF103B66) : Colors.grey.shade500),
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          isDone 
+                              ? '4 images have been uploaded to Cloudinary.'
+                              : 'Tap to take a photo or choose multiple images from the gallery.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDone ? AppColors.success.withOpacity(0.8) : Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _triggerRatingDialog(String carId) {
+    if (!mounted) return;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => RatingDialog(
+        carId: carId,
+        bookingId: widget.booking['id']?.toString() ?? '',
+        onSubmitted: () {
+          _refresh();
+        },
+      ),
     );
   }
 
@@ -273,13 +442,19 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
           final renterId = booking['renter_id']?.toString() ?? '';
           final isOwner = currentUserId == ownerId;
 
+          final now = DateTime.now();
+          final bool isPickupReached = now.isAfter(rawStart);
+          final bool isDropoffReached = now.isAfter(rawEnd);
+
           // Track states: requested, accepted, paid, active, completed
           bool requested = true;
           bool accepted = status == 'confirmed' || status == 'active' || status == 'completed';
           bool paid = paymentStatus == 'paid' && accepted;
           bool active = status == 'active' || status == 'completed';
-          bool completed = status == 'completed';
+          bool completed = status == 'completed' || (active && isDropoffReached);
           bool cancelled = status == 'cancelled';
+          
+          bool tripStartedGreen = isOwner ? active : (paid && _imagesUploaded);
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
@@ -414,13 +589,19 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
                         isLast: false,
                         timestamp: paid ? _formatDateTime(booking['updated_at']) : null,
                       ),
+                      if (!isOwner)
+                        _buildUploadImagesStep(
+                          isDone: _imagesUploaded,
+                          isActive: paid && !_imagesUploaded && isPickupReached,
+                          onTap: _handleUploadImages,
+                        ),
                       _buildStepNode(
                         title: 'Trip Started',
-                        subtitle: active
+                        subtitle: tripStartedGreen
                             ? 'Trip is currently in progress.'
                             : 'Pending key handoff.',
-                        isDone: active,
-                        isActive: paid && !active,
+                        isDone: tripStartedGreen,
+                        isActive: paid && (!isOwner ? _imagesUploaded : true) && !active,
                         isLast: false,
                         timestamp: active ? _formatDateTime(booking['updated_at']) : null,
                       ),
@@ -506,13 +687,13 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                   ),
-                ] else if (status == 'active' && isOwner) ...[
+                ] else if (completed && !isOwner) ...[
                   FilledButton.icon(
-                    onPressed: () => _handleCompleteTrip(booking['id']),
-                    icon: const Icon(Icons.check_circle_outline),
-                    label: const Text('Complete Trip', style: TextStyle(fontWeight: FontWeight.bold)),
+                    onPressed: () => _triggerRatingDialog(vehicle['id']?.toString() ?? ''),
+                    icon: const Icon(Icons.star_rate_rounded),
+                    label: const Text('Leave a Review', style: TextStyle(fontWeight: FontWeight.bold)),
                     style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.success,
+                      backgroundColor: Colors.amber,
                       minimumSize: const Size(0, 54),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),

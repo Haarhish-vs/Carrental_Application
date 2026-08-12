@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:car_rental_app_client_side/core/theme/app_colors.dart';
 import 'package:car_rental_app_client_side/features/home/models/car_model.dart';
+import 'package:car_rental_app_client_side/features/wishlist/presentation/controllers/wishlist_controller.dart';
 
 class CarResultCard extends StatelessWidget {
   final CarModel car;
@@ -108,32 +109,80 @@ class CarResultCard extends StatelessWidget {
                   ),
                 ),
 
-              // Rating Badge (Top Right)
+              // Rating Badge and Wishlist Button (Top Right)
               Positioned(
                 top: 12,
                 right: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.92),
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.star_rounded, size: 15, color: Colors.amber),
-                      const SizedBox(width: 4),
-                      Text(
-                        car.rating.toStringAsFixed(1),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.92),
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
                       ),
-                    ],
-                  ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.star_rounded, size: 15, color: Colors.amber),
+                          const SizedBox(width: 4),
+                          Text(
+                            car.rating.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    AnimatedBuilder(
+                      animation: WishlistController.instance,
+                      builder: (context, _) {
+                        final isWishlisted = WishlistController.instance.isWishlisted(car.id);
+                        return Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              WishlistController.instance.toggleWishlist(
+                                car.id,
+                                context: context,
+                                carName: car.name,
+                                carModel: car,
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.92),
+                                shape: BoxShape.circle,
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black12,
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                isWishlisted
+                                    ? Icons.favorite_rounded
+                                    : Icons.favorite_border_rounded,
+                                size: 18,
+                                color: isWishlisted
+                                    ? Colors.redAccent
+                                    : Colors.grey.shade700,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
             ],

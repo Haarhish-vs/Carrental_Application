@@ -18,6 +18,10 @@ import '../widgets/home_drawer.dart';
 import 'car_detail_screen.dart';
 import 'my_bookings_screen.dart';
 import 'my_cars_screen.dart';
+import '../../../support/presentation/screens/support_screen.dart';
+import 'all_recommended_cars_screen.dart';
+import '../../../profile/presentation/screens/profile_screen.dart';
+import '../../../wishlist/presentation/screens/wishlist_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -99,16 +103,42 @@ class _HomeScreenState extends State<HomeScreen> {
     String? startDate,
     String? endDate,
   }) async {
-    debugPrint('🔍 [HomeScreen] Querying vehicles -> city: "${city ?? 'ALL'}", startDate: "$startDate", endDate: "$endDate"');
+    // Default to a 1-year window if no dates are provided to exclude any car with an active/future booking
+    final now = DateTime.now();
+    final defaultStart = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final nextYear = now.add(const Duration(days: 365));
+    final defaultEnd = '${nextYear.year}-${nextYear.month.toString().padLeft(2, '0')}-${nextYear.day.toString().padLeft(2, '0')}';
+
+    final queryStart = startDate ?? defaultStart;
+    final queryEnd = endDate ?? defaultEnd;
+
+    debugPrint('🔍 [HomeScreen] Querying vehicles -> city: "${city ?? 'ALL'}", startDate: "$queryStart", endDate: "$queryEnd"');
     final vehicles = await _carApiService.getVehicles(
       city: city,
-      startDate: startDate,
-      endDate: endDate,
+      startDate: queryStart,
+      endDate: queryEnd,
     );
     final mapped = vehicles.map(CarModel.fromJson).toList();
     final available = mapped.where((car) => car.isAvailable).toList();
     debugPrint('🚗 [HomeScreen] Available vehicles loaded: ${available.length}');
-    return available;
+    
+    // Sort by ratings (highest first)
+    try {
+      final ratings = await Future.wait(
+        available.map((car) => _carApiService.getAverageRating(car.id))
+      );
+      
+      final paired = List.generate(
+        available.length, 
+        (i) => MapEntry(available[i], ratings[i] ?? 0.0)
+      );
+      
+      paired.sort((a, b) => b.value.compareTo(a.value));
+      return paired.map((e) => e.key).toList();
+    } catch (e) {
+      debugPrint('⚠️ Error sorting by rating: $e');
+      return available;
+    }
   }
 
   void _handleSearch() {
@@ -354,8 +384,8 @@ class _HomeScreenState extends State<HomeScreen> {
               _scaffoldKey.currentState?.openDrawer();
             },
             onFavoriteTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Favorites coming soon')),
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const WishlistScreen()),
               );
             },
             onProfileTap: _openProfileScreen,
@@ -503,6 +533,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                   _openCarDetail(car);
                 },
+                onSeeAllTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AllRecommendedCarsScreen(
+                        cars: cars,
+                        initialPickupDate: _selectedPickupDate,
+                        initialReturnDate: _selectedReturnDate,
+                      ),
+                    ),
+                  );
+                },
               );
             },
           ),
@@ -596,30 +637,41 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         onFavoritesTap: () {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Favorites coming soon')),
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const WishlistScreen()),
           );
         },
         onSupportTap: () {
           Navigator.pop(context);
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => SupportScreen(
-                initialSection: SupportSection.support,
-                onGoToBookings: () {
-                  setState(() {
-                    _navIndex = 1;
-                    _vehiclesFuture = _fetchHomeVehicles();
-                  });
-                },
-                onGoToMyCar: () {
-                  setState(() {
-                    _navIndex = 2;
-                  });
-                },
-                onGoToProfile: _showProfileModal,
-              ),
-            ),
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => SupportScreen(
+              initialSection: SupportSection.support,
+              onGoToHome: () {
+                Navigator.pop(context);
+                setState(() {
+                  _navIndex = 0;
+                  _vehiclesFuture = _fetchVehicles();
+                });
+              },
+              onGoToBookings: () {
+                Navigator.pop(context);
+                setState(() {
+                  _navIndex = 1;
+                });
+              },
+              onGoToMyCar: () {
+                Navigator.pop(context);
+                setState(() {
+                  _navIndex = 2;
+                });
+              },
+              onGoToHost: () async {
+                Navigator.pop(context);
+                await _goHost();
+              },
+              onGoToProfile: _openProfileScreen,
+            )),
           );
         },
         onHostTap: () async {
@@ -634,46 +686,68 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         onHelpTap: () {
           Navigator.pop(context);
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => SupportScreen(
-                initialSection: SupportSection.faq,
-                onGoToBookings: () {
-                  setState(() {
-                    _navIndex = 1;
-                    _vehiclesFuture = _fetchHomeVehicles();
-                  });
-                },
-                onGoToMyCar: () {
-                  setState(() {
-                    _navIndex = 2;
-                  });
-                },
-                onGoToProfile: _showProfileModal,
-              ),
-            ),
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => SupportScreen(
+              initialSection: SupportSection.faq,
+              onGoToHome: () {
+                Navigator.pop(context);
+                setState(() {
+                  _navIndex = 0;
+                  _vehiclesFuture = _fetchVehicles();
+                });
+              },
+              onGoToBookings: () {
+                Navigator.pop(context);
+                setState(() {
+                  _navIndex = 1;
+                });
+              },
+              onGoToMyCar: () {
+                Navigator.pop(context);
+                setState(() {
+                  _navIndex = 2;
+                });
+              },
+              onGoToHost: () async {
+                Navigator.pop(context);
+                await _goHost();
+              },
+              onGoToProfile: _openProfileScreen,
+            )),
           );
         },
         onPrivacyTap: () {
           Navigator.pop(context);
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => SupportScreen(
-                initialSection: SupportSection.policies,
-                onGoToBookings: () {
-                  setState(() {
-                    _navIndex = 1;
-                    _vehiclesFuture = _fetchHomeVehicles();
-                  });
-                },
-                onGoToMyCar: () {
-                  setState(() {
-                    _navIndex = 2;
-                  });
-                },
-                onGoToProfile: _showProfileModal,
-              ),
-            ),
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => SupportScreen(
+              initialSection: SupportSection.policies,
+              onGoToHome: () {
+                Navigator.pop(context);
+                setState(() {
+                  _navIndex = 0;
+                  _vehiclesFuture = _fetchVehicles();
+                });
+              },
+              onGoToBookings: () {
+                Navigator.pop(context);
+                setState(() {
+                  _navIndex = 1;
+                });
+              },
+              onGoToMyCar: () {
+                Navigator.pop(context);
+                setState(() {
+                  _navIndex = 2;
+                });
+              },
+              onGoToHost: () async {
+                Navigator.pop(context);
+                await _goHost();
+              },
+              onGoToProfile: _openProfileScreen,
+            )),
           );
         },
         onLogoutTap: () {

@@ -122,6 +122,96 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
     }
   }
 
+  String _formatDateTime(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return '';
+    try {
+      final dt = DateTime.parse(dateStr).toLocal();
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      final hour = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+      final min = dt.minute.toString().padLeft(2, '0');
+      final period = dt.hour >= 12 ? 'PM' : 'AM';
+      return '${months[dt.month - 1]} ${dt.day}, ${dt.year} at $hour:$min $period';
+    } catch (_) {
+      return dateStr;
+    }
+  }
+
+  Widget _buildStepNode({
+    required String title,
+    required String subtitle,
+    required bool isDone,
+    required bool isActive,
+    required bool isLast,
+    String? timestamp,
+  }) {
+    Color indicatorColor = isDone
+        ? AppColors.success
+        : isActive
+            ? AppColors.primary
+            : Colors.grey.shade300;
+
+    IconData nodeIcon = isDone
+        ? Icons.check_circle_rounded
+        : isActive
+            ? Icons.radio_button_checked_rounded
+            : Icons.radio_button_off_rounded;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Left timeline line & indicator
+        Column(
+          children: [
+            Icon(nodeIcon, color: indicatorColor, size: 24),
+            if (!isLast)
+              Container(
+                width: 2.5,
+                height: 48,
+                color: isDone ? AppColors.success : Colors.grey.shade200,
+              ),
+          ],
+        ),
+        const SizedBox(width: 14),
+        // Right step info
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.bold,
+                  color: isDone || isActive ? AppColors.textPrimary : Colors.grey.shade400,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: isDone || isActive ? AppColors.textSecondary : Colors.grey.shade400,
+                ),
+              ),
+              if (timestamp != null && timestamp.isNotEmpty) ...[
+                const SizedBox(height: 5),
+                Text(
+                  timestamp,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: isDone ? Colors.grey.shade500 : Colors.grey.shade400,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   // Determines the "until" date a car is booked (from activeBooking on car, if available)
   String? _bookedUntil(Map<String, dynamic> car) {
     final booking = car['activeBooking'] as Map<String, dynamic>?;
@@ -601,6 +691,87 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
               ],
             ),
             const Divider(height: 24, color: AppColors.divider),
+            
+            // Stepper Timeline (shown after owner approves)
+            if (status == 'confirmed' || status == 'active' || status == 'completed') ...[
+              Builder(
+                builder: (context) {
+                  bool requested = true;
+                  bool accepted = status == 'confirmed' || status == 'active' || status == 'completed';
+                  bool paid = paymentStatus == 'paid' && accepted;
+                  bool active = status == 'active' || status == 'completed';
+                  bool completed = status == 'completed';
+                  
+                  return Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF9FAFC),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: Column(
+                          children: [
+                            _buildStepNode(
+                              title: 'Request Placed',
+                              subtitle: 'Renter submitted the reservation request.',
+                              isDone: requested,
+                              isActive: status == 'pending',
+                              isLast: false,
+                              timestamp: _formatDateTime(request['created_at']),
+                            ),
+                            _buildStepNode(
+                              title: 'Approved by Owner',
+                              subtitle: accepted 
+                                  ? 'Owner approved the request.'
+                                  : 'Awaiting owner approval.',
+                              isDone: accepted,
+                              isActive: status == 'pending',
+                              isLast: false,
+                              timestamp: accepted ? _formatDateTime(request['updated_at']) : null,
+                            ),
+                            _buildStepNode(
+                              title: 'Payment Confirmed',
+                              subtitle: paid
+                                  ? 'Payment completed securely.'
+                                  : accepted
+                                      ? 'Awaiting renter payment.'
+                                      : 'Pending owner approval.',
+                              isDone: paid,
+                              isActive: accepted && !paid,
+                              isLast: false,
+                              timestamp: paid ? _formatDateTime(request['updated_at']) : null,
+                            ),
+                            _buildStepNode(
+                              title: 'Trip Started',
+                              subtitle: active
+                                  ? 'Trip is currently in progress.'
+                                  : 'Pending key handoff.',
+                              isDone: active,
+                              isActive: paid && !active,
+                              isLast: false,
+                              timestamp: active ? _formatDateTime(request['updated_at']) : null,
+                            ),
+                            _buildStepNode(
+                              title: 'Trip Completed',
+                              subtitle: completed
+                                  ? 'Car returned and trip finalized.'
+                                  : 'Pending rental return.',
+                              isDone: completed,
+                              isActive: active && !completed,
+                              isLast: true,
+                              timestamp: completed ? _formatDateTime(request['updated_at']) : null,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                  );
+                },
+              ),
+            ],
             
             // Action Buttons
             if (status == 'pending') ...[

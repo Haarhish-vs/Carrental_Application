@@ -33,7 +33,7 @@ module.exports = {
   SUPABASE_URL: process.env.SUPABASE_URL,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY, // Default to service role if not provided
-  JWT_SECRET: process.env.JWT_SECRET,
+  JWT_SECRET: process.env.JWT_SECRET || 'carrental_jwt_secret_key_default_1234567890',
   SMS_PROVIDER_API_KEY: process.env.SMS_PROVIDER_API_KEY || 'mock-sms-key',
   CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME || 'doymxkmea',
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY || '223194751911512',
