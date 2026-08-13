@@ -280,9 +280,7 @@ class _ReserveScreenState extends State<ReserveScreen> {
                   _buildStepConnector(),
                   _buildStepNode(2, 'Pickup', true, false),
                   _buildStepConnector(),
-                  _buildStepNode(3, 'Extras', true, false),
-                  _buildStepConnector(),
-                  _buildStepNode(4, 'Payment', false, true),
+                  _buildStepNode(3, 'Request', true, false),
                   Expanded(
                     child: Container(
                       height: 2.5,
@@ -290,7 +288,7 @@ class _ReserveScreenState extends State<ReserveScreen> {
                       margin: const EdgeInsets.only(bottom: 22),
                     ),
                   ),
-                  _buildStepNode(5, 'Confirmed', false, false),
+                  _buildStepNode(4, 'Confirmed', false, false),
                 ],
               ),
             ),
