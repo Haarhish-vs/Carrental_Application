@@ -51,18 +51,22 @@ class NotificationService {
 
       // Request Permission
       debugPrint('[FCM] Requesting notification permission...');
-      NotificationSettings settings = await _messaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-        provisional: false,
-      );
-      debugPrint('[FCM] Permission status: ${settings.authorizationStatus}');
+      try {
+        NotificationSettings settings = await _messaging.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+          provisional: false,
+        ).timeout(const Duration(seconds: 4));
+        debugPrint('[FCM] Permission status: ${settings.authorizationStatus}');
+      } catch (e) {
+        debugPrint('[FCM WARNING] Request permission timed out or skipped: $e');
+      }
 
       // Get FCM Token
       debugPrint('[FCM] Getting FCM token...');
       try {
-        _currentToken = await _messaging.getToken();
+        _currentToken = await _messaging.getToken().timeout(const Duration(seconds: 4));
         if (_currentToken != null && _currentToken!.isNotEmpty) {
           debugPrint('[FCM] FCM token generated successfully');
           debugPrint('[FCM] Token snippet: ${_currentToken!.substring(0, _currentToken!.length > 15 ? 15 : _currentToken!.length)}...');

@@ -5,16 +5,28 @@ import 'package:car_rental_app_client_side/features/home/presentation/screens/ho
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase & FCM Notification Service
-  await NotificationService.instance.initialize(navKey: navigatorKey);
-
-  // Validate stored JWT & auto-login user before initial frame
-  await AuthService.tryAutoLogin();
-
+  // Run App immediately so Flutter engine renders first frame without freezing splash screen
   runApp(const MyApp());
+
+  // Initialize Firebase, NotificationService & AuthService asynchronously after first frame
+  _initServices();
+}
+
+Future<void> _initServices() async {
+  try {
+    await NotificationService.instance.initialize(navKey: navigatorKey);
+  } catch (e) {
+    debugPrint('[FCM ERROR] Non-fatal initialization error: $e');
+  }
+
+  try {
+    await AuthService.tryAutoLogin();
+  } catch (e) {
+    debugPrint('[Auth ERROR] Auto-login error: $e');
+  }
 }
 
 class MyApp extends StatelessWidget {
