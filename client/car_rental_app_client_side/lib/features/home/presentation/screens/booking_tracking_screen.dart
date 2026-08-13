@@ -16,9 +16,11 @@ class BookingTrackingScreen extends StatefulWidget {
   const BookingTrackingScreen({
     super.key,
     required this.booking,
+    this.isOwnerView,
   });
 
   final Map<String, dynamic> booking;
+  final bool? isOwnerView;
 
   @override
   State<BookingTrackingScreen> createState() => _BookingTrackingScreenState();
@@ -34,17 +36,41 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
   bool _demoTripCompleted = false;
   final _storage = const FlutterSecureStorage();
 
+  Timer? _realtimeTimer;
+  final MapController _mapController = MapController();
+  Map<String, dynamic>? _latestBookingData;
+
   @override
   void initState() {
     super.initState();
     _refresh();
     _checkImagesUploaded();
+    _startRealtimeTrackingTimer();
   }
 
   @override
   void dispose() {
+    _realtimeTimer?.cancel();
     LocationTrackingService().stopTracking();
     super.dispose();
+  }
+
+  void _startRealtimeTrackingTimer() {
+    _realtimeTimer?.cancel();
+    _realtimeTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+      final bookingId = widget.booking['id']?.toString() ?? '';
+      if (bookingId.isEmpty || !mounted) return;
+      try {
+        final updatedData = await _apiService.getBookingById(bookingId);
+        if (mounted) {
+          setState(() {
+            _latestBookingData = updatedData;
+          });
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error fetching realtime tracking update: $e');
+      }
+    });
   }
 
   Future<void> _checkImagesUploaded() async {
@@ -297,7 +323,8 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
     );
   }
 
-  Widget _buildLiveMapCard(Map<String, dynamic> booking) {
+  Widget _buildLiveMapCard(Map<String, dynamic> rawBooking) {
+    final booking = _latestBookingData ?? rawBooking;
     final lat = double.tryParse(booking['current_lat']?.toString() ?? '');
     final lng = double.tryParse(booking['current_lng']?.toString() ?? '');
     final vehicle = booking['vehicle'] as Map<String, dynamic>?;
@@ -312,9 +339,12 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
         ? _formatDateTime(booking['last_tracked_at'].toString())
         : 'Live GPS Active';
 
+    final brand = vehicle?['brand']?.toString() ?? 'Vehicle';
+    final model = vehicle?['model']?.toString() ?? '';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
@@ -327,65 +357,117 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
             children: [
               const Icon(Icons.my_location_rounded, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'Live Vehicle GPS Tracking',
-                  style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Owner Live GPS Tracking',
+                      style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                    ),
+                    Text(
+                      '$brand $model',
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                  ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  color: AppColors.success.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.success.withOpacity(0.3)),
                 ),
                 child: Row(
                   children: const [
                     Icon(Icons.circle, color: AppColors.success, size: 8),
-                    SizedBox(width: 4),
-                    Text('LIVE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.success)),
+                    SizedBox(width: 5),
+                    Text('REALTIME', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.success)),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            'Last updated: $lastTracked',
-            style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Last updated: $lastTracked',
+                style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+              ),
+              if (lat != null && lng != null)
+                Text(
+                  '${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)}',
+                  style: const TextStyle(fontSize: 11.5, color: AppColors.primary, fontWeight: FontWeight.w600),
+                ),
+            ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(14),
             child: SizedBox(
-              height: 170,
-              child: FlutterMap(
-                options: MapOptions(
-                  initialCenter: centerPoint,
-                  initialZoom: 14.0,
-                ),
+              height: 220,
+              child: Stack(
                 children: [
-                  TileLayer(
-                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.example.car_rental_app_client_side',
-                  ),
-                  MarkerLayer(
-                    markers: [
-                      Marker(
-                        point: centerPoint,
-                        width: 40,
-                        height: 40,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: const BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
+                  FlutterMap(
+                    mapController: _mapController,
+                    options: MapOptions(
+                      initialCenter: centerPoint,
+                      initialZoom: 14.5,
+                    ),
+                    children: [
+                      TileLayer(
+                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.example.car_rental_app_client_side',
+                      ),
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: centerPoint,
+                            width: 60,
+                            height: 60,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Container(
+                                  width: 54,
+                                  height: 54,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withOpacity(0.25),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.primary,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [BoxShadow(color: Colors.black38, blurRadius: 6, offset: Offset(0, 2))],
+                                  ),
+                                  child: const Icon(Icons.directions_car_rounded, color: Colors.white, size: 22),
+                                ),
+                              ],
+                            ),
                           ),
-                          child: const Icon(Icons.directions_car_rounded, color: Colors.white, size: 20),
-                        ),
+                        ],
                       ),
                     ],
+                  ),
+                  Positioned(
+                    bottom: 12,
+                    right: 12,
+                    child: FloatingActionButton.small(
+                      heroTag: 'recenter_map',
+                      backgroundColor: Colors.white,
+                      foregroundColor: AppColors.primary,
+                      tooltip: 'Recenter Map',
+                      onPressed: () {
+                        _mapController.move(centerPoint, 15.0);
+                      },
+                      child: const Icon(Icons.center_focus_strong),
+                    ),
                   ),
                 ],
               ),
@@ -549,7 +631,7 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
           final currentUserId = AuthService.currentUser?['id']?.toString() ?? '';
           final ownerId = vehicle['owner_id']?.toString() ?? '';
           final renterId = booking['renter_id']?.toString() ?? '';
-          final isOwner = currentUserId == ownerId;
+          final isOwner = widget.isOwnerView ?? (currentUserId.isNotEmpty && currentUserId == ownerId);
 
           final now = DateTime.now();
           final bool isPickupReached = now.isAfter(rawStart);
@@ -658,8 +740,8 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
                   const SizedBox(height: 20),
                 ],
 
-                // 2.5. Live Vehicle Location Tracking Map Card (for active or confirmed rentals)
-                if (status == 'active' || status == 'confirmed') ...[
+                // 2.5. Live Vehicle Location Tracking Map Card (ONLY for car owner view on active or confirmed rentals)
+                if (isOwner && (status == 'active' || status == 'confirmed')) ...[
                   _buildLiveMapCard(booking),
                 ],
 
