@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -215,7 +214,7 @@ class NotificationService {
               const SizedBox(height: 2),
               Text(
                 body,
-                style: const TextStyle(fontSize: 12.5, color: Colors.white90),
+                style: const TextStyle(fontSize: 12.5, color: Colors.white70),
               ),
             ],
           ],
