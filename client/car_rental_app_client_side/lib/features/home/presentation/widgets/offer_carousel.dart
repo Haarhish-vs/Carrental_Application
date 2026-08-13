@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/offer_model.dart';
 
 /// Auto-swipeable offer banner. Data-driven, callback-driven — no
@@ -52,7 +53,13 @@ class _OfferCarouselState extends State<OfferCarousel> {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        Image.network(offer.imageUrl, fit: BoxFit.cover),
+                        CachedNetworkImage(
+                          imageUrl: offer.imageUrl, 
+                          fit: BoxFit.cover,
+                          memCacheHeight: 300, // Optimize memory for carousel
+                          placeholder: (context, url) => Container(color: const Color(0xFFF1F5F9)),
+                          errorWidget: (context, url, error) => Container(color: const Color(0xFFE2E8F0)),
+                        ),
                         Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(

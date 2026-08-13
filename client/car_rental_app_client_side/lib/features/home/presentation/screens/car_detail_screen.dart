@@ -6,6 +6,7 @@ import '../../../owner/data/services/car_api_service.dart';
 import '../../models/car_model.dart';
 import '../../../wishlist/presentation/controllers/wishlist_controller.dart';
 import 'reserve_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CarDetailScreen extends StatefulWidget {
   const CarDetailScreen({
@@ -176,18 +177,24 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                             });
                           },
                           itemBuilder: (context, index) {
-                            return Image.network(
-                              images[index],
+                            return CachedNetworkImage(
+                              imageUrl: images[index],
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Container(
-                                    color: const Color(0xFFEAF2FF),
-                                    child: const Icon(
-                                      Icons.directions_car,
-                                      size: 70,
-                                      color: AppColors.primary,
-                                    ),
-                                  ),
+                              memCacheHeight: 800, // Slightly higher for details screen
+                              placeholder: (context, url) => Container(
+                                color: const Color(0xFFF1F5F9),
+                                child: const Center(
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                                ),
+                              ),
+                              errorWidget: (context, url, error) => Container(
+                                color: const Color(0xFFEAF2FF),
+                                child: const Icon(
+                                  Icons.directions_car,
+                                  size: 70,
+                                  color: AppColors.primary,
+                                ),
+                              ),
                             );
                           },
                         ),
@@ -872,23 +879,21 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
         radius: 24,
         backgroundColor: const Color(0xFFEAF2FF),
         child: ClipOval(
-          child: Image.network(
-            imageUrl,
+          child: CachedNetworkImage(
+            imageUrl: imageUrl,
             width: 48,
             height: 48,
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
+            memCacheHeight: 100, // Optimize memory for avatars
+            placeholder: (context, url) => const Center(
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+            errorWidget: (context, url, error) {
               return _buildInitialsAvatar(displayName);
-            },
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return const Center(
-                child: SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              );
             },
           ),
         ),

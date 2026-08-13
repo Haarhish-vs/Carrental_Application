@@ -122,29 +122,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final available = mapped.where((car) => car.isAvailable).toList();
     debugPrint('🚗 [HomeScreen] Available vehicles loaded: ${available.length}');
     
-    // Update exact ratings & review counts from database
-    try {
-      final updatedList = await Future.wait(available.map((car) async {
-        final reviews = await _carApiService.getVehicleReviews(car.id);
-        if (reviews.isNotEmpty) {
-          double total = 0;
-          for (var r in reviews) {
-            total += (r['rating'] as num?)?.toDouble() ?? 0.0;
-          }
-          final avg = double.parse((total / reviews.length).toStringAsFixed(1));
-          return car.copyWith(rating: avg, reviewsCount: reviews.length);
-        } else {
-          return car.copyWith(rating: 0.0, reviewsCount: 0);
-        }
-      }));
-
-      final sorted = List<CarModel>.from(updatedList);
-      sorted.sort((a, b) => b.rating.compareTo(a.rating));
-      return sorted;
-    } catch (e) {
-      debugPrint('⚠️ Error updating ratings: $e');
-      return available;
-    }
+    // We skip fetching reviews for every car here to avoid the N+1 API bottleneck.
+    // Ratings should ideally be joined on the backend `getVehicles` query.
+    // For now, we rely on the backend provided `rating` or fallback to 0.
+    final sorted = List<CarModel>.from(available);
+    sorted.sort((a, b) => b.rating.compareTo(a.rating));
+    return sorted;
   }
 
   void _handleSearch() {
@@ -362,7 +345,6 @@ class _HomeScreenState extends State<HomeScreen> {
           onExplorePressed: () {
             setState(() {
               _navIndex = 0;
-              _vehiclesFuture = _fetchVehicles();
             });
           },
         );
@@ -543,7 +525,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => AllRecommendedCarsScreen(
-                        cars: cars,
                         initialPickupDate: _selectedPickupDate,
                         initialReturnDate: _selectedReturnDate,
                       ),
@@ -765,10 +746,11 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigation(
         currentIndex: _navIndex,
         onHomeTap: () {
-          setState(() {
-            _navIndex = 0;
-            _vehiclesFuture = _fetchVehicles();
-          });
+          if (_navIndex != 0) {
+            setState(() {
+              _navIndex = 0;
+            });
+          }
         },
         onBookingsTap: () {
           setState(() {

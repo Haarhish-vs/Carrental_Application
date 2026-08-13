@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
@@ -352,18 +353,17 @@ class _WishlistScreenState extends State<WishlistScreen> {
                   height: 170,
                   width: double.infinity,
                   child: car.imageUrl.isNotEmpty
-                      ? Image.network(
-                          car.imageUrl,
+                      ? CachedNetworkImage(
+                          imageUrl: car.imageUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
+                          memCacheHeight: 400,
+                          placeholder: (context, url) => Container(
+                            color: const Color(0xFFF8FAFC),
+                            child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
+                          ),
+                          errorWidget: (context, url, error) => Container(
                             color: const Color(0xFFF1F5F9),
-                            child: const Center(
-                              child: Icon(
-                                Icons.directions_car_rounded,
-                                size: 56,
-                                color: Color(0xFF94A3B8),
-                              ),
-                            ),
+                            child: const Center(child: Icon(Icons.directions_car_rounded, size: 48, color: Color(0xFF94A3B8))),
                           ),
                         )
                       : Container(

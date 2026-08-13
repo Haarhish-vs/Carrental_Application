@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../../auth/services/auth_service.dart';
@@ -34,6 +35,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isLoading = false;
         _profile = null;
       });
+      return;
+    }
+
+    final cachedProfile = _apiService.getCachedProfile();
+    if (cachedProfile != null) {
+      setState(() {
+        _profile = cachedProfile;
+        _isLoading = false;
+        _errorMessage = null;
+      });
+      // Silently fetch update in background without triggering _isLoading
+      _apiService.getProfile().then((freshProfile) {
+        if (mounted && _profile != freshProfile) {
+          setState(() {
+            _profile = freshProfile;
+          });
+        }
+      }).catchError((_) {});
       return;
     }
 
@@ -471,10 +490,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: _isUploadingImage
                     ? const Center(child: CircularProgressIndicator(strokeWidth: 2.5))
                     : profile.profileImageUrl.isNotEmpty
-                        ? Image.network(
-                            profile.profileImageUrl,
+                        ? CachedNetworkImage(
+                            imageUrl: profile.profileImageUrl,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Center(
+                            errorWidget: (context, url, error) => Center(
                               child: Text(
                                 profile.fullName.isNotEmpty ? profile.fullName[0].toUpperCase() : 'U',
                                 style: const TextStyle(fontSize: 38, fontWeight: FontWeight.bold, color: AppColors.primary),

@@ -6,20 +6,31 @@ import '../../../owner/data/services/car_api_service.dart';
 import '../models/user_profile_model.dart';
 
 class ProfileApiService {
-  ProfileApiService({Dio? dio}) : _dio = dio ?? Dio() {
-    _initDio();
+  static final Dio _sharedDio = Dio();
+  static bool _isDioInitialized = false;
+
+  ProfileApiService({Dio? dio}) : _dio = dio ?? _sharedDio {
+    if (dio == null && !_isDioInitialized) {
+      _initDio(_sharedDio);
+      _isDioInitialized = true;
+    } else if (dio != null) {
+      _initDio(dio);
+    }
   }
 
   final Dio _dio;
 
-  void _initDio() {
-    _dio.options.baseUrl = CarApiService.baseUrl;
-    _dio.options.connectTimeout = const Duration(seconds: 30);
-    _dio.options.receiveTimeout = const Duration(seconds: 30);
-    _dio.options.sendTimeout = const Duration(seconds: 30);
-    _dio.options.headers = {'Accept': 'application/json'};
+  // In-memory cache to prevent UI blocking
+  static UserProfileModel? _cachedProfile;
 
-    _dio.interceptors.add(
+  void _initDio(Dio dioInstance) {
+    dioInstance.options.baseUrl = CarApiService.baseUrl;
+    dioInstance.options.connectTimeout = const Duration(seconds: 30);
+    dioInstance.options.receiveTimeout = const Duration(seconds: 30);
+    dioInstance.options.sendTimeout = const Duration(seconds: 30);
+    dioInstance.options.headers = {'Accept': 'application/json'};
+
+    dioInstance.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
           final authToken = CarApiService.token ?? AuthService.currentToken;
@@ -60,11 +71,14 @@ class ProfileApiService {
             'trust_score': profile.trustScore,
           };
           AuthService.authStateNotifier.value = AuthService.currentUser;
+          _cachedProfile = profile;
           return profile;
         }
       }
+      if (_cachedProfile != null) return _cachedProfile!;
       throw Exception('Failed to load profile');
     } on DioException catch (e) {
+      if (_cachedProfile != null) return _cachedProfile!;
       if (AuthService.currentUser != null) {
         debugPrint('ℹ️ [ProfileApiService] Using cached user session while backend deploys');
         return UserProfileModel.fromJson(AuthService.currentUser!);
@@ -72,6 +86,9 @@ class ProfileApiService {
       throw _handleDioError(e);
     }
   }
+
+  /// Get cached profile instantly without awaiting network
+  UserProfileModel? getCachedProfile() => _cachedProfile;
 
   /// Update user profile details (Name, Phone number, Email)
   Future<UserProfileModel> updateProfile({

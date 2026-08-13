@@ -173,7 +173,7 @@ Future<void> showRentCarImagePreviewDialog(
       ? Image.network(
           item.uploadedUrl!,
           fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) =>
+          errorBuilder: (_, _, _) =>
               const Center(child: Icon(Icons.broken_image_outlined)),
         )
       : Image.memory(item.bytes!, fit: BoxFit.contain);
@@ -502,7 +502,7 @@ class _ImageTileCard extends StatelessWidget {
         ? Image.network(
             item.uploadedUrl!,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _fallbackPreview(item),
+            errorBuilder: (_, _, _) => _fallbackPreview(item),
           )
         : item.bytes != null
         ? Image.memory(item.bytes!, fit: BoxFit.cover)

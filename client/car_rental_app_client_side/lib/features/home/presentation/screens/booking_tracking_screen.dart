@@ -11,6 +11,7 @@ import '../../../owner/data/services/car_api_service.dart';
 import '../../models/car_model.dart';
 import 'payment_screen.dart';
 import '../widgets/rating_dialog.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class BookingTrackingScreen extends StatefulWidget {
   const BookingTrackingScreen({
@@ -673,7 +674,27 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: imageUrl.isNotEmpty
-                            ? Image.network(imageUrl, width: 85, height: 60, fit: BoxFit.cover)
+                            ? CachedNetworkImage(
+                                imageUrl: imageUrl, 
+                                width: 85, 
+                                height: 60, 
+                                fit: BoxFit.cover,
+                                memCacheHeight: 200,
+                                placeholder: (context, url) => Container(
+                                  width: 85,
+                                  height: 60,
+                                  color: const Color(0xFFEAF2FF),
+                                  child: const Center(
+                                    child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  width: 85,
+                                  height: 60,
+                                  color: const Color(0xFFEAF2FF),
+                                  child: const Icon(Icons.directions_car, color: AppColors.primary),
+                                ),
+                              )
                             : Container(
                                 width: 85,
                                 height: 60,

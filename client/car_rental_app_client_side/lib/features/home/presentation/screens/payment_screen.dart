@@ -390,7 +390,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               itemBuilder: (_, i) => Image.network(
                                 images[i],
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
+                                errorBuilder: (_, _, _) => Container(
                                   color: const Color(0xFFEAF2FF),
                                   child: const Icon(
                                     Icons.directions_car_rounded,
