@@ -58,6 +58,107 @@ class _SearchCarsScreenState extends State<SearchCarsScreen> {
     }
   }
 
+  DateTime _parseDate(String dateStr) {
+    try {
+      if (dateStr.contains('/')) {
+        final parts = dateStr.split('/');
+        if (parts.length == 3) {
+          return DateTime(
+            int.parse(parts[2]),
+            int.parse(parts[1]),
+            int.parse(parts[0]),
+          );
+        }
+      } else if (dateStr.contains('-')) {
+        return DateTime.parse(dateStr);
+      }
+    } catch (_) {}
+    return DateTime.now();
+  }
+
+  TimeOfDay _parseTime(String timeStr) {
+    try {
+      final upper = timeStr.toUpperCase();
+      if (upper.contains('AM') || upper.contains('PM')) {
+        final isPm = upper.contains('PM');
+        final clean = upper.replaceAll('AM', '').replaceAll('PM', '').trim();
+        final parts = clean.split(':');
+        int hour = int.parse(parts[0]);
+        final min = parts.length > 1 ? int.parse(parts[1]) : 0;
+        if (isPm && hour < 12) hour += 12;
+        if (!isPm && hour == 12) hour = 0;
+        return TimeOfDay(hour: hour, minute: min);
+      } else if (timeStr.contains(':')) {
+        final parts = timeStr.split(':');
+        return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+      }
+    } catch (_) {}
+    return const TimeOfDay(hour: 10, minute: 0);
+  }
+
+  Future<void> _handlePickDate({required bool isPickup}) async {
+    final currentParams = _provider.params ?? widget.initialParams;
+    final now = DateTime.now();
+    final initial = isPickup
+        ? _parseDate(currentParams.pickupDate)
+        : _parseDate(currentParams.returnDate);
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial.isBefore(now) ? now : initial,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+    );
+
+    if (picked == null || !mounted) return;
+
+    final formatted =
+        '${picked.day.toString().padLeft(2, '0')}/'
+        '${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+
+    if (isPickup) {
+      String newReturnDate = currentParams.returnDate;
+      final pickupDt = picked;
+      final currentReturnDt = _parseDate(currentParams.returnDate);
+      if (currentReturnDt.isBefore(pickupDt)) {
+        final nextDay = pickupDt.add(const Duration(days: 1));
+        newReturnDate =
+            '${nextDay.day.toString().padLeft(2, '0')}/'
+            '${nextDay.month.toString().padLeft(2, '0')}/${nextDay.year}';
+      }
+      await _provider.updateDatesAndTimes(
+        pickupDate: formatted,
+        returnDate: newReturnDate,
+      );
+    } else {
+      await _provider.updateDatesAndTimes(
+        returnDate: formatted,
+      );
+    }
+  }
+
+  Future<void> _handlePickTime({required bool isPickup}) async {
+    final currentParams = _provider.params ?? widget.initialParams;
+    final initial = isPickup
+        ? _parseTime(currentParams.pickupTime)
+        : _parseTime(currentParams.returnTime);
+
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initial,
+    );
+
+    if (picked == null || !mounted) return;
+
+    final formatted = picked.format(context);
+
+    if (isPickup) {
+      await _provider.updateDatesAndTimes(pickupTime: formatted);
+    } else {
+      await _provider.updateDatesAndTimes(returnTime: formatted);
+    }
+  }
+
   void _openSortSheet() {
     SortBottomSheet.show(
       context,
@@ -101,11 +202,6 @@ class _SearchCarsScreenState extends State<SearchCarsScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.sort_rounded, color: AppColors.primary),
-            onPressed: _openSortSheet,
-            tooltip: 'Sort',
-          ),
           AnimatedBuilder(
             animation: _provider,
             builder: (context, _) {
@@ -162,6 +258,11 @@ class _SearchCarsScreenState extends State<SearchCarsScreen> {
                       child: SearchSummaryCard(
                         params: params,
                         onChangeLocation: _handleChangeLocation,
+                        onPickupDateTap: () => _handlePickDate(isPickup: true),
+                        onPickupTimeTap: () => _handlePickTime(isPickup: true),
+                        onReturnDateTap: () => _handlePickDate(isPickup: false),
+                        onReturnTimeTap: () => _handlePickTime(isPickup: false),
+                        onChangeDates: () => _handlePickDate(isPickup: true),
                       ),
                     ),
                   ),

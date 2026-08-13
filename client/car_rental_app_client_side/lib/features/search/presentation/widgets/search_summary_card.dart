@@ -5,11 +5,21 @@ import 'package:car_rental_app_client_side/features/search/data/models/search_pa
 class SearchSummaryCard extends StatelessWidget {
   final SearchParameters params;
   final VoidCallback onChangeLocation;
+  final VoidCallback? onPickupDateTap;
+  final VoidCallback? onPickupTimeTap;
+  final VoidCallback? onReturnDateTap;
+  final VoidCallback? onReturnTimeTap;
+  final VoidCallback? onChangeDates;
 
   const SearchSummaryCard({
     super.key,
     required this.params,
     required this.onChangeLocation,
+    this.onPickupDateTap,
+    this.onPickupTimeTap,
+    this.onReturnDateTap,
+    this.onReturnTimeTap,
+    this.onChangeDates,
   });
 
   String _formatDisplayDate(String rawDate) {
@@ -115,86 +125,129 @@ class SearchSummaryCard extends StatelessWidget {
           const Divider(height: 1, color: AppColors.divider),
           const SizedBox(height: 12),
 
-          // Row 2: Dates and Times
+          // Row 2: Dates and Times Header / Interactive Tile
           Row(
             children: [
               // Pickup block
               Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.primary),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _formatDisplayDate(params.pickupDate),
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                child: InkWell(
+                  onTap: onPickupDateTap ?? onChangeDates,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.primary),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _formatDisplayDate(params.pickupDate),
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              InkWell(
+                                onTap: onPickupTimeTap ?? onChangeDates,
+                                borderRadius: BorderRadius.circular(4),
+                                child: Text(
+                                  params.pickupTime,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            params.pickupTime,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
 
               // Arrow indicator
               const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8),
-                child: Icon(Icons.arrow_forward_rounded, size: 18, color: AppColors.textSecondary),
+                padding: EdgeInsets.symmetric(horizontal: 4),
+                child: Icon(Icons.arrow_forward_rounded, size: 16, color: AppColors.textSecondary),
               ),
 
               // Return block
               Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.calendar_month_outlined, size: 16, color: AppColors.primary),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _formatDisplayDate(params.returnDate),
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                child: InkWell(
+                  onTap: onReturnDateTap ?? onChangeDates,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.calendar_month_outlined, size: 16, color: AppColors.primary),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _formatDisplayDate(params.returnDate),
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              InkWell(
+                                onTap: onReturnTimeTap ?? onChangeDates,
+                                borderRadius: BorderRadius.circular(4),
+                                child: Text(
+                                  params.returnTime,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            params.returnTime,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
+
+              if (onChangeDates != null) ...[
+                const SizedBox(width: 4),
+                InkWell(
+                  onTap: onChangeDates,
+                  borderRadius: BorderRadius.circular(8),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Text(
+                      'Change',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ],

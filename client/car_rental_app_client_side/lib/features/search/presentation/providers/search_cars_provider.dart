@@ -77,6 +77,23 @@ class SearchCarsProvider extends ChangeNotifier {
     await search();
   }
 
+  /// Updates dates and times and re-runs search
+  Future<void> updateDatesAndTimes({
+    String? pickupDate,
+    String? pickupTime,
+    String? returnDate,
+    String? returnTime,
+  }) async {
+    if (_params == null) return;
+    _params = _params!.copyWith(
+      pickupDate: pickupDate,
+      pickupTime: pickupTime,
+      returnDate: returnDate,
+      returnTime: returnTime,
+    );
+    await search();
+  }
+
   /// Performs or refreshes the search using current params, filters, and sort
   Future<void> search({bool isRefresh = false}) async {
     if (_params == null) return;
