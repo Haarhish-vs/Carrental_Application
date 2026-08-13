@@ -122,22 +122,34 @@ class AuthService {
 
   /// Logout: Clears encrypted storage, tokens, user data, and notifies listeners.
   static Future<void> logout() async {
-    debugPrint('🚪 [Auth] Clearing session and secure storage...');
+    debugPrint('🚪 [Auth] Initiating user logout...');
 
     final userId = currentUser?['id']?.toString();
-    if (userId != null && userId.isNotEmpty) {
-      await NotificationService.instance.removeTokenOnLogout(userId, customBaseUrl: '${CarApiService.baseUrl}/api');
-    }
 
+    // 1. Instantly clear in-memory authentication state so UI updates immediately
     currentToken = null;
     currentUser = null;
     CarApiService.token = null;
     authStateNotifier.value = null;
 
+    // 2. Clear secure storage keys
     try {
+      await _storage.delete(key: _tokenKey);
+      await _storage.delete(key: _userKey);
+      await _storage.delete(key: 'auth_fcm_token');
       await _storage.deleteAll();
+      debugPrint('✅ [Auth] Secure storage cleared successfully');
     } catch (e) {
       debugPrint('⚠️ [Auth] Error clearing secure storage: $e');
+    }
+
+    // 3. Disassociate FCM token on backend (non-blocking for UI)
+    if (userId != null && userId.isNotEmpty) {
+      try {
+        await NotificationService.instance.removeTokenOnLogout(userId, customBaseUrl: '${CarApiService.baseUrl}/api');
+      } catch (e) {
+        debugPrint('⚠️ [Auth] Error disassociating FCM token on logout: $e');
+      }
     }
   }
 

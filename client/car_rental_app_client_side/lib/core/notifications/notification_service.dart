@@ -7,6 +7,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:car_rental_app_client_side/core/config/api_config.dart';
+import 'package:car_rental_app_client_side/features/auth/services/auth_service.dart';
 
 /// Top-level background message handler required by FCM.
 @pragma('vm:entry-point')
@@ -124,10 +125,15 @@ class NotificationService {
   /// Synchronize FCM token with backend database
   Future<void> syncTokenWithBackend(String userId, {String? customBaseUrl}) async {
     _currentUserId = userId;
+    debugPrint('[FCM] User logged in: $userId');
 
     if (_currentToken == null || _currentToken!.isEmpty) {
+      debugPrint('[FCM] Getting FCM token...');
       try {
         _currentToken = await _messaging.getToken();
+        if (_currentToken != null && _currentToken!.isNotEmpty) {
+          debugPrint('[FCM] Token generated successfully');
+        }
       } catch (e) {
         debugPrint('[FCM ERROR] Failed to fetch token for sync: $e');
         return;
@@ -139,10 +145,19 @@ class NotificationService {
       return;
     }
 
-    debugPrint('[FCM] Registering token for user: $userId');
+    try {
+      await _storage.write(key: 'auth_fcm_token', value: _currentToken);
+      debugPrint('[FCM] Token stored locally');
+    } catch (e) {
+      debugPrint('[FCM WARNING] Could not store FCM token locally: $e');
+    }
+
+    debugPrint('[FCM] Registering token with backend...');
 
     try {
-      final token = await _storage.read(key: 'jwt_token');
+      final jwtToken = AuthService.currentToken ??
+          await _storage.read(key: 'auth_jwt_token') ??
+          await _storage.read(key: 'jwt_token');
       final baseUrl = customBaseUrl ?? _backendBaseUrl;
       final uri = Uri.parse('$baseUrl/notifications/register-token');
 
@@ -150,7 +165,7 @@ class NotificationService {
         uri,
         headers: {
           'Content-Type': 'application/json',
-          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+          if (jwtToken != null && jwtToken.isNotEmpty) 'Authorization': 'Bearer $jwtToken',
         },
         body: jsonEncode({
           'fcmToken': _currentToken,
@@ -159,7 +174,7 @@ class NotificationService {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        debugPrint('[FCM] Token synchronized with backend successfully');
+        debugPrint('[FCM] Token registered successfully');
       } else {
         debugPrint('[FCM ERROR] Backend request failed with status: ${response.statusCode}');
       }
@@ -174,7 +189,9 @@ class NotificationService {
 
     debugPrint('[FCM] Disassociating token on logout for user: $userId');
     try {
-      final token = await _storage.read(key: 'jwt_token');
+      final jwtToken = AuthService.currentToken ??
+          await _storage.read(key: 'auth_jwt_token') ??
+          await _storage.read(key: 'jwt_token');
       final baseUrl = customBaseUrl ?? _backendBaseUrl;
       final uri = Uri.parse('$baseUrl/notifications/unregister-token');
 
@@ -182,18 +199,19 @@ class NotificationService {
         uri,
         headers: {
           'Content-Type': 'application/json',
-          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+          if (jwtToken != null && jwtToken.isNotEmpty) 'Authorization': 'Bearer $jwtToken',
         },
         body: jsonEncode({
           'fcmToken': _currentToken,
         }),
       ).timeout(const Duration(seconds: 5));
 
-      debugPrint('[FCM] Token disassociated from user successfully');
-    } catch (e) {
-      debugPrint('[FCM ERROR] Failed to unregister token on logout: $e');
-    } finally {
+      await _storage.delete(key: 'auth_fcm_token');
+      _currentToken = null;
       _currentUserId = null;
+      debugPrint('[FCM] Token removed successfully on logout');
+    } catch (e) {
+      debugPrint('[FCM ERROR] Token unregistration failed: $e');
     }
   }
 

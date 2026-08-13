@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:car_rental_app_client_side/core/notifications/notification_service.dart';
 import 'package:car_rental_app_client_side/features/auth/services/auth_service.dart';
 import 'package:car_rental_app_client_side/features/home/presentation/screens/home_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Run App immediately so Flutter engine renders first frame without freezing splash screen
+  // Initialize core Firebase App synchronously before rendering UI
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('[Firebase] Initialization notice: $e');
+  }
+
   runApp(const MyApp());
 
-  // Initialize Firebase, NotificationService & AuthService asynchronously after first frame
+  // Initialize FCM Notification Service & Auth in background after initial frame
   _initServices();
 }
 
