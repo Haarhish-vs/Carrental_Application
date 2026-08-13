@@ -86,7 +86,7 @@ class HomeDrawer extends StatelessWidget {
                           child: Image.asset(
                             'lib/Car_rental_logo.jpeg',
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                            errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
                           ),
                         ),
                       ),
