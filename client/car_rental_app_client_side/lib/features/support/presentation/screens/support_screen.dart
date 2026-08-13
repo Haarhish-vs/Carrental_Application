@@ -637,18 +637,20 @@ class _SupportScreenState extends State<SupportScreen> {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
+                      children: const [
+                        Text(
                           'Still need help?',
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.blue),
                         ),
-                        const SizedBox(height: 4),
-                        const Text(
+                        SizedBox(height: 4),
+                        Text(
                           "Can't find what you're looking for? Our team is here for you.",
                           style: TextStyle(fontSize: 12, color: Colors.black54),
                         ),
                       ],
                     ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
