@@ -15,19 +15,30 @@ class CarCard extends StatelessWidget {
   final CarModel car;
   final VoidCallback? onCarTap;
   final VoidCallback? onBookNow;
-  final double width;
+  final double? width;
 
   const CarCard({
     super.key,
     required this.car,
     this.onCarTap,
     this.onBookNow,
-    this.width = 260,
+    this.width,
   });
 
   @override
   Widget build(BuildContext context) {
     final bool available = car.isAvailable;
+    final mediaQuery = MediaQuery.sizeOf(context);
+    final double screenWidth = mediaQuery.width;
+    
+    // 1. USE MEDIAPUERY FOR DIMENSIONS: Calculate scale factor from base mobile screen (375 logical px)
+    final double scale = (screenWidth / 375.0).clamp(0.8, 1.25);
+    
+    // Dynamic dimensions based on screen width & scale factor
+    final double cardPaddingH = (12.0 * scale).clamp(8.0, 16.0);
+    final double cardPaddingV = (10.0 * scale).clamp(8.0, 14.0);
+    final double imageHeight = (screenWidth * 0.32).clamp(100.0, 140.0);
+    final double borderRadiusVal = 16.0 * scale;
 
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: CarApiService().getVehicleReviews(car.id),
@@ -55,14 +66,14 @@ class CarCard extends StatelessWidget {
 
         return InkWell(
           onTap: available ? onCarTap : null,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(borderRadiusVal),
           child: Opacity(
             opacity: available ? 1.0 : 0.65,
             child: Container(
-              width: width,
+              width: width ?? (screenWidth * 0.68).clamp(230.0, 270.0),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(borderRadiusVal),
                 border: Border.all(
                   color: const Color(0xFFE2E8F0),
                   width: 1,
@@ -70,8 +81,8 @@ class CarCard extends StatelessWidget {
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+                    blurRadius: 12 * scale,
+                    offset: Offset(0, 4 * scale),
                   ),
                 ],
               ),
@@ -79,26 +90,28 @@ class CarCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 1. Image Stack with Rating & Wishlist Badges
+                  // 5. USE BOXFIT CONSTRAINTS FOR IMAGES: Bounded container with BoxFit.cover
                   Stack(
                     children: [
                       ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(17),
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(borderRadiusVal - 1),
                         ),
-                        child: Image.network(
-                          car.imageUrl,
-                          height: 130,
+                        child: SizedBox(
+                          height: imageHeight,
                           width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            height: 130,
-                            width: double.infinity,
-                            color: const Color(0xFFF1F5F9),
-                            child: const Icon(
-                              Icons.directions_car_rounded,
-                              size: 46,
-                              color: Color(0xFF94A3B8),
+                          child: Image.network(
+                            car.imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              height: imageHeight,
+                              width: double.infinity,
+                              color: const Color(0xFFF1F5F9),
+                              child: Icon(
+                                Icons.directions_car_rounded,
+                                size: 40 * scale,
+                                color: const Color(0xFF94A3B8),
+                              ),
                             ),
                           ),
                         ),
@@ -106,12 +119,12 @@ class CarCard extends StatelessWidget {
 
                       // Rating Badge (Top Left of Image)
                       Positioned(
-                        top: 10,
-                        left: 10,
+                        top: 8 * scale,
+                        left: 8 * scale,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 7 * scale,
+                            vertical: 3.5 * scale,
                           ),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.95),
@@ -119,35 +132,41 @@ class CarCard extends StatelessWidget {
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
+                                blurRadius: 4 * scale,
+                                offset: Offset(0, 2 * scale),
                               ),
                             ],
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.star_rounded,
-                                size: 14,
-                                color: Color(0xFFFFB800),
+                                size: 13 * scale,
+                                color: const Color(0xFFFFB800),
                               ),
-                              const SizedBox(width: 3),
+                              SizedBox(width: 2.5 * scale),
                               Text(
                                 displayRating,
-                                style: const TextStyle(
-                                  fontSize: 12,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11 * scale,
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.textPrimary,
                                 ),
                               ),
-                              const SizedBox(width: 2),
-                              Text(
-                                '(${reviewCount > 0 ? reviewCount : 24})',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textSecondary,
-                                  fontWeight: FontWeight.w500,
+                              SizedBox(width: 2 * scale),
+                              Flexible(
+                                child: Text(
+                                  '(${reviewCount > 0 ? reviewCount : 24})',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 10 * scale,
+                                    color: AppColors.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ],
@@ -157,8 +176,8 @@ class CarCard extends StatelessWidget {
 
                       // Wishlist Heart Button (Top Right of Image)
                       Positioned(
-                        top: 10,
-                        right: 10,
+                        top: 8 * scale,
+                        right: 8 * scale,
                         child: AnimatedBuilder(
                           animation: WishlistController.instance,
                           builder: (context, _) {
@@ -177,15 +196,15 @@ class CarCard extends StatelessWidget {
                                 },
                                 borderRadius: BorderRadius.circular(20),
                                 child: Container(
-                                  padding: const EdgeInsets.all(6),
+                                  padding: EdgeInsets.all(5.5 * scale),
                                   decoration: BoxDecoration(
                                     color: Colors.white.withValues(alpha: 0.95),
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
                                         color: Colors.black.withValues(alpha: 0.1),
-                                        blurRadius: 6,
-                                        offset: const Offset(0, 2),
+                                        blurRadius: 4 * scale,
+                                        offset: Offset(0, 2 * scale),
                                       ),
                                     ],
                                   ),
@@ -193,7 +212,7 @@ class CarCard extends StatelessWidget {
                                     isWishlisted
                                         ? Icons.favorite_rounded
                                         : Icons.favorite_border_rounded,
-                                    size: 16,
+                                    size: 15 * scale,
                                     color: isWishlisted
                                         ? Colors.redAccent
                                         : const Color(0xFF334155),
@@ -212,23 +231,27 @@ class CarCard extends StatelessWidget {
                           left: 0,
                           right: 0,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            padding: EdgeInsets.symmetric(vertical: 4 * scale),
                             color: Colors.black.withValues(alpha: 0.6),
-                            child: const Row(
+                            child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
                                   Icons.lock_outline,
                                   color: Colors.white,
-                                  size: 12,
+                                  size: 11 * scale,
                                 ),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Not Available',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
+                                SizedBox(width: 4 * scale),
+                                Flexible(
+                                  child: Text(
+                                    'Not Available',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10.5 * scale,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -240,11 +263,15 @@ class CarCard extends StatelessWidget {
 
                   // 2. Card Content
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: cardPaddingH,
+                      vertical: cardPaddingV,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Title Row: Car Name on Left, Reviews Pill on Right
+                        // 2. ENFORCE HORIZONTAL ROW SAFETY & 3. PREVENT TEXT BREAKOUTS:
+                        // Title Row: Car Name on Left (Expanded), Reviews Pill on Right (Flexible)
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -254,153 +281,179 @@ class CarCard extends StatelessWidget {
                                 car.name,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 16,
+                                style: TextStyle(
+                                  fontSize: 14.5 * scale,
                                   fontWeight: FontWeight.w700,
                                   color: AppColors.textPrimary,
                                   letterSpacing: -0.2,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            InkWell(
-                              onTap: () => ReviewsBottomSheet.show(context, car.id),
-                              borderRadius: BorderRadius.circular(20),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4.5,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFEEF4FF),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: const Color(0xFFD0E1FD),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.chat_bubble_outline_rounded,
-                                      size: 12.5,
-                                      color: AppColors.primary,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      reviewsText,
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.primary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 10),
-
-                        // Specs Row: Transmission, Fuel, Seats
-                        Row(
-                          children: [
-                            _SpecChip(
-                              icon: Icons.tune_rounded,
-                              label: car.transmission,
-                            ),
-                            const SizedBox(width: 12),
-                            _SpecChip(
-                              icon: Icons.local_gas_station_rounded,
-                              label: car.fuelType,
-                            ),
-                            const SizedBox(width: 12),
-                            _SpecChip(
-                              icon: Icons.person_outline_rounded,
-                              label: '${car.seats} Seats',
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        // Price & Book Now Row
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            RichText(
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: '₹${car.pricePerDay.toStringAsFixed(0)}',
-                                    style: const TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
-                                  const TextSpan(
-                                    text: ' / day',
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w500,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Material(
-                              color: Colors.transparent,
+                            SizedBox(width: 6 * scale),
+                            Flexible(
                               child: InkWell(
-                                onTap: available ? onBookNow : null,
-                                borderRadius: BorderRadius.circular(12),
+                                onTap: () => ReviewsBottomSheet.show(context, car.id),
+                                borderRadius: BorderRadius.circular(20),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 9,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 7 * scale,
+                                    vertical: 3.5 * scale,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: available
-                                        ? AppColors.primary
-                                        : Colors.grey.shade400,
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: available
-                                        ? [
-                                            BoxShadow(
-                                              color: AppColors.primary
-                                                  .withValues(alpha: 0.3),
-                                              blurRadius: 8,
-                                              offset: const Offset(0, 3),
-                                            ),
-                                          ]
-                                        : null,
+                                    color: const Color(0xFFEEF4FF),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: const Color(0xFFD0E1FD),
+                                      width: 1,
+                                    ),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Text(
-                                        available ? 'Book Now' : 'Unavailable',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12.5,
-                                          fontWeight: FontWeight.w700,
-                                          letterSpacing: 0.2,
+                                      Icon(
+                                        Icons.chat_bubble_outline_rounded,
+                                        size: 11 * scale,
+                                        color: AppColors.primary,
+                                      ),
+                                      SizedBox(width: 3 * scale),
+                                      Flexible(
+                                        child: Text(
+                                          reviewsText,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 10 * scale,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.primary,
+                                          ),
                                         ),
                                       ),
-                                      if (available) ...[
-                                        const SizedBox(width: 4),
-                                        const Icon(
-                                          Icons.chevron_right_rounded,
-                                          color: Colors.white,
-                                          size: 17,
-                                        ),
-                                      ],
                                     ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        SizedBox(height: 8 * scale),
+
+                        // Specs Row: Transmission, Fuel, Seats (Horizontal Row Safety - Wrapped in Expanded)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _SpecChip(
+                                icon: Icons.tune_rounded,
+                                label: car.transmission,
+                                scale: scale,
+                              ),
+                            ),
+                            SizedBox(width: 4 * scale),
+                            Expanded(
+                              child: _SpecChip(
+                                icon: Icons.local_gas_station_rounded,
+                                label: car.fuelType,
+                                scale: scale,
+                              ),
+                            ),
+                            SizedBox(width: 4 * scale),
+                            Expanded(
+                              child: _SpecChip(
+                                icon: Icons.person_outline_rounded,
+                                label: '${car.seats} Seats',
+                                scale: scale,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        SizedBox(height: 10 * scale),
+
+                        // Price & Book Now Row (Horizontal Row Safety - Expanded / Flexible with Text Ellipsis)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Text.rich(
+                                TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: '₹${car.pricePerDay.toStringAsFixed(0)}',
+                                      style: TextStyle(
+                                        fontSize: 15 * scale,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: ' / day',
+                                      style: TextStyle(
+                                        fontSize: 10 * scale,
+                                        fontWeight: FontWeight.w500,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            SizedBox(width: 4 * scale),
+                            Flexible(
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: available ? onBookNow : null,
+                                  borderRadius: BorderRadius.circular(10 * scale),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 9 * scale,
+                                      vertical: 6.5 * scale,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: available
+                                          ? AppColors.primary
+                                          : Colors.grey.shade400,
+                                      borderRadius: BorderRadius.circular(10 * scale),
+                                      boxShadow: available
+                                          ? [
+                                              BoxShadow(
+                                                color: AppColors.primary
+                                                    .withValues(alpha: 0.3),
+                                                blurRadius: 6 * scale,
+                                                offset: Offset(0, 2 * scale),
+                                              ),
+                                            ]
+                                          : null,
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            available ? 'Book Now' : 'Unavailable',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 11 * scale,
+                                              fontWeight: FontWeight.w700,
+                                              letterSpacing: 0.1,
+                                            ),
+                                          ),
+                                        ),
+                                        if (available) ...[
+                                          SizedBox(width: 2 * scale),
+                                          Icon(
+                                            Icons.chevron_right_rounded,
+                                            color: Colors.white,
+                                            size: 14 * scale,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
@@ -423,22 +476,31 @@ class CarCard extends StatelessWidget {
 class _SpecChip extends StatelessWidget {
   final IconData icon;
   final String label;
+  final double scale;
 
-  const _SpecChip({required this.icon, required this.label});
+  const _SpecChip({
+    required this.icon,
+    required this.label,
+    this.scale = 1.0,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 13, color: const Color(0xFF64748B)),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF64748B),
+        Icon(icon, size: 11.5 * scale, color: const Color(0xFF64748B)),
+        SizedBox(width: 2.5 * scale),
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 10 * scale,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF64748B),
+            ),
           ),
         ),
       ],

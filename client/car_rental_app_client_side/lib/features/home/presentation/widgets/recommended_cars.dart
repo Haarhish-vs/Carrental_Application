@@ -27,18 +27,29 @@ class RecommendedCars extends StatelessWidget {
     final availableCars = cars.where((c) => c.isAvailable).toList();
     if (availableCars.isEmpty) return const SizedBox.shrink();
 
+    final mediaQuery = MediaQuery.sizeOf(context);
+    final double screenWidth = mediaQuery.width;
+    final double scale = (screenWidth / 375.0).clamp(0.8, 1.25);
+    final double horizontalPadding = (16.0 * scale).clamp(12.0, 24.0);
+    final double spacing = (12.0 * scale).clamp(8.0, 16.0);
+    
+    // Dynamic horizontal rail height derived from screen dimensions
+    final double imageHeight = (screenWidth * 0.32).clamp(100.0, 140.0);
+    final double contentHeight = 105.0 * scale;
+    final double railHeight = imageHeight + contentHeight + (16.0 * scale);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 17,
+                style: TextStyle(
+                  fontSize: 17 * scale,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                 ),
@@ -46,10 +57,10 @@ class RecommendedCars extends StatelessWidget {
               trailing ??
                   GestureDetector(
                     onTap: onSeeAllTap,
-                    child: const Text(
+                    child: Text(
                       'See all',
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 13 * scale,
                         color: AppColors.primary,
                         fontWeight: FontWeight.w600,
                       ),
@@ -58,14 +69,14 @@ class RecommendedCars extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12 * scale),
         SizedBox(
-          height: 260,
+          height: railHeight,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
             itemCount: availableCars.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 14),
+            separatorBuilder: (context, index) => SizedBox(width: spacing),
             itemBuilder: (context, index) {
               final car = availableCars[index];
               return CarCard(

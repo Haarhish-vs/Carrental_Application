@@ -20,39 +20,54 @@ class PopularCarsGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     if (cars.isEmpty) return const SizedBox.shrink();
 
+    final mediaQuery = MediaQuery.sizeOf(context);
+    final double screenWidth = mediaQuery.width;
+    final double scale = (screenWidth / 375.0).clamp(0.8, 1.25);
+    final double gridPadding = (16.0 * scale).clamp(12.0, 24.0);
+    final double spacing = (12.0 * scale).clamp(8.0, 16.0);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: gridPadding),
           child: Text(
             'Popular Cars',
             style: TextStyle(
-              fontSize: 17,
+              fontSize: 17 * scale,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12 * scale),
         LayoutBuilder(
           builder: (context, constraints) {
-            // Responsive column count: phone -> 2, tablet/web -> 3+.
-            final crossAxisCount = constraints.maxWidth >= 900
+            final double availableWidth = constraints.maxWidth;
+            final int crossAxisCount = availableWidth >= 900
                 ? 4
-                : constraints.maxWidth >= 600
-                ? 3
-                : 2;
+                : availableWidth >= 600
+                    ? 3
+                    : 2;
+
+            // 4. CALCULATION OF GRID ASPECT RATIOS: Dynamically compute childAspectRatio from width
+            final double totalHorizontalSpacing = (gridPadding * 2) + (spacing * (crossAxisCount - 1));
+            final double cardWidth = (availableWidth - totalHorizontalSpacing) / crossAxisCount;
+            final double imageHeight = (availableWidth * 0.32).clamp(100.0, 140.0);
+            final double cardContentHeight = 105.0 * scale;
+            final double estimatedCardHeight = imageHeight + cardContentHeight;
+            final double dynamicAspectRatio = (cardWidth / estimatedCardHeight).clamp(0.46, 0.72);
+
             return GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: gridPadding),
               itemCount: cars.length,
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: crossAxisCount,
-                mainAxisSpacing: 14,
-                crossAxisSpacing: 14,
-                childAspectRatio: 0.54,
+                mainAxisSpacing: spacing,
+                crossAxisSpacing: spacing,
+                childAspectRatio: dynamicAspectRatio,
               ),
               itemBuilder: (context, index) {
                 final car = cars[index];

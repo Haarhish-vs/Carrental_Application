@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:car_rental_app_client_side/core/theme/app_colors.dart';
+import 'package:car_rental_app_client_side/core/utils/responsive.dart';
 import 'package:car_rental_app_client_side/features/home/models/car_model.dart';
 import 'package:car_rental_app_client_side/features/wishlist/presentation/controllers/wishlist_controller.dart';
 
@@ -15,35 +16,39 @@ class CarResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scale = context.scale;
     final hasDistance = car.distanceKm != null && car.distanceKm! > 0;
     final distanceText = hasDistance
         ? '${car.distanceKm!.toStringAsFixed(1)} km away'
         : (car.pickupLocation ?? car.city);
+    final imageHeight = (context.screenWidth * 0.42).clamp(130.0, 180.0);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: context.rSize(16)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(context.rSize(20)),
         border: Border.all(color: Colors.grey.shade200, width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
+            blurRadius: context.rSize(14),
+            offset: Offset(0, context.rSize(4)),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Car Image & Badges
+          // 1. Car Image & Badges (BoxFit constraints)
           Stack(
             children: [
               ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(context.rSize(20)),
+                ),
                 child: SizedBox(
-                  height: 170,
+                  height: imageHeight,
                   width: double.infinity,
                   child: car.imageUrl.isNotEmpty
                       ? Image.network(
@@ -51,11 +56,11 @@ class CarResultCard extends StatelessWidget {
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) => Container(
                             color: const Color(0xFFF1F5F9),
-                            child: const Center(
+                            child: Center(
                               child: Icon(
                                 Icons.directions_car_rounded,
-                                size: 56,
-                                color: Color(0xFF94A3B8),
+                                size: context.rSize(48),
+                                color: const Color(0xFF94A3B8),
                               ),
                             ),
                           ),
@@ -75,11 +80,11 @@ class CarResultCard extends StatelessWidget {
                         )
                       : Container(
                           color: const Color(0xFFF1F5F9),
-                          child: const Center(
+                          child: Center(
                             child: Icon(
                               Icons.directions_car_rounded,
-                              size: 56,
-                              color: Color(0xFF94A3B8),
+                              size: context.rSize(48),
+                              color: const Color(0xFF94A3B8),
                             ),
                           ),
                         ),
@@ -89,18 +94,23 @@ class CarResultCard extends StatelessWidget {
               // Car Type Badge (Top Left)
               if (car.carType != null && car.carType!.isNotEmpty)
                 Positioned(
-                  top: 12,
-                  left: 12,
+                  top: context.rSize(12),
+                  left: context.rSize(12),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: context.rSize(8),
+                      vertical: context.rSize(4),
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.75),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       car.carType!.toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 11,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: context.rFont(10),
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                         letterSpacing: 0.5,
@@ -111,13 +121,16 @@ class CarResultCard extends StatelessWidget {
 
               // Rating Badge and Wishlist Button (Top Right)
               Positioned(
-                top: 12,
-                right: 12,
+                top: context.rSize(12),
+                right: context.rSize(12),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: context.rSize(7),
+                        vertical: context.rSize(3.5),
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.92),
                         borderRadius: BorderRadius.circular(8),
@@ -126,12 +139,14 @@ class CarResultCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.star_rounded, size: 15, color: Colors.amber),
-                          const SizedBox(width: 4),
+                          Icon(Icons.star_rounded, size: context.rSize(14), color: Colors.amber),
+                          SizedBox(width: context.rSize(3)),
                           Text(
                             car.rating.toStringAsFixed(1),
-                            style: const TextStyle(
-                              fontSize: 12,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: context.rFont(11),
                               fontWeight: FontWeight.bold,
                               color: AppColors.textPrimary,
                             ),
@@ -139,7 +154,7 @@ class CarResultCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: context.rSize(6)),
                     AnimatedBuilder(
                       animation: WishlistController.instance,
                       builder: (context, _) {
@@ -157,7 +172,7 @@ class CarResultCard extends StatelessWidget {
                             },
                             borderRadius: BorderRadius.circular(20),
                             child: Container(
-                              padding: const EdgeInsets.all(5),
+                              padding: EdgeInsets.all(context.rSize(5)),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.92),
                                 shape: BoxShape.circle,
@@ -172,7 +187,7 @@ class CarResultCard extends StatelessWidget {
                                 isWishlisted
                                     ? Icons.favorite_rounded
                                     : Icons.favorite_border_rounded,
-                                size: 18,
+                                size: context.rSize(17),
                                 color: isWishlisted
                                     ? Colors.redAccent
                                     : Colors.grey.shade700,
@@ -190,97 +205,108 @@ class CarResultCard extends StatelessWidget {
 
           // 2. Info details
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.rSize(14)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Car Name
+                // Car Name (Text Breakout Safety)
                 Text(
                   car.name,
-                  style: const TextStyle(
-                    fontSize: 17,
+                  style: TextStyle(
+                    fontSize: context.rFont(16),
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: context.rSize(8)),
 
                 // Attributes Row: Seats, Transmission, Fuel, Distance
                 Wrap(
-                  spacing: 12,
-                  runSpacing: 8,
+                  spacing: context.rSize(10),
+                  runSpacing: context.rSize(6),
                   children: [
                     _SpecChip(
                       icon: Icons.airline_seat_recline_normal_rounded,
                       text: '${car.seats} Seats',
+                      scale: scale,
                     ),
                     _SpecChip(
                       icon: Icons.settings_outlined,
                       text: car.transmission,
+                      scale: scale,
                     ),
                     _SpecChip(
                       icon: Icons.local_gas_station_outlined,
                       text: car.fuelType,
+                      scale: scale,
                     ),
                     if (distanceText.isNotEmpty)
                       _SpecChip(
                         icon: Icons.near_me_outlined,
                         text: distanceText,
+                        scale: scale,
                       ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: context.rSize(12)),
                 const Divider(height: 1, color: AppColors.divider),
-                const SizedBox(height: 14),
+                SizedBox(height: context.rSize(12)),
 
-                // 3. Price & View Details Action
+                // 3. Price & View Details Action (Horizontal Row Safety - Expanded & Flexible)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
+                    Expanded(
+                      child: Text.rich(
+                        TextSpan(
                           children: [
-                            Text(
-                              '₹${car.pricePerDay.toStringAsFixed(0)}',
-                              style: const TextStyle(
-                                fontSize: 20,
+                            TextSpan(
+                              text: '₹${car.pricePerDay.toStringAsFixed(0)}',
+                              style: TextStyle(
+                                fontSize: context.rFont(18),
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.primary,
                               ),
                             ),
-                            const Text(
-                              ' / day',
+                            TextSpan(
+                              text: ' / day',
                               style: TextStyle(
-                                fontSize: 12.5,
+                                fontSize: context.rFont(12),
                                 color: AppColors.textSecondary,
                               ),
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                    ElevatedButton(
-                      onPressed: onViewDetails,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      child: const Text(
-                        'View Details',
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.bold,
+                    ),
+                    SizedBox(width: context.rSize(8)),
+                    Flexible(
+                      child: ElevatedButton(
+                        onPressed: onViewDetails,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: context.rSize(16),
+                            vertical: context.rSize(9),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          'View Details',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: context.rFont(12.5),
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -298,20 +324,27 @@ class CarResultCard extends StatelessWidget {
 class _SpecChip extends StatelessWidget {
   final IconData icon;
   final String text;
+  final double scale;
 
-  const _SpecChip({required this.icon, required this.text});
+  const _SpecChip({
+    required this.icon,
+    required this.text,
+    this.scale = 1.0,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: AppColors.textSecondary),
-        const SizedBox(width: 4),
+        Icon(icon, size: 13 * scale, color: AppColors.textSecondary),
+        SizedBox(width: 3 * scale),
         Text(
           text,
-          style: const TextStyle(
-            fontSize: 12,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 11 * scale,
             color: AppColors.textSecondary,
             fontWeight: FontWeight.w500,
           ),
