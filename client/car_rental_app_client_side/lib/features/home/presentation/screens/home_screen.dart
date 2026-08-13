@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../models/car_model.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
@@ -21,6 +22,7 @@ import 'my_cars_screen.dart';
 import '../../../support/presentation/screens/support_screen.dart';
 import 'all_recommended_cars_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
+import '../../../profile/presentation/screens/settings_screen.dart';
 import '../../../wishlist/presentation/screens/wishlist_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -35,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final CarApiService _carApiService = CarApiService();
 
   int _navIndex = 0;
+  DateTime? _lastPressedAt;
 
   late Future<List<CarModel>> _vehiclesFuture;
 
@@ -353,6 +356,11 @@ class _HomeScreenState extends State<HomeScreen> {
           onListCarPressed: () async {
             await _goHost();
           },
+          onExplorePressed: () {
+            setState(() {
+              _navIndex = 0;
+            });
+          },
         );
       default:
         return _buildHomeTab();
@@ -612,6 +620,22 @@ class _HomeScreenState extends State<HomeScreen> {
       drawer: HomeDrawer(
         userName: _userName,
         userLocation: _userLocation,
+        profileImageUrl: _profileImageUrl,
+        isAuthenticated: AuthService.isAuthenticated,
+        onLoginTap: () async {
+          Navigator.pop(context);
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const AuthScreen(initialMode: AuthMode.login),
+            ),
+          );
+          if (mounted) {
+            setState(() {
+              _loadUserInfo();
+              _vehiclesFuture = _fetchVehicles();
+            });
+          }
+        },
         onProfileTap: () {
           Navigator.pop(context);
           _openProfileScreen();
@@ -667,8 +691,8 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         onSettingsTap: () {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Settings coming soon')),
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const SettingsScreen()),
           );
         },
         onHelpTap: () {
@@ -742,7 +766,44 @@ class _HomeScreenState extends State<HomeScreen> {
           _handleLogout();
         },
       ),
-      body: SafeArea(child: _buildBody()),
+      body: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) return;
+
+          // If on another tab (Bookings or My Cars), navigate back to Home tab
+          if (_navIndex != 0) {
+            setState(() {
+              _navIndex = 0;
+            });
+            return;
+          }
+
+          // If on Home tab, check double tap window (2 seconds)
+          final now = DateTime.now();
+          if (_lastPressedAt == null || now.difference(_lastPressedAt!) > const Duration(seconds: 2)) {
+            _lastPressedAt = now;
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                  'Swipe / Press back again to exit',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                duration: const Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+                margin: const EdgeInsets.all(16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            );
+            return;
+          }
+
+          // On second back tap within 2 seconds, automatically exit app
+          SystemNavigator.pop();
+        },
+        child: SafeArea(child: _buildBody()),
+      ),
       bottomNavigationBar: BottomNavigation(
         currentIndex: _navIndex,
         onHomeTap: () {

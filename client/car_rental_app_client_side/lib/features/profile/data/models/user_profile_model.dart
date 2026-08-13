@@ -29,7 +29,7 @@ class UserProfileModel {
     this.profileImageUrl = '',
     this.isDlVerified = false,
     this.trustScore = 100.0,
-    this.rating = 4.8,
+    this.rating = 5.0,
     this.reviewsCount = 0,
     this.isRenter = true,
     this.bookedCarsCount = 0,
@@ -46,7 +46,7 @@ class UserProfileModel {
     final activity = json['activity'] as Map<String, dynamic>? ?? {};
 
     final trust = double.tryParse(json['trustScore']?.toString() ?? json['trust_score']?.toString() ?? '') ?? 100.0;
-    final rate = double.tryParse(json['rating']?.toString() ?? '') ?? (trust > 0 ? trust / 20.0 : 4.8);
+    final rate = double.tryParse(json['rating']?.toString() ?? '') ?? (trust > 0 ? (trust / 20.0).clamp(0.0, 5.0) : 5.0);
 
     return UserProfileModel(
       id: json['id']?.toString() ?? '',

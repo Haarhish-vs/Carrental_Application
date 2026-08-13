@@ -58,8 +58,21 @@ const uploadProfileImage = async (req, res, next) => {
   }
 };
 
+const deleteAccount = async (req, res, next) => {
+  try {
+    const result = await profileService.deleteAccount(req.user.id);
+    return res.status(200).json({
+      success: true,
+      message: result.message
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getProfile,
   updateProfile,
-  uploadProfileImage
+  uploadProfileImage,
+  deleteAccount
 };

@@ -8,9 +8,14 @@ import 'booking_tracking_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class MyCarsScreen extends StatefulWidget {
-  const MyCarsScreen({super.key, required this.onListCarPressed});
+  const MyCarsScreen({
+    super.key,
+    required this.onListCarPressed,
+    this.onExplorePressed,
+  });
 
   final VoidCallback onListCarPressed;
+  final VoidCallback? onExplorePressed;
 
   @override
   State<MyCarsScreen> createState() => _MyCarsScreenState();
@@ -936,7 +941,9 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                         color: Color(0xFF103B66),
                       ),
                       onPressed: () {
-                        if (Navigator.of(context).canPop()) {
+                        if (widget.onExplorePressed != null) {
+                          widget.onExplorePressed!();
+                        } else if (Navigator.of(context).canPop()) {
                           Navigator.of(context).pop();
                         } else {
                           widget.onListCarPressed();

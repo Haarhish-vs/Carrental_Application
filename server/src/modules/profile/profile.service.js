@@ -228,6 +228,43 @@ class ProfileService {
 
     return await this.getProfile(userId);
   }
+
+  /**
+   * Permanently deletes user account and related profile records from database.
+   * @param {string} userId - User UUID
+   * @returns {Promise<object>} Status result
+   */
+  async deleteAccount(userId) {
+    if (!userId) {
+      const error = new Error('User ID is required');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    console.log(`🗑️ [ProfileService.deleteAccount] Permanently deleting user account ${userId}...`);
+
+    // 1. Delete user record from public.users table
+    const { error: userErr } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', userId);
+
+    // 2. Delete user record from public.profiles table
+    const { error: profileErr } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', userId);
+
+    if (userErr && profileErr) {
+      console.error('❌ [ProfileService.deleteAccount] Error deleting user:', userErr || profileErr);
+      const err = new Error(`Failed to delete account from database: ${(userErr || profileErr).message}`);
+      err.statusCode = 500;
+      throw err;
+    }
+
+    console.log(`✅ [ProfileService.deleteAccount] Successfully deleted user ${userId} from database.`);
+    return { success: true, message: 'Account deleted successfully from database' };
+  }
 }
 
 module.exports = new ProfileService();

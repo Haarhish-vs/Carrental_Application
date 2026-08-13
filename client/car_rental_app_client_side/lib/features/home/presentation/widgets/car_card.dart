@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../models/car_model.dart';
 import '../../../wishlist/presentation/controllers/wishlist_controller.dart';
-import '../../../owner/data/services/car_api_service.dart';
 import '../widgets/reviews_bottom_sheet.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -42,7 +41,7 @@ class CarCard extends StatelessWidget {
     final double borderRadiusVal = 16.0 * scale;
 
     final int reviewCount = car.reviewsCount ?? 0;
-    final String displayRating = car.rating > 0 ? car.rating.toStringAsFixed(1) : '4.5';
+    final String displayRating = car.rating > 0 ? car.rating.toStringAsFixed(1) : 'New';
     final String reviewsText = reviewCount > 0 ? '$reviewCount Reviews' : 'Reviews';
 
     return InkWell(

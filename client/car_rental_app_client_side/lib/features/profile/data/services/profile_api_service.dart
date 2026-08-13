@@ -173,6 +173,20 @@ class ProfileApiService {
     }
   }
 
+  /// Permanently delete user account from backend database
+  Future<bool> deleteAccount() async {
+    try {
+      final response = await _dio.delete('/api/profile/account');
+      await AuthService.logout();
+      _cachedProfile = null;
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      await AuthService.logout();
+      _cachedProfile = null;
+      throw _handleDioError(e);
+    }
+  }
+
   Exception _handleDioError(DioException error) {
     String message = 'An unexpected error occurred';
     if (error.response != null) {

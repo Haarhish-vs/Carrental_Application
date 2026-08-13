@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_colors.dart';
 
 class HomeDrawer extends StatelessWidget {
   final String? userName;
   final String? userLocation;
+  final String? profileImageUrl;
+  final bool isAuthenticated;
 
   final VoidCallback onProfileTap;
   final VoidCallback onTripsTap;
@@ -14,11 +17,14 @@ class HomeDrawer extends StatelessWidget {
   final VoidCallback onHelpTap;
   final VoidCallback onPrivacyTap;
   final VoidCallback onLogoutTap;
+  final VoidCallback? onLoginTap;
 
   const HomeDrawer({
     super.key,
     this.userName,
     this.userLocation,
+    this.profileImageUrl,
+    this.isAuthenticated = false,
     required this.onProfileTap,
     required this.onTripsTap,
     required this.onFavoritesTap,
@@ -28,6 +34,7 @@ class HomeDrawer extends StatelessWidget {
     required this.onHelpTap,
     required this.onPrivacyTap,
     required this.onLogoutTap,
+    this.onLoginTap,
   });
 
   @override
@@ -36,10 +43,11 @@ class HomeDrawer extends StatelessWidget {
         ? 'Guest User'
         : userName!;
 
-    final displayLocation =
-        (userLocation == null || userLocation!.trim().isEmpty)
-        ? 'Select Location'
-        : userLocation!;
+    final bool hasValidLocation = userLocation != null &&
+        userLocation!.trim().isNotEmpty &&
+        userLocation != 'Select Location';
+
+    final bool hasProfileImage = profileImageUrl != null && profileImageUrl!.trim().isNotEmpty;
 
     return Drawer(
       child: SafeArea(
@@ -52,14 +60,19 @@ class HomeDrawer extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 28,
                     backgroundColor: Colors.white,
-                    child: Icon(
-                      Icons.person,
-                      size: 32,
-                      color: AppColors.primary,
-                    ),
+                    backgroundImage: hasProfileImage
+                        ? CachedNetworkImageProvider(profileImageUrl!)
+                        : null,
+                    child: !hasProfileImage
+                        ? const Icon(
+                            Icons.person,
+                            size: 32,
+                            color: AppColors.primary,
+                          )
+                        : null,
                   ),
                   const SizedBox(height: 14),
                   Text(
@@ -70,24 +83,26 @@ class HomeDrawer extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        color: Colors.white70,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          displayLocation,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.white70),
+                  if (hasValidLocation) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          color: Colors.white70,
+                          size: 16,
                         ),
-                      ),
-                    ],
-                  ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            userLocation!,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -146,11 +161,32 @@ class HomeDrawer extends StatelessWidget {
 
             const Divider(),
 
-            _DrawerTile(
-              icon: Icons.logout,
-              title: "Logout",
-              onTap: onLogoutTap,
-            ),
+            if (isAuthenticated)
+              _DrawerTile(
+                icon: Icons.logout,
+                title: "Logout",
+                onTap: onLogoutTap,
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: onLoginTap ?? onLogoutTap,
+                    icon: const Icon(Icons.login_rounded),
+                    label: const Text(
+                      'Log In / Register',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.5),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ),
 
             const SizedBox(height: 8),
 

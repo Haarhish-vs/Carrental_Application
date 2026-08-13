@@ -17,4 +17,8 @@ router.put('/', profileController.updateProfile);
 // POST /api/profile/upload-image -> Upload profile avatar
 router.post('/upload-image', upload.single('image'), profileController.uploadProfileImage);
 
+// DELETE /api/profile/account -> Delete user account from database
+router.delete('/account', profileController.deleteAccount);
+router.delete('/', profileController.deleteAccount);
+
 module.exports = router;
