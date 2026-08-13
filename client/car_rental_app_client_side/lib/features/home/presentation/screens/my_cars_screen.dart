@@ -600,6 +600,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           itemCount: requests.length,
           separatorBuilder: (_, _) => const SizedBox(height: 16),
+          itemBuilder: (context, index) => _buildRequestCard(requests[index]),
         );
       },
     );

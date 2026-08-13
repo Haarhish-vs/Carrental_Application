@@ -537,18 +537,18 @@ class _SupportScreenState extends State<SupportScreen> {
                 Expanded(
                   child: _buildEmergencyCard(
                     'Vehicle\nBreakdown',
-                    'Get roadside help',
+                    'Call admin help',
                     Icons.warning_amber_rounded,
-                    () => _openWhatsApp(message: "EMERGENCY: Vehicle Breakdown. I need immediate assistance."),
+                    () => _callAdminPhone(),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: _buildEmergencyCard(
                     'Accident\nSupport',
-                    'Report an accident',
+                    'Email admin',
                     Icons.car_crash_outlined,
-                    () => _openWhatsApp(message: "EMERGENCY: Accident Support. I need immediate assistance."),
+                    () => _sendAdminEmail(),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -649,34 +649,37 @@ class _SupportScreenState extends State<SupportScreen> {
                         ),
                       ],
                     ),
-                  ),
-                ],
               ),
             ),
             const SizedBox(height: 16),
-            InkWell(
-              onTap: () => _openWhatsApp(message: "Hi, I still need help."),
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: Colors.green),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.chat_bubble, color: Colors.green, size: 20),
-                    SizedBox(width: 8),
-                    Text(
-                      'Chat with us on WhatsApp',
-                      style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _callAdminPhone,
+                    icon: const Icon(Icons.phone, size: 16, color: Colors.blue),
+                    label: const Text('Call Admin', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.blue),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _sendAdminEmail,
+                    icon: const Icon(Icons.email_outlined, size: 16, color: Colors.purple),
+                    label: const Text('Email Admin', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.purple)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.purple),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 40),
           ],
