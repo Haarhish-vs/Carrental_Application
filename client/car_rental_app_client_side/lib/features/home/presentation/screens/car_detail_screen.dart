@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../../auth/services/auth_service.dart';
@@ -7,6 +8,7 @@ import '../../models/car_model.dart';
 import '../../../wishlist/presentation/controllers/wishlist_controller.dart';
 import 'reserve_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:share_plus/share_plus.dart';
 
 class CarDetailScreen extends StatefulWidget {
   const CarDetailScreen({
@@ -79,30 +81,22 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
     }
   }
 
-  void _handleShareCar() {
+  Future<void> _handleShareCar() async {
     final locationText = (widget.car.pickupLocation?.trim().isNotEmpty == true)
         ? widget.car.pickupLocation!
         : widget.car.city;
 
     final String shareMessage =
-        '🚗 Check out ${widget.car.name} on DriveX!\n'
+        '🚗 Check out ${widget.car.name} on DriveX!\n\n'
         '💰 Price: ₹${widget.car.pricePerDay.toStringAsFixed(0)}/day\n'
         '📍 Location: $locationText\n\n'
-        'Book directly on DriveX App!';
+        'Book directly on the DriveX App!';
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: const [
-            Icon(Icons.share_rounded, color: Colors.white, size: 20),
-            SizedBox(width: 10),
-            Expanded(child: Text('Car details link copied & ready to share!')),
-          ],
-        ),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    try {
+      await Share.share(shareMessage, subject: 'Check out ${widget.car.name} on DriveX');
+    } catch (e) {
+      debugPrint('⚠️ [CarDetailScreen] Share exception: $e');
+    }
   }
 
   @override
@@ -263,16 +257,16 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                               },
                             ),
                             const SizedBox(width: 12),
-                            CircleAvatar(
-                              backgroundColor: Colors.white.withOpacity(0.9),
-                              radius: 20,
-                              child: IconButton(
-                                icon: Icon(
+                            GestureDetector(
+                              onTap: _handleShareCar,
+                              child: CircleAvatar(
+                                backgroundColor: Colors.white.withOpacity(0.9),
+                                radius: 20,
+                                child: Icon(
                                   Icons.share_outlined,
                                   color: Colors.grey.shade700,
                                   size: 18,
                                 ),
-                                onPressed: _handleShareCar,
                               ),
                             ),
                           ],
@@ -293,43 +287,6 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                               size: 20,
                             ),
                             onPressed: () => Navigator.of(context).pop(),
-                          ),
-                        ),
-                      ),
-
-                      // 360 View overlay badge
-                      Positioned(
-                        bottom: 16,
-                        left: 16,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: const [
-                              BoxShadow(color: Colors.black12, blurRadius: 4),
-                            ],
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(
-                                Icons.threed_rotation_rounded,
-                                size: 14,
-                                color: AppColors.primary,
-                              ),
-                              SizedBox(width: 6),
-                              Text(
-                                "360 View",
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                            ],
                           ),
                         ),
                       ),
