@@ -144,7 +144,7 @@ class CarResultCard extends StatelessWidget {
                           Icon(Icons.star_rounded, size: context.rSize(14), color: Colors.amber),
                           SizedBox(width: context.rSize(3)),
                           Text(
-                            car.rating.toStringAsFixed(1),
+                            car.rating > 0 ? car.rating.toStringAsFixed(1) : 'New',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(

@@ -64,12 +64,16 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
       try {
         final updatedData = await _apiService.getBookingById(bookingId);
         if (mounted) {
+          final veh = _getVehicleData(updatedData['vehicle']);
+          final fetchedLat = updatedData['current_lat'] ?? veh?['location_lat'];
+          final fetchedLng = updatedData['current_lng'] ?? veh?['location_lng'];
+          debugPrint('📡 [OWNER FETCH] Realtime GPS Coordinates for booking $bookingId -> Lat: $fetchedLat, Lng: $fetchedLng');
           setState(() {
             _latestBookingData = updatedData;
           });
         }
       } catch (e) {
-        debugPrint('⚠️ Error fetching realtime tracking update: $e');
+        debugPrint('❌ [OWNER REALTIME FETCH ERROR] Booking $bookingId -> Failed to fetch live tracking update: $e');
       }
     });
   }
@@ -324,17 +328,108 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
     );
   }
 
+  Widget _buildRenterGpsStatusCard() {
+    return FutureBuilder<bool>(
+      future: LocationTrackingService().isGpsEnabled(),
+      builder: (context, snapshot) {
+        final isGpsOn = snapshot.data ?? true;
+        if (isGpsOn) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.green.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.green.shade200),
+            ),
+            child: Row(
+              children: const [
+                Icon(Icons.gps_fixed, color: Colors.green, size: 18),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '🟢 Renter Device GPS is ON & Sharing Live Location',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.green),
+                  ),
+                ),
+              ],
+            ),
+          );
+        } else {
+          return InkWell(
+            onTap: () => LocationTrackingService().requestEnableGps(),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.shade400),
+              ),
+              child: Row(
+                children: const [
+                  Icon(Icons.gps_off, color: Colors.orange, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '⚠️ Location Services (GPS) is OFF. Tap here to turn ON GPS for live tracking.',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.orange),
+                    ),
+                  ),
+                  Icon(Icons.chevron_right, color: Colors.orange, size: 18),
+                ],
+              ),
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  LatLng _getCityCoordinates(String? locationName) {
+    if (locationName == null || locationName.isEmpty) return const LatLng(11.0168, 76.9558); // Coimbatore default
+    final loc = locationName.toLowerCase();
+    if (loc.contains('coimbatore') || loc.contains('townhal') || loc.contains('town hall')) {
+      return const LatLng(11.0168, 76.9558);
+    } else if (loc.contains('chennai')) {
+      return const LatLng(13.0827, 80.2707);
+    } else if (loc.contains('bangalore') || loc.contains('bengaluru')) {
+      return const LatLng(12.9716, 77.5946);
+    } else if (loc.contains('madurai')) {
+      return const LatLng(9.9252, 78.1198);
+    } else if (loc.contains('salem')) {
+      return const LatLng(11.6643, 78.1460);
+    } else if (loc.contains('trichy') || loc.contains('tiruchirappalli')) {
+      return const LatLng(10.7905, 78.7047);
+    }
+    return const LatLng(11.0168, 76.9558); // Default
+  }
+
+  Map<String, dynamic>? _getVehicleData(dynamic rawVehicle) {
+    if (rawVehicle is Map<String, dynamic>) {
+      return rawVehicle;
+    } else if (rawVehicle is List && rawVehicle.isNotEmpty && rawVehicle.first is Map<String, dynamic>) {
+      return rawVehicle.first as Map<String, dynamic>;
+    }
+    return null;
+  }
+
   Widget _buildLiveMapCard(Map<String, dynamic> rawBooking) {
     final booking = _latestBookingData ?? rawBooking;
+    final vehicle = _getVehicleData(booking['vehicle']);
     final lat = double.tryParse(booking['current_lat']?.toString() ?? '');
     final lng = double.tryParse(booking['current_lng']?.toString() ?? '');
-    final vehicle = booking['vehicle'] as Map<String, dynamic>?;
     final vehicleLat = double.tryParse(vehicle?['location_lat']?.toString() ?? '');
     final vehicleLng = double.tryParse(vehicle?['location_lng']?.toString() ?? '');
 
-    final targetLat = lat ?? vehicleLat ?? 13.0827; // Default lat
-    final targetLng = lng ?? vehicleLng ?? 80.2707; // Default lng
+    final pickupLocation = vehicle?['pickup_location']?.toString() ?? vehicle?['city']?.toString();
+    final fallbackCoords = _getCityCoordinates(pickupLocation);
+
+    final targetLat = lat ?? vehicleLat ?? fallbackCoords.latitude;
+    final targetLng = lng ?? vehicleLng ?? fallbackCoords.longitude;
     final centerPoint = LatLng(targetLat, targetLng);
+
+    debugPrint('🗺️ [OWNER MAP VIEW] Displaying Marker Coordinates -> Latitude: $targetLat, Longitude: $targetLng');
 
     final String lastTracked = booking['last_tracked_at'] != null
         ? _formatDateTime(booking['last_tracked_at'].toString())
@@ -459,18 +554,73 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
                   Positioned(
                     bottom: 12,
                     right: 12,
-                    child: FloatingActionButton.small(
-                      heroTag: 'recenter_map',
-                      backgroundColor: Colors.white,
-                      foregroundColor: AppColors.primary,
-                      tooltip: 'Recenter Map',
-                      onPressed: () {
-                        _mapController.move(centerPoint, 15.0);
-                      },
-                      child: const Icon(Icons.center_focus_strong),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        FloatingActionButton.small(
+                          heroTag: 'recenter_map',
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.primary,
+                          tooltip: 'Recenter Map',
+                          onPressed: () {
+                            _mapController.move(centerPoint, 15.0);
+                          },
+                          child: const Icon(Icons.center_focus_strong),
+                        ),
+                        const SizedBox(width: 8),
+                        FloatingActionButton.small(
+                          heroTag: 'fullscreen_map',
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          tooltip: 'Full Screen Map',
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => FullScreenMapPage(
+                                  bookingId: booking['id']?.toString() ?? '',
+                                  brand: brand,
+                                  model: model,
+                                  initialCenter: centerPoint,
+                                  apiService: _apiService,
+                                ),
+                              ),
+                            );
+                          },
+                          child: const Icon(Icons.fullscreen_rounded),
+                        ),
+                      ],
                     ),
                   ),
                 ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => FullScreenMapPage(
+                      bookingId: booking['id']?.toString() ?? '',
+                      brand: brand,
+                      model: model,
+                      initialCenter: centerPoint,
+                      apiService: _apiService,
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.fullscreen_rounded, color: AppColors.primary),
+              label: const Text(
+                'Open Full Screen Live Map & Controls',
+                style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.primary, width: 1.5),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ),
@@ -595,6 +745,7 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
           }
 
           if (snapshot.hasError) {
+            debugPrint('❌ [OWNER TRACKING PAGE ERROR] Failed to fetch booking: ${snapshot.error}');
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
@@ -661,6 +812,9 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Renter GPS Status Check Banner
+                if (!isOwner && (status == 'active' || status == 'confirmed'))
+                  _buildRenterGpsStatusCard(),
                 // 1. Mini Car Info Card
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -930,6 +1084,250 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// Full Screen Interactive Map Page with Dedicated Refresh Button
+class FullScreenMapPage extends StatefulWidget {
+  final String bookingId;
+  final String brand;
+  final String model;
+  final LatLng initialCenter;
+  final CarApiService apiService;
+
+  const FullScreenMapPage({
+    super.key,
+    required this.bookingId,
+    required this.brand,
+    required this.model,
+    required this.initialCenter,
+    required this.apiService,
+  });
+
+  @override
+  State<FullScreenMapPage> createState() => _FullScreenMapPageState();
+}
+
+class _FullScreenMapPageState extends State<FullScreenMapPage> {
+  late MapController _mapController;
+  late LatLng _currentCenter;
+  bool _isRefreshing = false;
+  Timer? _timer;
+  String _lastUpdatedTime = 'Live GPS Active';
+
+  @override
+  void initState() {
+    super.initState();
+    _mapController = MapController();
+    _currentCenter = widget.initialCenter;
+    _fetchLatestLocation();
+    _timer = Timer.periodic(const Duration(seconds: 5), (_) => _fetchLatestLocation());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchLatestLocation() async {
+    if (!mounted || widget.bookingId.isEmpty) return;
+    setState(() => _isRefreshing = true);
+    try {
+      final updatedData = await widget.apiService.getBookingById(widget.bookingId);
+      final lat = double.tryParse(updatedData['current_lat']?.toString() ?? '');
+      final lng = double.tryParse(updatedData['current_lng']?.toString() ?? '');
+      final vehicle = updatedData['vehicle'];
+      final Map<String, dynamic>? vehMap = vehicle is Map<String, dynamic>
+          ? vehicle
+          : (vehicle is List && vehicle.isNotEmpty ? vehicle.first as Map<String, dynamic>? : null);
+      final vehLat = double.tryParse(vehMap?['location_lat']?.toString() ?? '');
+      final vehLng = double.tryParse(vehMap?['location_lng']?.toString() ?? '');
+
+      final targetLat = lat ?? vehLat;
+      final targetLng = lng ?? vehLng;
+
+      if (targetLat != null && targetLng != null && mounted) {
+        final newCenter = LatLng(targetLat, targetLng);
+        setState(() {
+          _currentCenter = newCenter;
+          _lastUpdatedTime = DateTime.now().toIso8601String().substring(11, 19);
+        });
+        _mapController.move(newCenter, _mapController.camera.zoom);
+      }
+    } catch (e) {
+      debugPrint('⚠️ FullScreenMap fetch error: $e');
+    } finally {
+      if (mounted) setState(() => _isRefreshing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 1,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF103B66)),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${widget.brand} ${widget.model}',
+              style: const TextStyle(color: Color(0xFF103B66), fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            Text(
+              'Lat: ${_currentCenter.latitude.toStringAsFixed(4)}, Lng: ${_currentCenter.longitude.toStringAsFixed(4)}',
+              style: const TextStyle(color: AppColors.primary, fontSize: 11.5, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: _isRefreshing
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                  )
+                : const Icon(Icons.refresh_rounded, color: AppColors.primary),
+            onPressed: () {
+              _fetchLatestLocation();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Refreshing live vehicle GPS location...'),
+                  duration: Duration(seconds: 1),
+                ),
+              );
+            },
+            tooltip: 'Refresh Location Now',
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: _currentCenter,
+              initialZoom: 15.5,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.example.car_rental_app_client_side',
+              ),
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: _currentCenter,
+                    width: 68,
+                    height: 68,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.25),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                            boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 8, offset: Offset(0, 3))],
+                          ),
+                          child: const Icon(Icons.directions_car_rounded, color: Colors.white, size: 26),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          // Top Floating Status Chip
+          Positioned(
+            top: 14,
+            left: 14,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.circle, color: AppColors.success, size: 9),
+                  const SizedBox(width: 6),
+                  Text(
+                    'REALTIME GPS • $_lastUpdatedTime',
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Bottom Floating Controls (Zoom, Recenter, Manual Refresh)
+          Positioned(
+            bottom: 24,
+            right: 14,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FloatingActionButton.small(
+                  heroTag: 'full_zoom_in',
+                  backgroundColor: Colors.white,
+                  foregroundColor: AppColors.primary,
+                  onPressed: () => _mapController.move(_currentCenter, _mapController.camera.zoom + 1),
+                  child: const Icon(Icons.add),
+                ),
+                const SizedBox(height: 8),
+                FloatingActionButton.small(
+                  heroTag: 'full_zoom_out',
+                  backgroundColor: Colors.white,
+                  foregroundColor: AppColors.primary,
+                  onPressed: () => _mapController.move(_currentCenter, _mapController.camera.zoom - 1),
+                  child: const Icon(Icons.remove),
+                ),
+                const SizedBox(height: 8),
+                FloatingActionButton.small(
+                  heroTag: 'full_recenter',
+                  backgroundColor: Colors.white,
+                  foregroundColor: AppColors.primary,
+                  onPressed: () => _mapController.move(_currentCenter, 16.0),
+                  child: const Icon(Icons.my_location),
+                ),
+                const SizedBox(height: 12),
+                FloatingActionButton.extended(
+                  heroTag: 'full_refresh',
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  onPressed: () {
+                    _fetchLatestLocation();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Updating live coordinates...'), duration: Duration(seconds: 1)),
+                    );
+                  },
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Refresh Location', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
