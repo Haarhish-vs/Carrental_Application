@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:car_rental_app_client_side/core/config/api_config.dart';
 import 'package:car_rental_app_client_side/features/auth/services/auth_service.dart';
+import 'package:car_rental_app_client_side/features/home/presentation/screens/booking_tracking_screen.dart';
 
 /// Top-level background message handler required by FCM.
 @pragma('vm:entry-point')
@@ -62,6 +63,17 @@ class NotificationService {
         debugPrint('[FCM] Permission status: ${settings.authorizationStatus}');
       } catch (e) {
         debugPrint('[FCM WARNING] Request permission timed out or skipped: $e');
+      }
+
+      // Configure foreground presentation options so head-up banners display while app is open
+      try {
+        await _messaging.setForegroundNotificationPresentationOptions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+      } catch (e) {
+        debugPrint('[FCM WARNING] Failed to set foreground presentation options: $e');
       }
 
       // Get FCM Token
@@ -262,28 +274,29 @@ class NotificationService {
 
     debugPrint('🔗 [FCM DEEP LINK] Processing notification tap -> Type: $type, BookingId: $bookingId');
 
-    if (bookingId == null || bookingId.isEmpty) return;
+    if (bookingId == null || bookingId.isEmpty) {
+      debugPrint('[FCM DEEP LINK WARNING] Missing bookingId in notification payload data');
+      return;
+    }
 
     final context = navigatorKey?.currentContext;
-    if (context == null) return;
-
-    // Route based on notification event type
-    switch (type) {
-      case 'RESERVATION_CREATED':
-        // Takes owner to booking management / requests
-        debugPrint('🚀 Navigating to Owner Booking Requests for booking: $bookingId');
-        break;
-      case 'RESERVATION_ACCEPTED':
-      case 'RESERVATION_DECLINED':
-      case 'RESERVATION_CANCELLED':
-      case 'PAYMENT_CONFIRMED':
-      case 'TRIP_REMINDER':
-      case 'TRIP_COMPLETED':
-        debugPrint('🚀 Navigating to Booking Detail for booking: $bookingId');
-        break;
-      default:
-        debugPrint('🚀 Navigating default for notification data: $data');
-        break;
+    if (context == null) {
+      debugPrint('[FCM DEEP LINK WARNING] Navigation context unavailable (navigatorKey is null or unmounted)');
+      return;
     }
+
+    final isOwnerView = (type == 'RESERVATION_CREATED' || type == 'PAYMENT_CONFIRMED');
+
+    debugPrint('🚀 Navigating to BookingTrackingScreen for booking: $bookingId (isOwnerView: $isOwnerView)');
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BookingTrackingScreen(
+          booking: {'id': bookingId},
+          isOwnerView: isOwnerView,
+        ),
+      ),
+    );
   }
 }
