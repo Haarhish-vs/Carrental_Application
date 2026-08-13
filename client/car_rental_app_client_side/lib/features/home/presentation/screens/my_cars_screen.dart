@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/widgets/auth_required_view.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../../owner/data/services/car_api_service.dart';
+import 'booking_tracking_screen.dart';
 
 class MyCarsScreen extends StatefulWidget {
   const MyCarsScreen({super.key, required this.onListCarPressed});
@@ -631,10 +632,20 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
       statusLabel = 'CANCELLED';
     }
 
-    return Card(
-      elevation: 0,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+    return InkWell(
+      onTap: () async {
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => BookingTrackingScreen(booking: request, isOwnerView: true),
+          ),
+        );
+        _refresh();
+      },
+      borderRadius: BorderRadius.circular(18),
+      child: Card(
+        elevation: 0,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -843,11 +854,36 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                 ),
               ),
             ],
+            if (status == 'active' || status == 'confirmed') ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => BookingTrackingScreen(booking: request, isOwnerView: true),
+                      ),
+                    );
+                    _refresh();
+                  },
+                  icon: const Icon(Icons.map_rounded, size: 18),
+                  label: const Text('Track Vehicle Live GPS', style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildVehiclesTab() {
     return FutureBuilder<List<Map<String, dynamic>>>(
