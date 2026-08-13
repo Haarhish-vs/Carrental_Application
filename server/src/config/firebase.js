@@ -194,6 +194,24 @@ async function sendMulticastNotification(tokens, { title, body, data = {} }, tar
       title,
       body
     },
+    android: {
+      priority: 'high',
+      notification: {
+        channelId: 'high_importance_channel',
+        sound: 'default',
+        priority: 'high',
+        defaultSound: true,
+        defaultVibrateTimings: true
+      }
+    },
+    apns: {
+      payload: {
+        aps: {
+          sound: 'default',
+          badge: 1
+        }
+      }
+    },
     data: stringifiedData,
     tokens
   };
