@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:car_rental_app_client_side/core/notifications/notification_service.dart';
 import 'package:car_rental_app_client_side/features/owner/data/services/car_api_service.dart';
 
 class AuthService {
@@ -111,6 +112,33 @@ class AuthService {
 
     await _storage.write(key: _tokenKey, value: token);
     await _storage.write(key: _userKey, value: jsonEncode(user));
+
+    // Synchronize FCM Token with backend for authenticated user
+    final userId = user['id']?.toString();
+    if (userId != null && userId.isNotEmpty) {
+      NotificationService.instance.syncTokenWithBackend(userId, customBaseUrl: '${CarApiService.baseUrl}/api');
+    }
+  }
+
+  /// Logout: Clears encrypted storage, tokens, user data, and notifies listeners.
+  static Future<void> logout() async {
+    debugPrint('🚪 [Auth] Clearing session and secure storage...');
+
+    final userId = currentUser?['id']?.toString();
+    if (userId != null && userId.isNotEmpty) {
+      await NotificationService.instance.removeTokenOnLogout(userId, customBaseUrl: '${CarApiService.baseUrl}/api');
+    }
+
+    currentToken = null;
+    currentUser = null;
+    CarApiService.token = null;
+    authStateNotifier.value = null;
+
+    try {
+      await _storage.deleteAll();
+    } catch (e) {
+      debugPrint('⚠️ [Auth] Error clearing secure storage: $e');
+    }
   }
 
   /// Checks if a phone number exists in the backend DB (409 for register, 404 for login).
@@ -239,21 +267,6 @@ class AuthService {
       return null;
     } on DioException {
       return null;
-    }
-  }
-
-  /// Logout: Clears encrypted storage, tokens, user data, and notifies listeners.
-  static Future<void> logout() async {
-    debugPrint('🚪 [Auth] Clearing session and secure storage...');
-    currentToken = null;
-    currentUser = null;
-    CarApiService.token = null;
-    authStateNotifier.value = null;
-
-    try {
-      await _storage.deleteAll();
-    } catch (e) {
-      debugPrint('⚠️ [Auth] Error clearing secure storage: $e');
     }
   }
 

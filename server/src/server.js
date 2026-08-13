@@ -2,9 +2,11 @@
 const app = require('./app');
 const env = require('./config/env');
 const expirePendingBookingsCron = require('./modules/bookings/jobs/expire-pending-bookings.cron');
+const { startTripReminderCron } = require('./services/trip-reminder.cron');
 
 // Start background cron jobs
 expirePendingBookingsCron.startCron();
+startTripReminderCron();
 
 const server = app.listen(env.PORT, () => {
   console.log(`===================================================`);
