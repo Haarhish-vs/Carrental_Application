@@ -600,9 +600,54 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           itemCount: requests.length,
           separatorBuilder: (_, _) => const SizedBox(height: 16),
-          itemBuilder: (context, index) => _buildRequestCard(requests[index]),
         );
       },
+    );
+  }
+
+  Widget _buildRenterVerificationCard(Map<String, dynamic> request) {
+    final renter = request['renter'] as Map<String, dynamic>?;
+    final renterName = renter?['full_name']?.toString() ?? renter?['fullName']?.toString() ?? 'Renter';
+    final renterPhone = renter?['phone_number']?.toString() ?? renter?['phoneNumber']?.toString() ?? '';
+    final avatarUrl = renter?['profile_image_url']?.toString() ?? renter?['avatar_url']?.toString() ?? '';
+
+    return Container(
+      margin: const EdgeInsets.only(top: 10, bottom: 4),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: AppColors.primary.withOpacity(0.12),
+            backgroundImage: avatarUrl.isNotEmpty ? CachedNetworkImageProvider(avatarUrl) : null,
+            child: avatarUrl.isEmpty ? const Icon(Icons.person, color: AppColors.primary, size: 18) : null,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Renter: $renterName',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF103B66)),
+                ),
+                if (renterPhone.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    '📞 $renterPhone',
+                    style: const TextStyle(fontSize: 12, color: AppColors.textPrimary, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -711,7 +756,11 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                 ),
               ],
             ),
-            const Divider(height: 24, color: AppColors.divider),
+            
+            // Renter Verification & Contact Details Card
+            _buildRenterVerificationCard(request),
+
+            const Divider(height: 20, color: AppColors.divider),
             
             // Action Buttons
             if (status == 'pending') ...[

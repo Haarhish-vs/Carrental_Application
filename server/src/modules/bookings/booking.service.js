@@ -204,12 +204,13 @@ class BookingService {
    */
   async getMyVehicleBookings(ownerId) {
     await this._autoTransitionBookings();
-    // We join the vehicles table and perform an inner join filter
+    // We join the vehicles table and renter user record
     const { data, error } = await supabase
       .from('bookings')
       .select(`
         *,
-        vehicle:vehicles!inner (*)
+        vehicle:vehicles!inner (*),
+        renter:users (*)
       `)
       .eq('vehicle.owner_id', ownerId)
       .order('created_at', { ascending: false });
@@ -218,7 +219,29 @@ class BookingService {
       throw new Error(`Failed to fetch vehicle bookings: ${error.message}`);
     }
 
-    return data;
+    let resultData = data || [];
+
+    // Fallback if renter:users returned null (table name might be 'profiles')
+    if (resultData.some(b => !b.renter && b.renter_id)) {
+      const renterIds = [...new Set(resultData.map(b => b.renter_id).filter(Boolean))];
+      if (renterIds.length > 0) {
+        const { data: usersData } = await supabase.from('users').select('*').in('id', renterIds);
+        const { data: profilesData } = await supabase.from('profiles').select('*').in('id', renterIds);
+
+        const usersMap = {};
+        (usersData || []).forEach(u => { usersMap[u.id] = u; });
+        (profilesData || []).forEach(p => { if (!usersMap[p.id]) usersMap[p.id] = p; });
+
+        resultData = resultData.map(b => {
+          if (!b.renter && usersMap[b.renter_id]) {
+            b.renter = usersMap[b.renter_id];
+          }
+          return b;
+        });
+      }
+    }
+
+    return resultData;
   }
 
   /**
@@ -230,7 +253,8 @@ class BookingService {
       .from('bookings')
       .select(`
         *,
-        vehicle:vehicles (*)
+        vehicle:vehicles (*),
+        renter:users (*)
       `)
       .eq('id', bookingId)
       .maybeSingle();
@@ -244,6 +268,13 @@ class BookingService {
     // Normalize vehicle object if returned as array by Supabase PostgREST
     if (Array.isArray(booking.vehicle)) {
       booking.vehicle = booking.vehicle[0] || null;
+    }
+
+    // Fallback fetch for renter details if null
+    if (!booking.renter && booking.renter_id) {
+      const { data: uData } = await supabase.from('users').select('*').eq('id', booking.renter_id).maybeSingle();
+      const { data: pData } = await supabase.from('profiles').select('*').eq('id', booking.renter_id).maybeSingle();
+      booking.renter = uData || pData || null;
     }
 
     const ownerId = booking.vehicle?.owner_id;

@@ -31,7 +31,8 @@ class SupportScreen extends StatefulWidget {
 }
 
 class _SupportScreenState extends State<SupportScreen> {
-  static const String _supportWhatsAppNumber = '+91 98765 43210';
+  static const String _adminPhoneNumber = '+91 98765 43210';
+  static const String _adminEmailAddress = 'admin@drivexcarrental.com';
   static const String _sosEmergencyNumber = '911';
 
   final ScrollController _scrollController = ScrollController();
@@ -73,16 +74,28 @@ class _SupportScreenState extends State<SupportScreen> {
     }
   }
 
-  Future<void> _openWhatsApp({String message = "Hi, I need help with my car rental."}) async {
-    final cleanNumber = _supportWhatsAppNumber.replaceAll(RegExp(r'[^\d]'), '');
-    final url = Uri.https('wa.me', '/$cleanNumber/', {'text': message});
-
+  Future<void> _callAdminPhone() async {
+    final cleanNumber = _adminPhoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+    final url = Uri.parse('tel:$cleanNumber');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open WhatsApp.')),
+          const SnackBar(content: Text('Could not open phone dialer.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _sendAdminEmail() async {
+    final url = Uri.parse('mailto:$_adminEmailAddress?subject=DriveX%20Support%20Request');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open email client.')),
         );
       }
     }
@@ -215,51 +228,68 @@ class _SupportScreenState extends State<SupportScreen> {
                           ],
                         ),
                         const SizedBox(height: 16),
-                        InkWell(
-                          onTap: () => _openWhatsApp(message: "Hi, I need help with my car rental."),
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.green.shade400),
-                              borderRadius: BorderRadius.circular(8),
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.green.withValues(alpha: 0.1),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                )
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.chat_bubble, color: Colors.green, size: 20),
-                                const SizedBox(width: 8),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: const [
-                                    Text(
-                                      'Chat on WhatsApp',
-                                      style: TextStyle(
-                                        color: Colors.green,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: InkWell(
+                                onTap: _callAdminPhone,
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.blue.shade300),
+                                    borderRadius: BorderRadius.circular(10),
+                                    color: Colors.white,
+                                  ),
+                                  child: Row(
+                                    children: const [
+                                      Icon(Icons.phone_in_talk_rounded, color: Colors.blue, size: 16),
+                                      SizedBox(width: 6),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text('Call Admin', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 11)),
+                                            Text(_adminPhoneNumber, style: TextStyle(color: Colors.black54, fontSize: 9), overflow: TextOverflow.ellipsis),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                    Text(
-                                      "We'll reply shortly",
-                                      style: TextStyle(
-                                        color: Colors.black54,
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: InkWell(
+                                onTap: _sendAdminEmail,
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.purple.shade300),
+                                    borderRadius: BorderRadius.circular(10),
+                                    color: Colors.white,
+                                  ),
+                                  child: Row(
+                                    children: const [
+                                      Icon(Icons.email_outlined, color: Colors.purple, size: 16),
+                                      SizedBox(width: 6),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text('Email Admin', style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold, fontSize: 11)),
+                                            Text(_adminEmailAddress, style: TextStyle(color: Colors.black54, fontSize: 9), overflow: TextOverflow.ellipsis),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -398,44 +428,32 @@ class _SupportScreenState extends State<SupportScreen> {
                 _buildCheckItem('Offers & Promotions', Colors.blue),
                 _buildCheckItem('Other inquiries', Colors.blue),
                 const SizedBox(height: 20),
-                InkWell(
-                  onTap: () => _openWhatsApp(message: "Hi, I need help with my car rental."),
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.green),
-                      borderRadius: BorderRadius.circular(8),
-                      color: Colors.white,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.chat_bubble_outline, color: Colors.green),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
-                              'Chat on WhatsApp',
-                              style: TextStyle(
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                            Text(
-                              "We'll reply shortly",
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _callAdminPhone,
+                        icon: const Icon(Icons.phone, size: 16, color: Colors.blue),
+                        label: const Text('Call Admin', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.blue),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _sendAdminEmail,
+                        icon: const Icon(Icons.email_outlined, size: 16, color: Colors.purple),
+                        label: const Text('Email Admin', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.purple)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.purple),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

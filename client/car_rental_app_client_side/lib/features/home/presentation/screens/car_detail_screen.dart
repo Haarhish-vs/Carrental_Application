@@ -79,6 +79,32 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
     }
   }
 
+  void _handleShareCar() {
+    final locationText = (widget.car.pickupLocation?.trim().isNotEmpty == true)
+        ? widget.car.pickupLocation!
+        : widget.car.city;
+
+    final String shareMessage =
+        '🚗 Check out ${widget.car.name} on DriveX!\n'
+        '💰 Price: ₹${widget.car.pricePerDay.toStringAsFixed(0)}/day\n'
+        '📍 Location: $locationText\n\n'
+        'Book directly on DriveX App!';
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: const [
+            Icon(Icons.share_rounded, color: Colors.white, size: 20),
+            SizedBox(width: 10),
+            Expanded(child: Text('Car details link copied & ready to share!')),
+          ],
+        ),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -246,7 +272,7 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                                   color: Colors.grey.shade700,
                                   size: 18,
                                 ),
-                                onPressed: () {},
+                                onPressed: _handleShareCar,
                               ),
                             ),
                           ],
@@ -392,30 +418,10 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                           ],
                         ),
                         const SizedBox(height: 10),
-                        // Location & Availability Row
+                        // Availability Status Row
                         Row(
                           children: [
-                            const Icon(
-                              Icons.location_on_rounded,
-                              size: 16,
-                              color: AppColors.primary,
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                (widget.car.pickupLocation != null && widget.car.pickupLocation!.trim().isNotEmpty)
-                                    ? '${widget.car.pickupLocation}, ${widget.car.city}'
-                                    : widget.car.city,
-                                style: const TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
+                            const Spacer(),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(

@@ -386,6 +386,52 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
     );
   }
 
+  Widget _buildRenterDetailsCard(Map<String, dynamic> booking) {
+    final renter = booking['renter'] as Map<String, dynamic>?;
+    final renterName = renter?['full_name']?.toString() ?? renter?['fullName']?.toString() ?? 'Renter';
+    final renterPhone = renter?['phone_number']?.toString() ?? renter?['phoneNumber']?.toString() ?? '';
+    final avatarUrl = renter?['profile_image_url']?.toString() ?? renter?['avatar_url']?.toString() ?? '';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 3))],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: AppColors.primary.withOpacity(0.12),
+            backgroundImage: avatarUrl.isNotEmpty ? CachedNetworkImageProvider(avatarUrl) : null,
+            child: avatarUrl.isEmpty ? const Icon(Icons.person, color: AppColors.primary, size: 22) : null,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Renter: $renterName',
+                  style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF103B66)),
+                ),
+                if (renterPhone.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    '📞 $renterPhone',
+                    style: const TextStyle(fontSize: 12.5, color: AppColors.textPrimary, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   LatLng _getCityCoordinates(String? locationName) {
     if (locationName == null || locationName.isEmpty) return const LatLng(11.0168, 76.9558); // Coimbatore default
     final loc = locationName.toLowerCase();
@@ -881,6 +927,10 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
                     ],
                   ),
                 ),
+                
+                // Renter Verification & Profile Card (Visible to Owner)
+                if (isOwner) _buildRenterDetailsCard(booking),
+
                 const SizedBox(height: 20),
 
                 // 2. Cancellation block if cancelled
