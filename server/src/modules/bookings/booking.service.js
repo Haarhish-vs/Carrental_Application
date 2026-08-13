@@ -241,11 +241,26 @@ class BookingService {
       throw err;
     }
 
-    if (booking.renter_id !== userId && booking.vehicle.owner_id !== userId) {
+    // Normalize vehicle object if returned as array by Supabase PostgREST
+    if (Array.isArray(booking.vehicle)) {
+      booking.vehicle = booking.vehicle[0] || null;
+    }
+
+    const ownerId = booking.vehicle?.owner_id;
+    if (booking.renter_id !== userId && ownerId !== userId) {
       const err = new Error('You are not authorized to view this booking');
       err.statusCode = 403;
       throw err;
     }
+
+    // Dynamic resolution of tracking coordinates if current_lat/lng are null
+    if (booking.current_lat == null && booking.vehicle?.location_lat != null) {
+      booking.current_lat = booking.vehicle.location_lat;
+    }
+    if (booking.current_lng == null && booking.vehicle?.location_lng != null) {
+      booking.current_lng = booking.vehicle.location_lng;
+    }
+    console.log(`📡 [OWNER FETCH SUCCESS] Booking ID: ${bookingId} -> Latitude: ${booking.current_lat}, Longitude: ${booking.current_lng}`);
 
     return booking;
   }
@@ -459,8 +474,11 @@ class BookingService {
       throw error;
     }
 
+    const ownerId = Array.isArray(booking.vehicle)
+      ? booking.vehicle[0]?.owner_id
+      : booking.vehicle?.owner_id;
     const isRenter = booking.renter_id === userId;
-    const isOwner = booking.vehicle && booking.vehicle.owner_id === userId;
+    const isOwner = ownerId === userId;
 
     if (!isRenter && !isOwner) {
       const error = new Error('Unauthorized to update location for this booking');
@@ -472,9 +490,9 @@ class BookingService {
     const parsedLat = parseFloat(lat);
     const parsedLng = parseFloat(lng);
 
-    // Update vehicle table location as well to ensure location is always stored in Supabase
+    // 1. Update vehicle table location (guaranteed to succeed in Supabase)
     if (booking.vehicle_id) {
-      await supabase
+      const { error: vehError } = await supabase
         .from('vehicles')
         .update({
           location_lat: parsedLat,
@@ -482,6 +500,12 @@ class BookingService {
           updated_at: now
         })
         .eq('id', booking.vehicle_id);
+
+      if (vehError) {
+        console.error(`⚠️ Vehicle location update error: ${vehError.message}`);
+      } else {
+        console.log(`📍 [Supabase] Updated vehicle ${booking.vehicle_id} location to [${parsedLat}, ${parsedLng}]`);
+      }
     }
 
     const { data, error: updateError } = await supabase

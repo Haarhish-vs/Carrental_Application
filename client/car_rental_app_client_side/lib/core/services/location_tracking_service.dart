@@ -132,6 +132,27 @@ class LocationTrackingService {
     });
   }
 
+  /// Check if mobile GPS / Location Services is enabled and permitted
+  Future<bool> isGpsEnabled() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      LocationPermission permission = await Geolocator.checkPermission();
+      return serviceEnabled &&
+          (permission == LocationPermission.always || permission == LocationPermission.whileInUse);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Open device location settings so user can turn GPS ON
+  Future<void> requestEnableGps() async {
+    try {
+      await Geolocator.openLocationSettings();
+    } catch (e) {
+      debugPrint('⚠️ Could not open location settings: $e');
+    }
+  }
+
   /// Stop live location tracking
   void stopTracking() {
     _positionStreamSub?.cancel();

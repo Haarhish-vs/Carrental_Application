@@ -63,12 +63,16 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
       try {
         final updatedData = await _apiService.getBookingById(bookingId);
         if (mounted) {
+          final veh = _getVehicleData(updatedData['vehicle']);
+          final fetchedLat = updatedData['current_lat'] ?? veh?['location_lat'];
+          final fetchedLng = updatedData['current_lng'] ?? veh?['location_lng'];
+          debugPrint('📡 [OWNER FETCH] Realtime GPS Coordinates for booking $bookingId -> Lat: $fetchedLat, Lng: $fetchedLng');
           setState(() {
             _latestBookingData = updatedData;
           });
         }
       } catch (e) {
-        debugPrint('⚠️ Error fetching realtime tracking update: $e');
+        debugPrint('❌ [OWNER REALTIME FETCH ERROR] Booking $bookingId -> Failed to fetch live tracking update: $e');
       }
     });
   }
@@ -323,17 +327,108 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
     );
   }
 
+  Widget _buildRenterGpsStatusCard() {
+    return FutureBuilder<bool>(
+      future: LocationTrackingService().isGpsEnabled(),
+      builder: (context, snapshot) {
+        final isGpsOn = snapshot.data ?? true;
+        if (isGpsOn) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.green.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.green.shade200),
+            ),
+            child: Row(
+              children: const [
+                Icon(Icons.gps_fixed, color: Colors.green, size: 18),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '🟢 Renter Device GPS is ON & Sharing Live Location',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.green),
+                  ),
+                ),
+              ],
+            ),
+          );
+        } else {
+          return InkWell(
+            onTap: () => LocationTrackingService().requestEnableGps(),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.shade400),
+              ),
+              child: Row(
+                children: const [
+                  Icon(Icons.gps_off, color: Colors.orange, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '⚠️ Location Services (GPS) is OFF. Tap here to turn ON GPS for live tracking.',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.orange),
+                    ),
+                  ),
+                  Icon(Icons.chevron_right, color: Colors.orange, size: 18),
+                ],
+              ),
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  LatLng _getCityCoordinates(String? locationName) {
+    if (locationName == null || locationName.isEmpty) return const LatLng(11.0168, 76.9558); // Coimbatore default
+    final loc = locationName.toLowerCase();
+    if (loc.contains('coimbatore') || loc.contains('townhal') || loc.contains('town hall')) {
+      return const LatLng(11.0168, 76.9558);
+    } else if (loc.contains('chennai')) {
+      return const LatLng(13.0827, 80.2707);
+    } else if (loc.contains('bangalore') || loc.contains('bengaluru')) {
+      return const LatLng(12.9716, 77.5946);
+    } else if (loc.contains('madurai')) {
+      return const LatLng(9.9252, 78.1198);
+    } else if (loc.contains('salem')) {
+      return const LatLng(11.6643, 78.1460);
+    } else if (loc.contains('trichy') || loc.contains('tiruchirappalli')) {
+      return const LatLng(10.7905, 78.7047);
+    }
+    return const LatLng(11.0168, 76.9558); // Default
+  }
+
+  Map<String, dynamic>? _getVehicleData(dynamic rawVehicle) {
+    if (rawVehicle is Map<String, dynamic>) {
+      return rawVehicle;
+    } else if (rawVehicle is List && rawVehicle.isNotEmpty && rawVehicle.first is Map<String, dynamic>) {
+      return rawVehicle.first as Map<String, dynamic>;
+    }
+    return null;
+  }
+
   Widget _buildLiveMapCard(Map<String, dynamic> rawBooking) {
     final booking = _latestBookingData ?? rawBooking;
+    final vehicle = _getVehicleData(booking['vehicle']);
     final lat = double.tryParse(booking['current_lat']?.toString() ?? '');
     final lng = double.tryParse(booking['current_lng']?.toString() ?? '');
-    final vehicle = booking['vehicle'] as Map<String, dynamic>?;
     final vehicleLat = double.tryParse(vehicle?['location_lat']?.toString() ?? '');
     final vehicleLng = double.tryParse(vehicle?['location_lng']?.toString() ?? '');
 
-    final targetLat = lat ?? vehicleLat ?? 13.0827; // Default lat
-    final targetLng = lng ?? vehicleLng ?? 80.2707; // Default lng
+    final pickupLocation = vehicle?['pickup_location']?.toString() ?? vehicle?['city']?.toString();
+    final fallbackCoords = _getCityCoordinates(pickupLocation);
+
+    final targetLat = lat ?? vehicleLat ?? fallbackCoords.latitude;
+    final targetLng = lng ?? vehicleLng ?? fallbackCoords.longitude;
     final centerPoint = LatLng(targetLat, targetLng);
+
+    debugPrint('🗺️ [OWNER MAP VIEW] Displaying Marker Coordinates -> Latitude: $targetLat, Longitude: $targetLng');
 
     final String lastTracked = booking['last_tracked_at'] != null
         ? _formatDateTime(booking['last_tracked_at'].toString())
@@ -594,6 +689,7 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
           }
 
           if (snapshot.hasError) {
+            debugPrint('❌ [OWNER TRACKING PAGE ERROR] Failed to fetch booking: ${snapshot.error}');
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
@@ -660,6 +756,9 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Renter GPS Status Check Banner
+                if (!isOwner && (status == 'active' || status == 'confirmed'))
+                  _buildRenterGpsStatusCard(),
                 // 1. Mini Car Info Card
                 Container(
                   padding: const EdgeInsets.all(12),
