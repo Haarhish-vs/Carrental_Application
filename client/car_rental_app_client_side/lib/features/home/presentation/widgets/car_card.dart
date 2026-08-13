@@ -58,7 +58,7 @@ class CarCard extends StatelessWidget {
         }
         final String displayRating = avgRating > 0
             ? avgRating.toStringAsFixed(1)
-            : (car.rating > 0 ? car.rating.toStringAsFixed(1) : '4.5');
+            : (car.rating > 0 ? car.rating.toStringAsFixed(1) : 'New');
 
         final String reviewsText = reviewCount > 0
             ? '$reviewCount Reviews'
@@ -156,19 +156,17 @@ class CarCard extends StatelessWidget {
                                   color: AppColors.textPrimary,
                                 ),
                               ),
-                              SizedBox(width: 2 * scale),
-                              Flexible(
-                                child: Text(
-                                  '(${reviewCount > 0 ? reviewCount : 24})',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                              if (reviewCount > 0) ...[
+                                SizedBox(width: 2 * scale),
+                                Text(
+                                  '($reviewCount)',
                                   style: TextStyle(
                                     fontSize: 10 * scale,
                                     color: AppColors.textSecondary,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                              ),
+                              ],
                             ],
                           ),
                         ),

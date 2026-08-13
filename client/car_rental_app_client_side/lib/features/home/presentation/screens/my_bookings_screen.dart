@@ -43,7 +43,19 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
 
   void _refreshBookings() {
     setState(() {
-      _bookingsFuture = _apiService.getMyBookings();
+      _bookingsFuture = _apiService.getMyBookings().then((bookings) {
+        for (final b in bookings) {
+          final status = b['status']?.toString().toLowerCase() ?? '';
+          if (status == 'active' || status == 'confirmed') {
+            final bId = b['id']?.toString() ?? '';
+            if (bId.isNotEmpty) {
+              LocationTrackingService().startTracking(bId);
+            }
+            break;
+          }
+        }
+        return bookings;
+      });
     });
   }
 

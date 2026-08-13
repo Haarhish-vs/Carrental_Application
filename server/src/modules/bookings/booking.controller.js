@@ -61,6 +61,7 @@ const getBookingById = async (req, res, next) => {
       data: booking
     });
   } catch (error) {
+    console.error(`❌ [GET /api/bookings/${req.params.id} ERROR] User ${req.user?.id} failed to fetch booking details: ${error.message}`);
     next(error);
   }
 };
