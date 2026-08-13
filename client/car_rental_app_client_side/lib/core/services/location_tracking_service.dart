@@ -14,18 +14,23 @@ class LocationTrackingService {
 
   /// Start tracking GPS location for an active booking ID
   Future<void> startTracking(String bookingId) async {
+    if (bookingId.isEmpty) return;
+
     if (_activeBookingId == bookingId && _positionStreamSub != null) {
-      return; // Already tracking this booking
+      // Force an immediate location push if already tracking
+      _lastSentTime = null;
+      _pushCurrentLocation();
+      return;
     }
 
     stopTracking(); // Stop any previous tracking session
     _activeBookingId = bookingId;
+    _lastSentTime = null; // Reset so initial position sends immediately
 
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         debugPrint('⚠️ Location services are disabled.');
-        return;
       }
 
       LocationPermission permission = await Geolocator.checkPermission();
@@ -42,10 +47,10 @@ class LocationTrackingService {
         return;
       }
 
-      // Stream position updates
+      // Stream position updates with high accuracy and small distance filter
       const locationSettings = LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 10, // Send update every 10 meters
+        distanceFilter: 3, // Send update every 3 meters
       );
 
       _positionStreamSub = Geolocator.getPositionStream(locationSettings: locationSettings).listen(
@@ -53,27 +58,35 @@ class LocationTrackingService {
           _onLocationUpdated(position);
         },
         onError: (err) {
-          debugPrint('❌ Error tracking location: $err');
+          debugPrint('❌ Error tracking location stream: $err');
         },
       );
 
-      // Trigger immediate initial position push
-      final initialPosition = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-      );
-      _onLocationUpdated(initialPosition);
-      debugPrint('📍 Live location tracking started for booking: $bookingId');
+      // Immediately push initial current position
+      await _pushCurrentLocation();
+      debugPrint('📍 Live GPS location tracking active for booking: $bookingId');
     } catch (e) {
       debugPrint('⚠️ Error starting location tracking: $e');
     }
   }
 
-  void _onLocationUpdated(Position position) {
+  Future<void> _pushCurrentLocation() async {
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      );
+      _onLocationUpdated(position, force: true);
+    } catch (e) {
+      debugPrint('⚠️ Error getting current position: $e');
+    }
+  }
+
+  void _onLocationUpdated(Position position, {bool force = false}) {
     if (_activeBookingId == null) return;
 
-    // Rate-limit API calls to once every 10 seconds
+    // Rate-limit API calls to once every 3 seconds unless forced
     final now = DateTime.now();
-    if (_lastSentTime != null && now.difference(_lastSentTime!).inSeconds < 10) {
+    if (!force && _lastSentTime != null && now.difference(_lastSentTime!).inSeconds < 3) {
       return;
     }
     _lastSentTime = now;

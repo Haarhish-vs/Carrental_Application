@@ -440,7 +440,7 @@ class BookingService {
   /**
    * Update real-time GPS location of a booking during an active trip.
    */
-  async updateBookingLocation(bookingId, renterId, lat, lng) {
+  async updateBookingLocation(bookingId, userId, lat, lng) {
     if (!bookingId || lat == null || lng == null) {
       const error = new Error('Booking ID, latitude, and longitude are required');
       error.statusCode = 400;
@@ -449,7 +449,7 @@ class BookingService {
 
     const { data: booking, error: fetchError } = await supabase
       .from('bookings')
-      .select('id, renter_id, status')
+      .select('id, renter_id, vehicle_id, status, vehicle:vehicles(owner_id)')
       .eq('id', bookingId)
       .single();
 
@@ -459,18 +459,36 @@ class BookingService {
       throw error;
     }
 
-    if (booking.renter_id !== renterId) {
+    const isRenter = booking.renter_id === userId;
+    const isOwner = booking.vehicle && booking.vehicle.owner_id === userId;
+
+    if (!isRenter && !isOwner) {
       const error = new Error('Unauthorized to update location for this booking');
       error.statusCode = 403;
       throw error;
     }
 
     const now = new Date().toISOString();
+    const parsedLat = parseFloat(lat);
+    const parsedLng = parseFloat(lng);
+
+    // Update vehicle table location as well to ensure location is always stored in Supabase
+    if (booking.vehicle_id) {
+      await supabase
+        .from('vehicles')
+        .update({
+          location_lat: parsedLat,
+          location_lng: parsedLng,
+          updated_at: now
+        })
+        .eq('id', booking.vehicle_id);
+    }
+
     const { data, error: updateError } = await supabase
       .from('bookings')
       .update({
-        current_lat: parseFloat(lat),
-        current_lng: parseFloat(lng),
+        current_lat: parsedLat,
+        current_lng: parsedLng,
         last_tracked_at: now,
         updated_at: now
       })
@@ -479,8 +497,8 @@ class BookingService {
       .single();
 
     if (updateError) {
-      console.log(`⚠️ Note: current_lat/current_lng column update warning: ${updateError.message}`);
-      return { id: bookingId, current_lat: parseFloat(lat), current_lng: parseFloat(lng), last_tracked_at: now };
+      console.log(`⚠️ Note: bookings table tracking update note: ${updateError.message}`);
+      return { id: bookingId, current_lat: parsedLat, current_lng: parsedLng, last_tracked_at: now };
     }
 
     return data;

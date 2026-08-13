@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/widgets/auth_required_view.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../../owner/data/services/car_api_service.dart';
+import '../../../../core/services/location_tracking_service.dart';
 import '../../models/car_model.dart';
 import 'payment_screen.dart';
 import 'booking_tracking_screen.dart';
@@ -282,6 +283,14 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
               }
 
               final bookings = snapshot.data ?? [];
+              for (final b in bookings) {
+                if (b['status']?.toString().toLowerCase() == 'active') {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    LocationTrackingService().startTracking(b['id']?.toString() ?? '');
+                  });
+                  break;
+                }
+              }
               if (bookings.isEmpty) {
                 return Center(
                   child: Padding(

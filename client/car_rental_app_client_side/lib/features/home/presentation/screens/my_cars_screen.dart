@@ -704,87 +704,6 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
             ),
             const Divider(height: 24, color: AppColors.divider),
             
-            // Stepper Timeline (shown after owner approves)
-            if (status == 'confirmed' || status == 'active' || status == 'completed') ...[
-              Builder(
-                builder: (context) {
-                  bool requested = true;
-                  bool accepted = status == 'confirmed' || status == 'active' || status == 'completed';
-                  bool paid = paymentStatus == 'paid' && accepted;
-                  bool active = status == 'active' || status == 'completed';
-                  bool completed = status == 'completed';
-                  
-                  return Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF9FAFC),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.grey.shade200),
-                        ),
-                        child: Column(
-                          children: [
-                            _buildStepNode(
-                              title: 'Request Placed',
-                              subtitle: 'Renter submitted the reservation request.',
-                              isDone: requested,
-                              isActive: status == 'pending',
-                              isLast: false,
-                              timestamp: _formatDateTime(request['created_at']),
-                            ),
-                            _buildStepNode(
-                              title: 'Approved by Owner',
-                              subtitle: accepted 
-                                  ? 'Owner approved the request.'
-                                  : 'Awaiting owner approval.',
-                              isDone: accepted,
-                              isActive: status == 'pending',
-                              isLast: false,
-                              timestamp: accepted ? _formatDateTime(request['updated_at']) : null,
-                            ),
-                            _buildStepNode(
-                              title: 'Payment Confirmed',
-                              subtitle: paid
-                                  ? 'Payment completed securely.'
-                                  : accepted
-                                      ? 'Awaiting renter payment.'
-                                      : 'Pending owner approval.',
-                              isDone: paid,
-                              isActive: accepted && !paid,
-                              isLast: false,
-                              timestamp: paid ? _formatDateTime(request['updated_at']) : null,
-                            ),
-                            _buildStepNode(
-                              title: 'Trip Started',
-                              subtitle: active
-                                  ? 'Trip is currently in progress.'
-                                  : 'Pending key handoff.',
-                              isDone: active,
-                              isActive: paid && !active,
-                              isLast: false,
-                              timestamp: active ? _formatDateTime(request['updated_at']) : null,
-                            ),
-                            _buildStepNode(
-                              title: 'Trip Completed',
-                              subtitle: completed
-                                  ? 'Car returned and trip finalized.'
-                                  : 'Pending rental return.',
-                              isDone: completed,
-                              isActive: active && !completed,
-                              isLast: true,
-                              timestamp: completed ? _formatDateTime(request['updated_at']) : null,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                  );
-                },
-              ),
-            ],
-            
             // Action Buttons
             if (status == 'pending') ...[
               Row(
@@ -814,48 +733,78 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                 ],
               ),
             ] else if (status == 'confirmed' && paymentStatus == 'paid') ...[
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => _handleStartTrip(bookingId),
-                  icon: const Icon(Icons.play_arrow_rounded, size: 16),
-                  label: const Text('Start Trip'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () => _handleStartTrip(bookingId),
+                      icon: const Icon(Icons.play_arrow_rounded, size: 16),
+                      label: const Text('Start Trip'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => BookingTrackingScreen(booking: request, isOwnerView: true),
+                          ),
+                        );
+                        _refresh();
+                      },
+                      icon: const Icon(Icons.map_rounded, size: 16),
+                      label: const Text('View Tracking'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primary),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ] else if (status == 'active') ...[
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => _handleCompleteTrip(bookingId),
-                  icon: const Icon(Icons.check, size: 16),
-                  label: const Text('Complete Trip'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.success,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () => _handleCompleteTrip(bookingId),
+                      icon: const Icon(Icons.check, size: 16),
+                      label: const Text('Complete Trip'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.success,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ] else if (status == 'confirmed' && paymentStatus == 'unpaid') ...[
-              const Center(
-                child: Text(
-                  'Waiting for renter to complete payment.',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontStyle: FontStyle.italic),
-                ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => BookingTrackingScreen(booking: request, isOwnerView: true),
+                          ),
+                        );
+                        _refresh();
+                      },
+                      icon: const Icon(Icons.map_rounded, size: 16),
+                      label: const Text('Live GPS'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primary),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ] else ...[
-              const Center(
-                child: Text(
-                  'No further actions available.',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                ),
-              ),
-            ],
-            if (status == 'active' || status == 'confirmed') ...[
-              const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -867,13 +816,12 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                     );
                     _refresh();
                   },
-                  icon: const Icon(Icons.map_rounded, size: 18),
-                  label: const Text('Track Vehicle Live GPS', style: TextStyle(fontWeight: FontWeight.bold)),
+                  icon: const Icon(Icons.visibility_outlined, size: 16),
+                  label: const Text('View Booking Details & Timeline'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.primary,
                     side: const BorderSide(color: AppColors.primary),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                 ),
               ),

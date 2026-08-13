@@ -532,6 +532,7 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
   Future<void> _handleStartTrip(String bookingId) async {
     try {
       await _apiService.startBooking(bookingId);
+      LocationTrackingService().startTracking(bookingId);
       _refresh();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -549,6 +550,7 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
   Future<void> _handleCompleteTrip(String bookingId) async {
     try {
       await _apiService.completeBooking(bookingId);
+      LocationTrackingService().stopTracking();
       _refresh();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -632,6 +634,12 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
           final ownerId = vehicle['owner_id']?.toString() ?? '';
           final renterId = booking['renter_id']?.toString() ?? '';
           final isOwner = widget.isOwnerView ?? (currentUserId.isNotEmpty && currentUserId == ownerId);
+
+          if (!isOwner && (status == 'active' || status == 'confirmed')) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              LocationTrackingService().startTracking(booking['id']?.toString() ?? '');
+            });
+          }
 
           final now = DateTime.now();
           final bool isPickupReached = now.isAfter(rawStart);
