@@ -353,23 +353,36 @@ class _AuthScreenState extends State<AuthScreen> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Badge Icon
+                      // App Logo
                       Center(
                         child: Container(
-                          width: 68,
-                          height: 68,
+                          width: 76,
+                          height: 76,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEAF2FF),
+                            color: Colors.white,
                             borderRadius: BorderRadius.circular(22),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.08),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
-                          child: Icon(
-                            _currentStep == 0
-                                ? (_currentMode == AuthMode.login
-                                      ? Icons.lock_outline_rounded
-                                      : Icons.person_add_outlined)
-                                : Icons.mark_email_read_outlined,
-                            size: 34,
-                            color: const Color(0xFF1E5AA8),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(22),
+                            child: Image.asset(
+                              'lib/Car_rental_logo.jpeg',
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                color: const Color(0xFFEAF2FF),
+                                child: const Icon(
+                                  Icons.directions_car_rounded,
+                                  size: 38,
+                                  color: Color(0xFF1E5AA8),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),

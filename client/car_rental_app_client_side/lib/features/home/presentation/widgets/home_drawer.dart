@@ -55,24 +55,42 @@ class HomeDrawer extends StatelessWidget {
           children: [
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
               color: AppColors.primary,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: Colors.white,
-                    backgroundImage: hasProfileImage
-                        ? CachedNetworkImageProvider(profileImageUrl!)
-                        : null,
-                    child: !hasProfileImage
-                        ? const Icon(
-                            Icons.person,
-                            size: 32,
-                            color: AppColors.primary,
-                          )
-                        : null,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: Colors.white,
+                        backgroundImage: hasProfileImage
+                            ? CachedNetworkImageProvider(profileImageUrl!)
+                            : null,
+                        child: !hasProfileImage
+                            ? const Icon(
+                                Icons.person,
+                                size: 32,
+                                color: AppColors.primary,
+                              )
+                            : null,
+                      ),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          color: Colors.white,
+                          child: Image.asset(
+                            'lib/Car_rental_logo.jpeg',
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 14),
                   Text(
