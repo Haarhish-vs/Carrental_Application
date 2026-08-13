@@ -8,6 +8,7 @@ client/car_rental_app_client_side/node_modules/
 .env
 .env.local
 .env.*.local
+*firebase-service-account*.json
 
 # Log files
 npm-debug.log*

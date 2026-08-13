@@ -39,10 +39,10 @@ const validateBookingCreation = async (vehicleId, renterId, startDateStr, endDat
     throw error;
   }
 
-  // 1. Fetch vehicle verification status, availability status, owner, price, deposit
+  // 1. Fetch vehicle verification status, availability status, owner, price, deposit, brand, model
   const { data: vehicle, error: vehicleError } = await supabase
     .from('vehicles')
-    .select('id, owner_id, status, is_available, price_per_day, deposit_amount')
+    .select('id, owner_id, status, is_available, price_per_day, deposit_amount, brand, model')
     .eq('id', vehicleId)
     .maybeSingle();
 

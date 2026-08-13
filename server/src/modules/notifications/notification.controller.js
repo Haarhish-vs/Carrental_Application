@@ -9,13 +9,15 @@ class NotificationController {
   async registerToken(req, res) {
     try {
       const userId = req.user.id;
-      const { fcmToken, deviceInfo } = req.body;
+      const { fcmToken, token, deviceInfo, device_info } = req.body;
+      const targetToken = fcmToken || token;
+      const targetDeviceInfo = deviceInfo || device_info || '';
 
-      if (!fcmToken) {
+      if (!targetToken) {
         return res.status(400).json({ error: 'fcmToken is required' });
       }
 
-      await registerFcmToken(userId, fcmToken, deviceInfo);
+      await registerFcmToken(userId, targetToken, targetDeviceInfo);
       return res.status(200).json({
         message: 'FCM token registered successfully',
         userId
@@ -33,10 +35,11 @@ class NotificationController {
   async unregisterToken(req, res) {
     try {
       const userId = req.user.id;
-      const { fcmToken } = req.body;
+      const { fcmToken, token } = req.body;
+      const targetToken = fcmToken || token;
 
-      if (fcmToken) {
-        await unregisterFcmToken(userId, fcmToken);
+      if (targetToken) {
+        await unregisterFcmToken(userId, targetToken);
       }
 
       return res.status(200).json({

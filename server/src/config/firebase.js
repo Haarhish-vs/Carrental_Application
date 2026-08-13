@@ -17,10 +17,11 @@ function initFirebaseAdmin() {
   try {
     let serviceAccount = null;
 
-    // 1. Check environment variable FIREBASE_SERVICE_ACCOUNT (JSON string or base64)
-    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    // 1. Check environment variables FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT (JSON string or base64)
+    const envServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON || process.env.FIREBASE_SERVICE_ACCOUNT;
+    if (envServiceAccount) {
       try {
-        const rawEnv = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
+        const rawEnv = envServiceAccount.trim();
         const jsonString = rawEnv.startsWith('{')
           ? rawEnv
           : Buffer.from(rawEnv, 'base64').toString('utf8');
@@ -140,14 +141,13 @@ async function sendPushNotificationToUser(userId, { title, body, data = {} }) {
       .select('fcm_token')
       .eq('user_id', userId);
 
-    if (fetchError || !tokenRecords || tokenRecords.length === 0) {
-      console.log(`[NOTIFICATION] No active FCM tokens found for user: ${userId}`);
-      return { success: false, reason: 'No tokens found' };
+    const tokens = tokenRecords ? tokenRecords.map(r => r.fcm_token).filter(Boolean) : [];
+    if (tokens.length === 0) {
+      console.log(`[NOTIFICATION] No active FCM tokens found in DB for user: ${userId}`);
+      return { success: false, reason: 'Empty tokens list' };
     }
 
-    const tokens = tokenRecords.map(r => r.fcm_token).filter(Boolean);
-    if (tokens.length === 0) return { success: false, reason: 'Empty tokens list' };
-
+    console.log(`[NOTIFICATION] Found ${tokens.length} active FCM token(s) in DB for target user: ${userId}`);
     return await sendMulticastNotification(tokens, { title, body, data }, userId);
   } catch (err) {
     console.error(`[FCM ERROR] Notification delivery failed for user ${userId}:`, err.message);

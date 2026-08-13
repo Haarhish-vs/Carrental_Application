@@ -560,6 +560,18 @@ class BookingService {
           bookingId: bookingId
         }
       }).catch(err => console.error(`[FCM ERROR] Delivery failed: ${err.message}`));
+    } else if (cancelledBy === 'renter' && booking.vehicle?.owner_id) {
+      const carName = `${booking.vehicle?.brand || 'Vehicle'} ${booking.vehicle?.model || ''}`.trim();
+      console.log('[NOTIFICATION] Renter cancelled booking');
+      console.log('[NOTIFICATION] Sending cancellation notification to owner...');
+      sendPushNotificationToUser(booking.vehicle.owner_id, {
+        title: 'Reservation Cancelled',
+        body: `The renter cancelled their booking for ${carName}.`,
+        data: {
+          type: 'RESERVATION_CANCELLED',
+          bookingId: bookingId
+        }
+      }).catch(err => console.error(`[FCM ERROR] Delivery failed: ${err.message}`));
     }
 
     return data;

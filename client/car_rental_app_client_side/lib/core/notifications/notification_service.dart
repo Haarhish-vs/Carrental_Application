@@ -275,6 +275,7 @@ class NotificationService {
         break;
       case 'RESERVATION_ACCEPTED':
       case 'RESERVATION_DECLINED':
+      case 'RESERVATION_CANCELLED':
       case 'PAYMENT_CONFIRMED':
       case 'TRIP_REMINDER':
       case 'TRIP_COMPLETED':
