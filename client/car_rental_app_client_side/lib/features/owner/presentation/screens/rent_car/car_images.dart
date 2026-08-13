@@ -27,9 +27,6 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
   final ImagePicker _imagePicker = ImagePicker();
   final List<RentCarUploadImageItem> _items = <RentCarUploadImageItem>[];
 
-  bool _isUploading = false;
-  double _uploadProgress = 0;
-  String? _statusMessage;
 
   List<RentCarImageSlot> get _requiredSlots => rentCarRequiredImageSlots;
 
@@ -44,10 +41,7 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
       .map((item) => item.file!)
       .toList();
 
-  List<String> get _uploadedUrls => _items
-      .where((item) => item.isUploaded && item.uploadedUrl != null)
-      .map((item) => item.uploadedUrl!)
-      .toList();
+
 
   @override
   void initState() {
@@ -101,7 +95,6 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
   }
 
   void _showMessage(String message) {
-    setState(() => _statusMessage = message);
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
@@ -228,103 +221,7 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
     });
   }
 
-  Future<void> _uploadSelectedImages() async {
-    if (!AuthService.isAuthenticated) {
-      _showMessage('Please log in before uploading images.');
-      return;
-    }
 
-    if (_pendingLocalFiles.isEmpty) {
-      _showMessage('Select images first, then upload them.');
-      return;
-    }
-
-    if (widget.onUploadRequested == null) {
-      _showMessage(
-        'Multipart upload is ready. Connect the backend callback to upload files and return permanent URLs.',
-      );
-      return;
-    }
-
-    setState(() {
-      _isUploading = true;
-      _uploadProgress = 0;
-      _statusMessage = 'Uploading selected files...';
-      for (var index = 0; index < _items.length; index++) {
-        final item = _items[index];
-        if (item.file != null) {
-          _items[index] = item.copyWith(
-            state: RentCarImageUploadState.uploading,
-            progress: 0,
-            errorMessage: null,
-          );
-        }
-      }
-    });
-
-    try {
-      final returnedUrls = await widget.onUploadRequested!(_pendingLocalFiles, (
-        progress,
-      ) {
-        if (!mounted) {
-          return;
-        }
-        setState(() => _uploadProgress = progress.clamp(0, 1));
-      });
-
-      if (!mounted) {
-        return;
-      }
-
-      if (returnedUrls.length != _pendingLocalFiles.length) {
-        _showMessage(
-          'Upload completed, but the returned URL count did not match the selected files.',
-        );
-        return;
-      }
-
-      var urlIndex = 0;
-      setState(() {
-        for (var index = 0; index < _items.length; index++) {
-          final current = _items[index];
-          if (current.file == null) {
-            continue;
-          }
-          _items[index] = current.copyWith(
-            uploadedUrl: returnedUrls[urlIndex++],
-            state: RentCarImageUploadState.uploaded,
-            progress: 1,
-            errorMessage: null,
-          );
-        }
-      });
-
-      _showMessage(
-        'Images uploaded successfully. Returned URLs are now displayed.',
-      );
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        for (var index = 0; index < _items.length; index++) {
-          final current = _items[index];
-          if (current.file != null) {
-            _items[index] = current.copyWith(
-              state: RentCarImageUploadState.failed,
-              errorMessage: 'Upload failed. Retry or replace the image.',
-            );
-          }
-        }
-      });
-      _showMessage('Upload failed: $error');
-    } finally {
-      if (mounted) {
-        setState(() => _isUploading = false);
-      }
-    }
-  }
 
   void _goBack() {
     Navigator.of(context).pop();

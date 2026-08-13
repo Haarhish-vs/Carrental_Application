@@ -493,35 +493,16 @@ class _AuthScreenState extends State<AuthScreen> {
                             hintText: '9876543210',
                             filled: true,
                             fillColor: const Color(0xFFF8FAFC),
-                            prefixIcon: const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 14),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.phone_outlined,
-                                    color: Color(0xFF1E5AA8),
-                                    size: 20,
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    '+91',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF103B66),
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                  SizedBox(width: 8),
-                                  SizedBox(
-                                    height: 20,
-                                    child: VerticalDivider(
-                                      color: Color(0xFFCBD5E1),
-                                      thickness: 1,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            prefixIcon: const Icon(
+                              Icons.phone_outlined,
+                              color: Color(0xFF1E5AA8),
+                              size: 20,
+                            ),
+                            prefixText: '+91 ',
+                            prefixStyle: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF103B66),
+                              fontSize: 15,
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),

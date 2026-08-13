@@ -4,6 +4,7 @@ import '../../models/car_model.dart';
 import '../../../wishlist/presentation/controllers/wishlist_controller.dart';
 import '../../../owner/data/services/car_api_service.dart';
 import '../widgets/reviews_bottom_sheet.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 /// Reusable car card matching the modern design system.
 /// Features:
@@ -40,31 +41,11 @@ class CarCard extends StatelessWidget {
     final double imageHeight = (screenWidth * 0.32).clamp(100.0, 140.0);
     final double borderRadiusVal = 16.0 * scale;
 
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: CarApiService().getVehicleReviews(car.id),
-      builder: (context, snapshot) {
-        final reviews = snapshot.data;
-        final int reviewCount = reviews != null
-            ? reviews.length
-            : (car.reviewsCount ?? 0);
+    final int reviewCount = car.reviewsCount ?? 0;
+    final String displayRating = car.rating > 0 ? car.rating.toStringAsFixed(1) : '4.5';
+    final String reviewsText = reviewCount > 0 ? '$reviewCount Reviews' : 'Reviews';
 
-        double avgRating = car.rating;
-        if (reviews != null && reviews.isNotEmpty) {
-          double total = 0;
-          for (var r in reviews) {
-            total += (r['rating'] as num?)?.toDouble() ?? 0.0;
-          }
-          avgRating = total / reviews.length;
-        }
-        final String displayRating = avgRating > 0
-            ? avgRating.toStringAsFixed(1)
-            : (car.rating > 0 ? car.rating.toStringAsFixed(1) : 'New');
-
-        final String reviewsText = reviewCount > 0
-            ? '$reviewCount Reviews'
-            : 'Reviews';
-
-        return InkWell(
+    return InkWell(
           onTap: available ? onCarTap : null,
           borderRadius: BorderRadius.circular(borderRadiusVal),
           child: Opacity(
@@ -100,10 +81,22 @@ class CarCard extends StatelessWidget {
                         child: SizedBox(
                           height: imageHeight,
                           width: double.infinity,
-                          child: Image.network(
-                            car.imageUrl,
+                          child: CachedNetworkImage(
+                            imageUrl: car.imageUrl,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
+                            memCacheHeight: 400, // Optimize memory for thumbnails
+                            placeholder: (context, url) => Container(
+                              height: imageHeight,
+                              width: double.infinity,
+                              color: const Color(0xFFF1F5F9),
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
                               height: imageHeight,
                               width: double.infinity,
                               color: const Color(0xFFF1F5F9),
@@ -462,12 +455,10 @@ class CarCard extends StatelessWidget {
                     ),
                   ),
                 ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
+              ), // End Column
+            ), // End Container
+          ), // End Opacity
+        ); // End InkWell
   }
 }
 

@@ -3,6 +3,7 @@ import 'package:car_rental_app_client_side/core/theme/app_colors.dart';
 import 'package:car_rental_app_client_side/core/utils/responsive.dart';
 import 'package:car_rental_app_client_side/features/home/models/car_model.dart';
 import 'package:car_rental_app_client_side/features/wishlist/presentation/controllers/wishlist_controller.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CarResultCard extends StatelessWidget {
   final CarModel car;
@@ -51,10 +52,24 @@ class CarResultCard extends StatelessWidget {
                   height: imageHeight,
                   width: double.infinity,
                   child: car.imageUrl.isNotEmpty
-                      ? Image.network(
-                          car.imageUrl,
+                      ? CachedNetworkImage(
+                          imageUrl: car.imageUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
+                          memCacheHeight: 450, // Optimize memory for lists
+                          placeholder: (context, url) => Container(
+                            color: const Color(0xFFF8FAFC),
+                            child: const Center(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
                             color: const Color(0xFFF1F5F9),
                             child: Center(
                               child: Icon(
@@ -64,19 +79,6 @@ class CarResultCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Container(
-                              color: const Color(0xFFF8FAFC),
-                              child: const Center(
-                                child: SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                ),
-                              ),
-                            );
-                          },
                         )
                       : Container(
                           color: const Color(0xFFF1F5F9),

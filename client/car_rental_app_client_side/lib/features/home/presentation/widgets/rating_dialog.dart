@@ -36,8 +36,7 @@ class _RatingDialogState extends State<RatingDialog> {
       _isSubmitting = true;
     });
 
-    final user = AuthService.currentUser;
-    final userName = user?['full_name']?.toString() ?? user?['fullName']?.toString() ?? 'Renter';
+
 
     try {
       await CarApiService().submitReview(

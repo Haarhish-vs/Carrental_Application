@@ -21,8 +21,9 @@ class PopularLocationsList extends StatelessWidget {
   IconData _iconFor(String name) {
     final lower = name.toLowerCase();
     if (lower.contains('airport')) return Icons.flight_takeoff_rounded;
-    if (lower.contains('railway') || lower.contains('station'))
+    if (lower.contains('railway') || lower.contains('station')) {
       return Icons.train_rounded;
+    }
     if (lower.contains('bus')) return Icons.directions_bus_rounded;
     if (lower.contains('mall')) return Icons.local_mall_outlined;
     if (lower.contains('city') ||

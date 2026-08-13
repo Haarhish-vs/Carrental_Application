@@ -8,6 +8,7 @@ import '../../../../core/services/location_tracking_service.dart';
 import '../../models/car_model.dart';
 import 'payment_screen.dart';
 import 'booking_tracking_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key, required this.onExplorePressed});
@@ -254,8 +255,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         Expanded(
           child: FutureBuilder<List<Map<String, dynamic>>>(
             future: _bookingsFuture,
+            initialData: _apiService.getCachedBookings(),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
+              if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
                 return const Center(child: CircularProgressIndicator());
               }
 
@@ -359,7 +361,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                   vertical: 10,
                 ),
                 itemCount: bookings.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 16),
+                separatorBuilder: (_, _) => const SizedBox(height: 16),
                 itemBuilder: (context, index) {
                   final booking = bookings[index];
                   final car = booking['vehicle'] as Map<String, dynamic>? ?? {};
@@ -428,10 +430,21 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                           AspectRatio(
                             aspectRatio: 16 / 9,
                             child: imageUrl.isNotEmpty
-                                ? Image.network(
-                                    imageUrl,
+                                ? CachedNetworkImage(
+                                    imageUrl: imageUrl,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Container(
+                                    memCacheHeight: 400, // Optimize memory for lists
+                                    placeholder: (context, url) => Container(
+                                      color: const Color(0xFFEAF2FF),
+                                      child: const Center(
+                                        child: SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        ),
+                                      ),
+                                    ),
+                                    errorWidget: (context, url, error) => Container(
                                       color: const Color(0xFFEAF2FF),
                                       child: const Icon(
                                         Icons.directions_car_rounded,

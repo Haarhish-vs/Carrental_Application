@@ -6,11 +6,24 @@ import 'package:car_rental_app_client_side/core/config/api_config.dart';
 import 'package:car_rental_app_client_side/features/auth/services/auth_service.dart';
 
 class CarApiService {
-  CarApiService({Dio? dio}) : _dio = dio ?? Dio() {
-    _initDio();
+  static final Dio _sharedDio = Dio();
+  static bool _isDioInitialized = false;
+
+  CarApiService({Dio? dio}) : _dio = dio ?? _sharedDio {
+    if (dio == null && !_isDioInitialized) {
+      _initDio(_sharedDio);
+      _isDioInitialized = true;
+    } else if (dio != null) {
+      _initDio(dio);
+    }
   }
 
   final Dio _dio;
+
+  // In-memory caches to prevent UI blocking
+  static List<Map<String, dynamic>>? _cachedBookings;
+  static List<Map<String, dynamic>>? _cachedListings;
+  static List<Map<String, dynamic>>? _cachedVehicleBookings;
 
   // Base URL for the Rent-A-Car backend (configured via ApiConfig)
   static String baseUrl = ApiConfig.baseUrl;
@@ -18,15 +31,15 @@ class CarApiService {
   // Static token storage that can be set from elsewhere in the app (e.g., login)
   static String? token;
 
-  void _initDio() {
-    _dio.options.baseUrl = baseUrl;
+  void _initDio(Dio dioInstance) {
+    dioInstance.options.baseUrl = baseUrl;
     _dio.options.connectTimeout = const Duration(seconds: 60);
-    _dio.options.receiveTimeout = const Duration(seconds: 60);
-    _dio.options.sendTimeout = const Duration(seconds: 60);
-    _dio.options.headers = {'Accept': 'application/json'};
+    dioInstance.options.receiveTimeout = const Duration(seconds: 60);
+    dioInstance.options.sendTimeout = const Duration(seconds: 60);
+    dioInstance.options.headers = {'Accept': 'application/json'};
 
     // Authentication, Logging, and Retry Interceptor
-    _dio.interceptors.add(
+    dioInstance.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
           final authToken = token ?? AuthService.currentToken;
@@ -159,6 +172,8 @@ class CarApiService {
     String? fuelType,
     String? transmission,
     int? seats,
+    int? limit,
+    int? offset,
   }) async {
     try {
       final queryParams = <String, dynamic>{};
@@ -171,6 +186,8 @@ class CarApiService {
       if (fuelType != null && fuelType.trim().isNotEmpty) queryParams['fuelType'] = fuelType.trim();
       if (transmission != null && transmission.trim().isNotEmpty) queryParams['transmission'] = transmission.trim();
       if (seats != null) queryParams['seats'] = seats;
+      if (limit != null) queryParams['limit'] = limit;
+      if (offset != null) queryParams['offset'] = offset;
 
       debugPrint('🔍 [CarApiService.getVehicles] GET /api/vehicles with query: $queryParams');
       final response = await _dio.get('/api/vehicles', queryParameters: queryParams);
@@ -213,15 +230,20 @@ class CarApiService {
         final success = response.data['success'] as bool? ?? false;
         if (success && response.data['data'] != null) {
           final list = response.data['data'] as List<dynamic>;
-          return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+          final parsed = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+          _cachedBookings = parsed;
+          return parsed;
         }
       }
-      return [];
+      return _cachedBookings ?? [];
     } on DioException catch (e) {
       debugPrint('Error fetching my bookings: ${e.message}');
-      return [];
+      return _cachedBookings ?? [];
     }
   }
+
+  /// Get cached bookings instantly without awaiting network
+  List<Map<String, dynamic>>? getCachedBookings() => _cachedBookings;
 
   /// Fetch a single booking by its ID.
   Future<Map<String, dynamic>> getBookingById(String bookingId) async {
@@ -256,23 +278,31 @@ class CarApiService {
     }
   }
 
-  /// Fetch the logged-in user's listed vehicles.
+  /// Fetch the owner's listed vehicles.
   Future<List<Map<String, dynamic>>> getMyListings() async {
+    // If we have cached data, we can optionally return it first or just update it
+    // Wait, since Future returns a single value, we'll return cached immediately if called by a fast-refresh
+    // Actually, UI will handle caching visually, so we just return the future. But we can save to cache.
     try {
       final response = await _dio.get('/api/vehicles/my-listings');
       if (response.statusCode == 200 && response.data != null) {
         final success = response.data['success'] as bool? ?? false;
         if (success && response.data['data'] != null) {
           final list = response.data['data'] as List<dynamic>;
-          return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+          final parsed = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+          _cachedListings = parsed;
+          return parsed;
         }
       }
-      return [];
+      return _cachedListings ?? [];
     } on DioException catch (e) {
       debugPrint('Error fetching my listings: ${e.message}');
-      return [];
+      return _cachedListings ?? [];
     }
   }
+
+  /// Get cached listings instantly without awaiting network
+  List<Map<String, dynamic>>? getCachedListings() => _cachedListings;
 
   /// Create a new booking for a selected vehicle.
   Future<Map<String, dynamic>> createBooking({
@@ -464,15 +494,20 @@ class CarApiService {
         final success = response.data['success'] as bool? ?? false;
         if (success && response.data['data'] != null) {
           final list = response.data['data'] as List<dynamic>;
-          return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+          final parsed = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+          _cachedVehicleBookings = parsed;
+          return parsed;
         }
       }
-      return [];
+      return _cachedVehicleBookings ?? [];
     } on DioException catch (e) {
       debugPrint('Error fetching vehicle bookings: ${e.message}');
-      return [];
+      return _cachedVehicleBookings ?? [];
     }
   }
+
+  /// Get cached vehicle bookings instantly
+  List<Map<String, dynamic>>? getCachedVehicleBookings() => _cachedVehicleBookings;
 
   /// Confirm a booking request (Owner accepts).
   Future<void> confirmBooking(String bookingId) async {
@@ -562,8 +597,12 @@ class CarApiService {
   /// Fetch dynamic filter options from database
   Future<Map<String, dynamic>> getFilterOptions() async {
     try {
-      final response = await _dio.get('/api/cars/filter-options');
+      final response = await _dio.get('/api/vehicles/filter-options');
       if (response.statusCode == 200 && response.data != null) {
+        final success = response.data['success'] as bool? ?? false;
+        if (success && response.data['data'] != null) {
+          return Map<String, dynamic>.from(response.data['data'] as Map);
+        }
         return Map<String, dynamic>.from(response.data as Map);
       }
       return {};

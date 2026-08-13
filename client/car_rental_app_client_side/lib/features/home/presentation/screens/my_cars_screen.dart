@@ -5,6 +5,7 @@ import '../../../auth/presentation/widgets/auth_required_view.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../../owner/data/services/car_api_service.dart';
 import 'booking_tracking_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class MyCarsScreen extends StatefulWidget {
   const MyCarsScreen({super.key, required this.onListCarPressed});
@@ -309,10 +310,12 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
               fit: StackFit.expand,
               children: [
                 imageUrl.isNotEmpty
-                    ? Image.network(
-                        imageUrl,
+                    ? CachedNetworkImage(
+                        imageUrl: imageUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _placeholderImage(),
+                        memCacheHeight: 400, // Optimize memory for lists
+                        placeholder: (context, url) => _placeholderImage(),
+                        errorWidget: (context, url, error) => _placeholderImage(),
                       )
                     : _placeholderImage(),
                 // Overlay banner if unavailable
@@ -536,8 +539,9 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
   Widget _buildRequestsTab() {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _requestsFuture,
+      initialData: _apiService.getCachedVehicleBookings(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
 
@@ -590,7 +594,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
         return ListView.separated(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           itemCount: requests.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 16),
+          separatorBuilder: (_, _) => const SizedBox(height: 16),
           itemBuilder: (context, index) => _buildRequestCard(requests[index]),
         );
       },
@@ -836,8 +840,9 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
   Widget _buildVehiclesTab() {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _carsFuture,
+      initialData: _apiService.getCachedListings(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
 
@@ -893,7 +898,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
         return ListView.separated(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           itemCount: cars.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 16),
+          separatorBuilder: (_, _) => const SizedBox(height: 16),
           itemBuilder: (context, index) => _buildCarCard(cars[index]),
         );
       },

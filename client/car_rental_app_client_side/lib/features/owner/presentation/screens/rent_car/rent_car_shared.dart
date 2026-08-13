@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../../../core/theme/app_colors.dart';
+
 
 const List<String> rentCarStepTitles = <String>[
   'Car Specifications',
@@ -555,7 +555,7 @@ class RentCarDropdownField<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       items: options
           .map(
             (option) => DropdownMenuItem<T>(
