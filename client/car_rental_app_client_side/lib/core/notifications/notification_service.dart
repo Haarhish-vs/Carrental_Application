@@ -186,7 +186,7 @@ class NotificationService {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        debugPrint('[FCM] Token registered successfully');
+        debugPrint('[FCM] Token synchronized with backend');
       } else {
         debugPrint('[FCM ERROR] Backend request failed with status: ${response.statusCode}');
       }

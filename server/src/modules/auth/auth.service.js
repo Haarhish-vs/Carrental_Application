@@ -87,8 +87,8 @@ class AuthService {
     const cleanPhone = phoneNumber.trim();
     const cleanOtp = otp.trim();
 
-    // 1. Verify OTP code (Allow universal test OTP '123456' in dev/test)
-    if (cleanOtp !== '123456' || process.env.NODE_ENV === 'test') {
+    // 1. Verify OTP code (Bypass local OTP check for Firebase Verified tokens)
+    if (cleanOtp !== 'FIREBASE_VERIFIED') {
       await otpService.verifyOtp(cleanPhone, cleanOtp);
     }
 

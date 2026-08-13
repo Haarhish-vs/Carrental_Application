@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:car_rental_app_client_side/core/notifications/notification_service.dart';
 import 'package:car_rental_app_client_side/features/owner/data/services/car_api_service.dart';
@@ -120,11 +121,17 @@ class AuthService {
     }
   }
 
-  /// Logout: Clears encrypted storage, tokens, user data, and notifies listeners.
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+
+  /// Logout: Clears encrypted storage, tokens, user data, disassociates FCM, and notifies listeners.
   static Future<void> logout() async {
     debugPrint('🚪 [Auth] Initiating user logout...');
 
     final userId = currentUser?['id']?.toString();
+
+    try {
+      await FirebaseAuth.instance.signOut();
+    } catch (_) {}
 
     // 1. Instantly clear in-memory authentication state so UI updates immediately
     currentToken = null;
@@ -150,6 +157,123 @@ class AuthService {
       } catch (e) {
         debugPrint('⚠️ [Auth] Error disassociating FCM token on logout: $e');
       }
+    }
+
+    debugPrint('[AUTH] Logout completed');
+  }
+
+  /// Initiate Firebase Phone Number Authentication with backend pre-check
+  Future<void> sendFirebaseOtp({
+    required String phoneNumber,
+    required bool isRegister,
+    required void Function(String verificationId, int? resendToken) onCodeSent,
+    required void Function(Exception error) onError,
+    void Function(PhoneAuthCredential credential)? onAutoVerification,
+  }) async {
+    final formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : '+91$phoneNumber';
+
+    debugPrint('[AUTH] Phone authentication started');
+    debugPrint('[AUTH] Checking existing user');
+
+    try {
+      // Pre-check phone in database (409 if existing on register, 404 if missing on login)
+      await checkPhone(formattedPhone, isRegister: isRegister);
+    } catch (e) {
+      if (e is Exception) {
+        onError(e);
+      } else {
+        onError(Exception('Validation failed'));
+      }
+      return;
+    }
+
+    debugPrint('[AUTH] OTP requested');
+
+    try {
+      await _firebaseAuth.verifyPhoneNumber(
+        phoneNumber: formattedPhone,
+        timeout: const Duration(seconds: 60),
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          debugPrint('[AUTH] Firebase auto-verification completed');
+          if (onAutoVerification != null) {
+            onAutoVerification(credential);
+          }
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          debugPrint('⚠️ [AUTH] Firebase verification failed: ${e.code}');
+          onError(_mapFirebaseAuthError(e));
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          debugPrint('✅ [AUTH] Firebase OTP code sent');
+          onCodeSent(verificationId, resendToken);
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          debugPrint('⌛ [AUTH] Code auto retrieval timeout');
+        },
+      );
+    } catch (e) {
+      onError(Exception('Failed to send OTP. Please try again.'));
+    }
+  }
+
+  /// Verify Firebase Phone OTP & Synchronize session with backend database
+  Future<Map<String, dynamic>> verifyFirebaseOtpAndLogin({
+    required String verificationId,
+    required String smsCode,
+    required String phoneNumber,
+    String? fullName,
+    bool isRegister = false,
+  }) async {
+    final formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : '+91$phoneNumber';
+
+    try {
+      // 1. Create PhoneAuthCredential
+      final credential = PhoneAuthProvider.credential(
+        verificationId: verificationId,
+        smsCode: smsCode.trim(),
+      );
+
+      // 2. Sign in user with Firebase Credential
+      await _firebaseAuth.signInWithCredential(credential);
+      debugPrint('[AUTH] OTP verification successful');
+      debugPrint('[AUTH] Firebase user authenticated');
+
+      // 3. Synchronize user in backend database & retrieve 7-day JWT session token
+      final result = await verifyOtpAndLogin(
+        phoneNumber: formattedPhone,
+        otp: 'FIREBASE_VERIFIED',
+        fullName: fullName,
+        isRegister: isRegister,
+      );
+
+      debugPrint('[AUTH] Backend user synchronized');
+      debugPrint(isRegister ? '[AUTH] Registration completed' : '[AUTH] Login completed');
+
+      return result;
+    } on FirebaseAuthException catch (e) {
+      debugPrint('⚠️ [AUTH] Firebase Auth Exception: ${e.code}');
+      throw _mapFirebaseAuthError(e);
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Verification failed. Please try again.');
+    }
+  }
+
+  /// Maps Firebase Authentication errors to user-friendly messages
+  Exception _mapFirebaseAuthError(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'invalid-phone-number':
+        return Exception('Please check the entered details.');
+      case 'invalid-verification-code':
+        return Exception('Invalid OTP. Please try again.');
+      case 'session-expired':
+        return Exception('OTP expired. Please request a new OTP.');
+      case 'too-many-requests':
+        return Exception('Too many attempts. Please try again later.');
+      case 'network-request-failed':
+        return Exception('Unable to connect. Check your internet connection.');
+      default:
+        return Exception(e.message ?? 'Authentication failed. Please try again.');
     }
   }
 

@@ -27,7 +27,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   bool _isLoading = false;
   String? _errorMessage;
-  String? _devOtp;
+  String? _verificationId;
 
   Timer? _resendTimer;
   int _resendCountdown = 30;
@@ -115,43 +115,43 @@ class _AuthScreenState extends State<AuthScreen> {
       _errorMessage = null;
     });
 
-    try {
-      final fullPhone = phone.startsWith('+') ? phone : '+91$phone';
+    final fullPhone = phone.startsWith('+') ? phone : '+91$phone';
 
-      // Request OTP from backend (Backend validates DB FIRST: 409 for existing on register, 404 for not found on login)
-      final devOtp = await _authService.sendOtp(
-        fullPhone,
-        isRegister: _currentMode == AuthMode.register,
-      );
-
-      _showToast('OTP sent successfully', isSuccess: true);
-      _startResendTimer();
-
-      if (!mounted) return;
-      setState(() {
-        _currentStep = 1;
-        _devOtp = devOtp;
-        if (devOtp != null && devOtp.isNotEmpty) {
-          _otpController.text = devOtp;
-        }
-      });
-    } catch (e) {
-      if (!mounted) return;
-      final msg = e.toString().replaceAll('Exception:', '').trim();
-      setState(() {
-        _errorMessage = msg;
-      });
-      _showToast(msg, isSuccess: false);
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+    await _authService.sendFirebaseOtp(
+      phoneNumber: fullPhone,
+      isRegister: _currentMode == AuthMode.register,
+      onCodeSent: (verificationId, resendToken) {
+        if (!mounted) return;
+        _showToast('OTP sent successfully', isSuccess: true);
+        _startResendTimer();
+        setState(() {
+          _verificationId = verificationId;
+          _currentStep = 1;
+          _isLoading = false;
+        });
+      },
+      onError: (error) {
+        if (!mounted) return;
+        final msg = error.toString().replaceAll('Exception:', '').trim();
+        setState(() {
+          _errorMessage = msg;
+          _isLoading = false;
+        });
+        _showToast(msg, isSuccess: false);
+      },
+    );
   }
 
   Future<void> _handleVerifyOtp() async {
     final otp = _otpController.text.trim();
-    if (otp.length < 4) {
+    if (otp.length < 6) {
       _showToast('Please check the entered details.');
       setState(() => _errorMessage = 'Please enter the 6-digit OTP code');
+      return;
+    }
+
+    if (_verificationId == null || _verificationId!.isEmpty) {
+      _showToast('Verification session expired. Please request a new OTP.');
       return;
     }
 
@@ -165,9 +165,10 @@ class _AuthScreenState extends State<AuthScreen> {
     });
 
     try {
-      final result = await _authService.verifyOtpAndLogin(
+      final result = await _authService.verifyFirebaseOtpAndLogin(
+        verificationId: _verificationId!,
+        smsCode: otp,
         phoneNumber: fullPhone,
-        otp: otp,
         fullName: name,
         isRegister: _currentMode == AuthMode.register,
       );
@@ -610,28 +611,6 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                         ),
 
-                        if (_devOtp != null) ...[
-                          const SizedBox(height: 10),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 6,
-                              horizontal: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE6F4EA),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              'Dev Mode Detected OTP: $_devOtp',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: AppColors.success,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12.5,
-                              ),
-                            ),
-                          ),
-                        ],
                         const SizedBox(height: 24),
 
                         FilledButton(
