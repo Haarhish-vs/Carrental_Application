@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:car_rental_app_client_side/core/theme/app_colors.dart';
 import 'package:car_rental_app_client_side/features/search/presentation/providers/search_cars_provider.dart';
 import 'package:car_rental_app_client_side/features/search/presentation/widgets/filter_option_chip.dart';
-import 'package:car_rental_app_client_side/features/search/presentation/widgets/sort_bottom_sheet.dart';
 
 class FilterBottomSheet extends StatefulWidget {
   final SearchCarsProvider provider;
@@ -256,39 +255,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                           _provider.setTempPriceRange(values.start, values.end);
                         },
                       ),
-
-                      // 6. SORT BY
-                      _buildSectionHeader('SORT BY'),
-                      ...SortBottomSheet.options.map((option) {
-                        final isSelected = temp.sort == option.key;
-                        return InkWell(
-                          onTap: () => _provider.setTempSort(option.key),
-                          borderRadius: BorderRadius.circular(10),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  isSelected
-                                      ? Icons.radio_button_checked
-                                      : Icons.radio_button_unchecked,
-                                  color: isSelected ? AppColors.primary : Colors.grey.shade400,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  option.label,
-                                  style: TextStyle(
-                                    fontSize: 14.5,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                    color: isSelected ? AppColors.primary : AppColors.textPrimary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }),
                       const SizedBox(height: 24),
                     ],
                   ),
