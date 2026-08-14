@@ -1,15 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:car_rental_app_client_side/core/theme/app_colors.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:car_rental_app_client_side/core/notifications/notification_service.dart';
 import 'package:car_rental_app_client_side/features/auth/services/auth_service.dart';
 import 'package:car_rental_app_client_side/features/home/presentation/screens/home_screen.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Validate stored JWT & auto-login user before initial frame
-  await AuthService.tryAutoLogin();
+  // Initialize core Firebase App synchronously before rendering UI
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('[Firebase] Initialization notice: $e');
+  }
 
   runApp(const MyApp());
+
+  // Initialize FCM Notification Service & Auth in background after initial frame
+  _initServices();
+}
+
+Future<void> _initServices() async {
+  try {
+    await NotificationService.instance.initialize(navKey: navigatorKey);
+  } catch (e) {
+    debugPrint('[FCM ERROR] Non-fatal initialization error: $e');
+  }
+
+  try {
+    await AuthService.tryAutoLogin();
+  } catch (e) {
+    debugPrint('[Auth ERROR] Auto-login error: $e');
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -18,6 +43,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'Car Rental Application',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

@@ -1,5 +1,6 @@
 // booking.service.js
 const { supabase } = require('../../config/supabase');
+const { sendPushNotificationToUser, sendPushNotificationToUsers } = require('../../config/firebase');
 const bookingValidation = require('./booking.validation');
 const pricingService = require('./pricing.service');
 const cancellationService = require('./cancellation.service');
@@ -42,6 +43,23 @@ class BookingService {
       .from('vehicles')
       .update({ is_available: false, updated_at: new Date().toISOString() })
       .eq('id', vehicleId);
+
+    // 5. Send push notification to vehicle owner
+    if (vehicle.owner_id) {
+      const carName = `${vehicle.brand || 'Vehicle'} ${vehicle.model || ''}`.trim();
+      console.log('[NOTIFICATION] Reservation created');
+      console.log(`[NOTIFICATION] Target owner: ${vehicle.owner_id}`);
+      console.log('[NOTIFICATION] Sending reservation notification...');
+      sendPushNotificationToUser(vehicle.owner_id, {
+        title: 'New Reservation Request',
+        body: `A renter has requested to book your ${carName}.`,
+        data: {
+          type: 'RESERVATION_CREATED',
+          bookingId: booking.id,
+          vehicleId: vehicleId
+        }
+      }).catch(err => console.error(`[FCM ERROR] Delivery failed: ${err.message}`));
+    }
 
     return booking;
   }
@@ -327,6 +345,22 @@ class BookingService {
       .single();
 
     if (updateError) throw updateError;
+
+    // Send push notification to renter
+    if (booking.renter_id) {
+      const carName = `${booking.vehicle?.brand || 'Vehicle'} ${booking.vehicle?.model || ''}`.trim();
+      console.log('[NOTIFICATION] Owner accepted reservation');
+      console.log('[NOTIFICATION] Sending notification to renter...');
+      sendPushNotificationToUser(booking.renter_id, {
+        title: 'Reservation Accepted',
+        body: `The owner accepted your reservation for ${carName}.`,
+        data: {
+          type: 'RESERVATION_ACCEPTED',
+          bookingId: bookingId
+        }
+      }).catch(err => console.error(`[FCM ERROR] Delivery failed: ${err.message}`));
+    }
+
     return data;
   }
 
@@ -359,6 +393,23 @@ class BookingService {
       .single();
 
     if (updateError) throw updateError;
+
+    // Notify owner after payment confirmed
+    const ownerId = booking.vehicle?.owner_id;
+    if (ownerId) {
+      const carName = `${booking.vehicle?.brand || 'Vehicle'} ${booking.vehicle?.model || ''}`.trim();
+      console.log('[NOTIFICATION] Payment confirmed');
+      console.log('[NOTIFICATION] Sending payment notification to owner...');
+      sendPushNotificationToUser(ownerId, {
+        title: 'Payment Confirmed',
+        body: `Payment for ${carName} has been successfully completed.`,
+        data: {
+          type: 'PAYMENT_CONFIRMED',
+          bookingId: bookingId
+        }
+      }).catch(err => console.error(`[FCM ERROR] Delivery failed: ${err.message}`));
+    }
+
     return data;
   }
 
@@ -428,6 +479,22 @@ class BookingService {
     // Restore availability if no other active bookings remain
     await this._restoreVehicleAvailability(booking.vehicle_id);
 
+    // Send push notification to renter and owner
+    const renterId = booking.renter_id;
+    const ownerId = booking.vehicle?.owner_id;
+    const carName = `${booking.vehicle?.brand || 'Vehicle'} ${booking.vehicle?.model || ''}`.trim();
+    console.log('[NOTIFICATION] Trip ended');
+    console.log('[NOTIFICATION] Sending completion notification...');
+    const targetUsers = [renterId, ownerId].filter(Boolean);
+    sendPushNotificationToUsers(targetUsers, {
+      title: 'Trip Completed',
+      body: `Your rental trip for ${carName} is now completed.`,
+      data: {
+        type: 'TRIP_COMPLETED',
+        bookingId: bookingId
+      }
+    }).catch(err => console.error(`[FCM ERROR] Delivery failed: ${err.message}`));
+
     return data;
   }
 
@@ -479,6 +546,33 @@ class BookingService {
 
     // Restore vehicle availability once booking is cancelled
     await this._restoreVehicleAvailability(booking.vehicle_id);
+
+    // If cancelled by owner, notify renter
+    if (cancelledBy === 'owner' && booking.renter_id) {
+      const carName = `${booking.vehicle?.brand || 'Vehicle'} ${booking.vehicle?.model || ''}`.trim();
+      console.log('[NOTIFICATION] Owner declined reservation');
+      console.log('[NOTIFICATION] Sending notification to renter...');
+      sendPushNotificationToUser(booking.renter_id, {
+        title: 'Reservation Declined',
+        body: `The owner declined your reservation request for ${carName}.`,
+        data: {
+          type: 'RESERVATION_DECLINED',
+          bookingId: bookingId
+        }
+      }).catch(err => console.error(`[FCM ERROR] Delivery failed: ${err.message}`));
+    } else if (cancelledBy === 'renter' && booking.vehicle?.owner_id) {
+      const carName = `${booking.vehicle?.brand || 'Vehicle'} ${booking.vehicle?.model || ''}`.trim();
+      console.log('[NOTIFICATION] Renter cancelled booking');
+      console.log('[NOTIFICATION] Sending cancellation notification to owner...');
+      sendPushNotificationToUser(booking.vehicle.owner_id, {
+        title: 'Reservation Cancelled',
+        body: `The renter cancelled their booking for ${carName}.`,
+        data: {
+          type: 'RESERVATION_CANCELLED',
+          bookingId: bookingId
+        }
+      }).catch(err => console.error(`[FCM ERROR] Delivery failed: ${err.message}`));
+    }
 
     return data;
   }

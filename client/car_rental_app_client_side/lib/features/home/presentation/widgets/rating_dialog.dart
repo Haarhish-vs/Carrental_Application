@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../owner/data/services/car_api_service.dart';
-import 'package:car_rental_app_client_side/features/auth/services/auth_service.dart';
 
 class RatingDialog extends StatefulWidget {
   final String carId;
