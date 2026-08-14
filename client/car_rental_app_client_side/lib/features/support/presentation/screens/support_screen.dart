@@ -86,27 +86,35 @@ class _SupportScreenState extends State<SupportScreen> {
   }
 
   Future<void> _callAdminPhone() async {
-    final cleanNumber = _supportData.phone.replaceAll(RegExp(r'[^\d+]'), '');
+    final rawPhone = _supportData.phone.isNotEmpty ? _supportData.phone : '8825430047';
+    final cleanNumber = rawPhone.replaceAll(RegExp(r'[^\d+]'), '');
     final url = Uri.parse('tel:$cleanNumber');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
+    try {
+      final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        await launchUrl(url, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open phone dialer.')),
+          SnackBar(content: Text('Could not open phone dialer: $rawPhone')),
         );
       }
     }
   }
 
   Future<void> _sendAdminEmail() async {
-    final url = Uri.parse('mailto:${_supportData.email}?subject=DriveX%20Support%20Request');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
+    final rawEmail = _supportData.email.isNotEmpty ? _supportData.email : 'adminsupport@gmail.com';
+    final url = Uri.parse('mailto:$rawEmail?subject=DriveX%20Support%20Request');
+    try {
+      final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        await launchUrl(url, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open email client.')),
+          SnackBar(content: Text('Could not open email client: $rawEmail')),
         );
       }
     }
@@ -114,9 +122,12 @@ class _SupportScreenState extends State<SupportScreen> {
 
   Future<void> _callEmergency() async {
     final url = Uri.parse('tel:911');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
+    try {
+      final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        await launchUrl(url, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Could not open dialer.')),
@@ -261,7 +272,11 @@ class _SupportScreenState extends State<SupportScreen> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             const Text('Call Admin', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 11)),
-                                            Text(_supportData.phone, style: const TextStyle(color: Colors.black54, fontSize: 9), overflow: TextOverflow.ellipsis),
+                                            Text(
+                                              _supportData.phone.isNotEmpty ? _supportData.phone : '8825430047',
+                                              style: const TextStyle(color: Colors.black54, fontSize: 9),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ],
                                         ),
                                       ),
@@ -291,7 +306,11 @@ class _SupportScreenState extends State<SupportScreen> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             const Text('Email Admin', style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold, fontSize: 11)),
-                                            Text(_supportData.email, style: const TextStyle(color: Colors.black54, fontSize: 9), overflow: TextOverflow.ellipsis),
+                                            Text(
+                                              _supportData.email.isNotEmpty ? _supportData.email : 'adminsupport@gmail.com',
+                                              style: const TextStyle(color: Colors.black54, fontSize: 9),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ],
                                         ),
                                       ),
@@ -625,7 +644,7 @@ class _SupportScreenState extends State<SupportScreen> {
                           );
                         }).toList()
                       : (_supportData.policiesMap.isNotEmpty
-                          ? _supportData.policiesMap.values.asMap().entries.map((entry) {
+                          ? _supportData.policiesMap.values.toList().asMap().entries.map((entry) {
                               final index = entry.key;
                               final policy = entry.value;
                               IconData icon = Icons.description_outlined;

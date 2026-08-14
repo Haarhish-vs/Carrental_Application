@@ -52,6 +52,10 @@ class SupportData {
       policiesList: [],
     );
   }
+
+  factory SupportData.defaultFallback() {
+    return SupportData.empty();
+  }
 }
 
 class DynamicPolicy {
