@@ -12,29 +12,49 @@ class MyCarsScreen extends StatefulWidget {
     super.key,
     required this.onListCarPressed,
     this.onExplorePressed,
+    this.activeSubTab = 0,
+    this.onSubTabChanged,
   });
 
   final VoidCallback onListCarPressed;
   final VoidCallback? onExplorePressed;
+  final int activeSubTab;
+  final ValueChanged<int>? onSubTabChanged;
 
   @override
   State<MyCarsScreen> createState() => _MyCarsScreenState();
 }
 
-class _MyCarsScreenState extends State<MyCarsScreen> {
+class _MyCarsScreenState extends State<MyCarsScreen> with SingleTickerProviderStateMixin {
   final CarApiService _apiService = CarApiService();
   late Future<List<Map<String, dynamic>>> _carsFuture;
   late Future<List<Map<String, dynamic>>> _requestsFuture;
+  late final TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: widget.activeSubTab.clamp(0, 1),
+    );
     AuthService.authStateNotifier.addListener(_onAuthChanged);
     _refresh();
   }
 
   @override
+  void didUpdateWidget(MyCarsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.activeSubTab != oldWidget.activeSubTab &&
+        _tabController.index != widget.activeSubTab) {
+      _tabController.animateTo(widget.activeSubTab.clamp(0, 1));
+    }
+  }
+
+  @override
   void dispose() {
+    _tabController.dispose();
     AuthService.authStateNotifier.removeListener(_onAuthChanged);
     super.dispose();
   }
@@ -971,8 +991,20 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
       );
     }
 
-    return DefaultTabController(
-      length: 2,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_tabController.index > 0) {
+          _tabController.animateTo(0);
+        } else {
+          if (widget.onExplorePressed != null) {
+            widget.onExplorePressed!();
+          } else if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
+        }
+      },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -991,7 +1023,9 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                         color: AppColors.textPrimary,
                       ),
                       onPressed: () {
-                        if (widget.onExplorePressed != null) {
+                        if (_tabController.index > 0) {
+                          _tabController.animateTo(0);
+                        } else if (widget.onExplorePressed != null) {
                           widget.onExplorePressed!();
                         } else if (Navigator.of(context).canPop()) {
                           Navigator.of(context).pop();
@@ -1024,6 +1058,12 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: TabBar(
+              controller: _tabController,
+              onTap: (index) {
+                if (widget.onSubTabChanged != null) {
+                  widget.onSubTabChanged!(index);
+                }
+              },
               labelColor: AppColors.primary,
               unselectedLabelColor: AppColors.textSecondary,
               indicatorColor: AppColors.primary,
@@ -1040,6 +1080,8 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
           // TabBarView
           Expanded(
             child: TabBarView(
+              controller: _tabController,
+              physics: const PageScrollPhysics(),
               children: [
                 _buildVehiclesTab(),
                 _buildRequestsTab(),
