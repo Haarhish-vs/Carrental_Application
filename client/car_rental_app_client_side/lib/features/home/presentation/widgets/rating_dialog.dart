@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/error_handling/app_error_handler.dart';
 import '../../../owner/data/services/car_api_service.dart';
 
 class RatingDialog extends StatefulWidget {
@@ -25,17 +26,13 @@ class _RatingDialogState extends State<RatingDialog> {
 
   void _submitReview() async {
     if (_feedbackController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please provide some feedback before submitting.'), backgroundColor: Colors.orange),
-      );
+      AppErrorHandler.showInfo(context, 'Please provide some feedback before submitting.');
       return;
     }
 
     setState(() {
       _isSubmitting = true;
     });
-
-
 
     try {
       await CarApiService().submitReview(
@@ -53,17 +50,13 @@ class _RatingDialogState extends State<RatingDialog> {
       Navigator.of(context).pop();
       widget.onSubmitted();
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Thank you for your feedback!'), backgroundColor: AppColors.success),
-      );
+      AppErrorHandler.showSuccess(context, 'Thank you for your feedback!');
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _isSubmitting = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-      );
+      AppErrorHandler.show(context, e);
     }
   }
 

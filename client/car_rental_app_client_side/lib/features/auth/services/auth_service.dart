@@ -6,6 +6,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:car_rental_app_client_side/core/notifications/notification_service.dart';
 import 'package:car_rental_app_client_side/features/owner/data/services/car_api_service.dart';
 
+import 'package:car_rental_app_client_side/core/error_handling/app_error_handler.dart';
+
 class AuthService {
   AuthService({Dio? dio}) : _dio = dio ?? Dio() {
     _initDio();
@@ -408,48 +410,6 @@ class AuthService {
 
   /// Maps backend HTTP status codes & Dio exceptions to exact required user-facing messages
   Exception _mapDioError(DioException error) {
-    if (error.response != null) {
-      final status = error.response?.statusCode;
-      final responseData = error.response?.data;
-      final serverMsg = responseData is Map ? responseData['message']?.toString() : null;
-
-      // Exact HTTP status code mapping
-      switch (status) {
-        case 201:
-          return Exception('Account created successfully');
-        case 200:
-          return Exception(serverMsg ?? 'Login successful');
-        case 409:
-          return Exception('Phone number already registered. Please login.');
-        case 404:
-          return Exception('Phone number not registered. Please register.');
-        case 400:
-          return Exception('Invalid OTP. Please try again.');
-        case 410:
-          return Exception('OTP expired. Please request a new OTP.');
-        case 429:
-          return Exception('Too many attempts. Please try again later.');
-        case 401:
-          return Exception('Session expired. Please login again.');
-        case 403:
-          return Exception("You don't have permission to perform this action.");
-        case 422:
-          return Exception('Please check the entered details.');
-        case 500:
-          return Exception('Something went wrong. Please try again.');
-        default:
-          return Exception(serverMsg ?? 'Something went wrong. Please try again.');
-      }
-    }
-
-    switch (error.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-      case DioExceptionType.connectionError:
-        return Exception('Unable to connect. Check your internet connection.');
-      default:
-        return Exception('Unable to connect. Check your internet connection.');
-    }
+    return AppErrorHandler.handle(error);
   }
 }

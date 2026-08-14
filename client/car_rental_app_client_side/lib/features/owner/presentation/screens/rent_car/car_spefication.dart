@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'car_pricingandavilablity.dart';
 import 'rent_car_shared.dart';
@@ -88,9 +89,12 @@ class _CarSpecificationScreenState extends State<CarSpecificationScreen> {
     super.dispose();
   }
 
-  String? _requiredText(String? value, String label) {
+  String? _requiredText(String? value, String label, {int maxLen = 20}) {
     if (value == null || value.trim().isEmpty) {
       return 'Enter $label';
+    }
+    if (value.trim().length > maxLen) {
+      return '$label cannot exceed $maxLen characters';
     }
     return null;
   }
@@ -137,6 +141,8 @@ class _CarSpecificationScreenState extends State<CarSpecificationScreen> {
               label: 'Brand',
               hint: 'e.g. Toyota',
               icon: Icons.badge_outlined,
+              maxLength: 20,
+              inputFormatters: [LengthLimitingTextInputFormatter(20)],
               validator: (value) => _requiredText(value, 'brand'),
               textInputAction: TextInputAction.next,
             ),
@@ -148,6 +154,8 @@ class _CarSpecificationScreenState extends State<CarSpecificationScreen> {
               label: 'Model',
               hint: 'e.g. Corolla',
               icon: Icons.directions_car_filled_outlined,
+              maxLength: 20,
+              inputFormatters: [LengthLimitingTextInputFormatter(20)],
               validator: (value) => _requiredText(value, 'model'),
               textInputAction: TextInputAction.next,
             ),
@@ -159,6 +167,8 @@ class _CarSpecificationScreenState extends State<CarSpecificationScreen> {
               label: 'Variant',
               hint: 'e.g. GX CVT',
               icon: Icons.layers_outlined,
+              maxLength: 20,
+              inputFormatters: [LengthLimitingTextInputFormatter(20)],
               validator: (value) => _requiredText(value, 'variant'),
               textInputAction: TextInputAction.next,
             ),
@@ -171,6 +181,11 @@ class _CarSpecificationScreenState extends State<CarSpecificationScreen> {
               hint: 'e.g. 2022',
               icon: Icons.event_outlined,
               keyboardType: TextInputType.number,
+              maxLength: 4,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(4),
+              ],
               validator: _yearValidator,
               textInputAction: TextInputAction.next,
             ),
@@ -182,6 +197,8 @@ class _CarSpecificationScreenState extends State<CarSpecificationScreen> {
               label: 'Registration Number',
               hint: 'e.g. KDA-1234',
               icon: Icons.confirmation_number_outlined,
+              maxLength: 20,
+              inputFormatters: [LengthLimitingTextInputFormatter(20)],
               validator: (value) => _requiredText(value, 'registration number'),
               textInputAction: TextInputAction.next,
             ),
@@ -251,6 +268,8 @@ class _CarSpecificationScreenState extends State<CarSpecificationScreen> {
               label: 'Color',
               hint: 'e.g. Pearl White',
               icon: Icons.color_lens_outlined,
+              maxLength: 20,
+              inputFormatters: [LengthLimitingTextInputFormatter(20)],
               validator: (value) => _requiredText(value, 'color'),
               textInputAction: TextInputAction.next,
             ),

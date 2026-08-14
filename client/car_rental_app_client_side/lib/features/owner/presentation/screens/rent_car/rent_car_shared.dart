@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:car_rental_app_client_side/core/theme/app_colors.dart';
 
@@ -500,6 +501,8 @@ class RentCarTextField extends StatelessWidget {
     this.onTap,
     this.validator,
     this.textInputAction,
+    this.inputFormatters,
+    this.maxLength,
   });
 
   final TextEditingController controller;
@@ -512,6 +515,8 @@ class RentCarTextField extends StatelessWidget {
   final VoidCallback? onTap;
   final FormFieldValidator<String>? validator;
   final TextInputAction? textInputAction;
+  final List<TextInputFormatter>? inputFormatters;
+  final int? maxLength;
 
   @override
   Widget build(BuildContext context) {
@@ -523,6 +528,8 @@ class RentCarTextField extends StatelessWidget {
       onTap: onTap,
       validator: validator,
       textInputAction: textInputAction,
+      inputFormatters: inputFormatters,
+      maxLength: maxLength,
       decoration: rentCarInputDecoration(
         context,
         label: label,

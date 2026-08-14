@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/error_handling/app_error_handler.dart';
 import '../../../auth/presentation/widgets/auth_required_view.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../../owner/data/services/car_api_service.dart';
@@ -12,29 +13,49 @@ class MyCarsScreen extends StatefulWidget {
     super.key,
     required this.onListCarPressed,
     this.onExplorePressed,
+    this.activeSubTab = 0,
+    this.onSubTabChanged,
   });
 
   final VoidCallback onListCarPressed;
   final VoidCallback? onExplorePressed;
+  final int activeSubTab;
+  final ValueChanged<int>? onSubTabChanged;
 
   @override
   State<MyCarsScreen> createState() => _MyCarsScreenState();
 }
 
-class _MyCarsScreenState extends State<MyCarsScreen> {
+class _MyCarsScreenState extends State<MyCarsScreen> with SingleTickerProviderStateMixin {
   final CarApiService _apiService = CarApiService();
   late Future<List<Map<String, dynamic>>> _carsFuture;
   late Future<List<Map<String, dynamic>>> _requestsFuture;
+  late final TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: widget.activeSubTab.clamp(0, 1),
+    );
     AuthService.authStateNotifier.addListener(_onAuthChanged);
     _refresh();
   }
 
   @override
+  void didUpdateWidget(MyCarsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.activeSubTab != oldWidget.activeSubTab &&
+        _tabController.index != widget.activeSubTab) {
+      _tabController.animateTo(widget.activeSubTab.clamp(0, 1));
+    }
+  }
+
+  @override
   void dispose() {
+    _tabController.dispose();
     AuthService.authStateNotifier.removeListener(_onAuthChanged);
     super.dispose();
   }
@@ -104,18 +125,15 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
     try {
       await _apiService.toggleVehicleAvailability(vehicleId, isAvailable: targetAvailable);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(targetAvailable ? 'Car is now available for booking.' : 'Car is now marked as unavailable.'),
-          backgroundColor: targetAvailable ? AppColors.success : Colors.orange,
-        ),
-      );
+      if (targetAvailable) {
+        AppErrorHandler.showSuccess(context, 'Car is now available for booking.');
+      } else {
+        AppErrorHandler.showInfo(context, 'Car is now marked as unavailable.');
+      }
       _refresh();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-      );
+      AppErrorHandler.show(context, e);
     }
   }
 
@@ -482,14 +500,10 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
       await _apiService.confirmBooking(bookingId);
       _refresh();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Booking accepted successfully!'), backgroundColor: AppColors.success),
-      );
+      AppErrorHandler.showSuccess(context, 'Booking accepted successfully!');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red),
-      );
+      AppErrorHandler.show(context, e);
     }
   }
 
@@ -498,14 +512,10 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
       await _apiService.declineBooking(bookingId);
       _refresh();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Booking request declined.'), backgroundColor: Colors.orange),
-      );
+      AppErrorHandler.showInfo(context, 'Booking request declined.');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red),
-      );
+      AppErrorHandler.show(context, e);
     }
   }
 
@@ -514,14 +524,10 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
       await _apiService.startBooking(bookingId);
       _refresh();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Trip started successfully!'), backgroundColor: AppColors.primary),
-      );
+      AppErrorHandler.showInfo(context, 'Trip started successfully!');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red),
-      );
+      AppErrorHandler.show(context, e);
     }
   }
 
@@ -530,14 +536,10 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
       await _apiService.completeBooking(bookingId);
       _refresh();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Trip completed successfully!'), backgroundColor: AppColors.success),
-      );
+      AppErrorHandler.showSuccess(context, 'Trip completed successfully!');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red),
-      );
+      AppErrorHandler.show(context, e);
     }
   }
 
@@ -971,8 +973,20 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
       );
     }
 
-    return DefaultTabController(
-      length: 2,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_tabController.index > 0) {
+          _tabController.animateTo(0);
+        } else {
+          if (widget.onExplorePressed != null) {
+            widget.onExplorePressed!();
+          } else if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
+        }
+      },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -991,7 +1005,9 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                         color: AppColors.textPrimary,
                       ),
                       onPressed: () {
-                        if (widget.onExplorePressed != null) {
+                        if (_tabController.index > 0) {
+                          _tabController.animateTo(0);
+                        } else if (widget.onExplorePressed != null) {
                           widget.onExplorePressed!();
                         } else if (Navigator.of(context).canPop()) {
                           Navigator.of(context).pop();
@@ -1024,6 +1040,12 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: TabBar(
+              controller: _tabController,
+              onTap: (index) {
+                if (widget.onSubTabChanged != null) {
+                  widget.onSubTabChanged!(index);
+                }
+              },
               labelColor: AppColors.primary,
               unselectedLabelColor: AppColors.textSecondary,
               indicatorColor: AppColors.primary,
@@ -1040,6 +1062,8 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
           // TabBarView
           Expanded(
             child: TabBarView(
+              controller: _tabController,
+              physics: const PageScrollPhysics(),
               children: [
                 _buildVehiclesTab(),
                 _buildRequestsTab(),

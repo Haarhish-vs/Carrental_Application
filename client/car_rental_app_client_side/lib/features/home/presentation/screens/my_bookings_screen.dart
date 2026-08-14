@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/error_handling/app_error_handler.dart';
 import '../../../auth/presentation/widgets/auth_required_view.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../../owner/data/services/car_api_service.dart';
@@ -22,6 +23,66 @@ class MyBookingsScreen extends StatefulWidget {
 class _MyBookingsScreenState extends State<MyBookingsScreen> {
   final CarApiService _apiService = CarApiService();
   late Future<List<Map<String, dynamic>>> _bookingsFuture;
+  String _selectedFilter = 'all';
+
+  Widget _buildFilterBar(List<Map<String, dynamic>> allBookings) {
+    final pendingCount = allBookings.where((b) => (b['status']?.toString().toLowerCase() ?? '') == 'pending').length;
+    final approvedCount = allBookings.where((b) {
+      final s = b['status']?.toString().toLowerCase() ?? '';
+      return s == 'confirmed' || s == 'active';
+    }).length;
+    final completedCount = allBookings.where((b) => (b['status']?.toString().toLowerCase() ?? '') == 'completed').length;
+    final cancelledCount = allBookings.where((b) => (b['status']?.toString().toLowerCase() ?? '') == 'cancelled').length;
+
+    final filters = [
+      {'id': 'all', 'label': 'All', 'count': allBookings.length},
+      {'id': 'pending', 'label': 'Pending', 'count': pendingCount},
+      {'id': 'approved', 'label': 'Approved', 'count': approvedCount},
+      {'id': 'completed', 'label': 'Completed', 'count': completedCount},
+      {'id': 'cancelled', 'label': 'Cancelled', 'count': cancelledCount},
+    ];
+
+    return Container(
+      height: 40,
+      margin: const EdgeInsets.only(top: 10, bottom: 6),
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: filters.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final f = filters[index];
+          final fId = f['id'] as String;
+          final isSelected = _selectedFilter == fId;
+          final count = f['count'] as int;
+
+          return FilterChip(
+            selected: isSelected,
+            showCheckmark: false,
+            label: Text(
+              '${f['label']} ($count)',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                color: isSelected ? Colors.white : const Color(0xFF103B66),
+              ),
+            ),
+            selectedColor: AppColors.primary,
+            backgroundColor: Colors.white,
+            side: BorderSide(
+              color: isSelected ? AppColors.primary : const Color(0xFFE2E8F0),
+            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            onSelected: (_) {
+              setState(() {
+                _selectedFilter = fId;
+              });
+            },
+          );
+        },
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -91,18 +152,11 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     try {
       await _apiService.cancelBooking(bookingId, reason: 'Cancelled by renter');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Booking cancelled successfully'),
-          backgroundColor: AppColors.success,
-        ),
-      );
+      AppErrorHandler.showSuccess(context, 'Booking cancelled successfully');
       _refreshBookings();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-      );
+      AppErrorHandler.show(context, e);
     }
   }
 
@@ -305,6 +359,16 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                   break;
                 }
               }
+
+              final filteredBookings = bookings.where((b) {
+                final s = b['status']?.toString().toLowerCase() ?? '';
+                if (_selectedFilter == 'pending') return s == 'pending';
+                if (_selectedFilter == 'approved') return s == 'confirmed' || s == 'active';
+                if (_selectedFilter == 'completed') return s == 'completed';
+                if (_selectedFilter == 'cancelled') return s == 'cancelled';
+                return true; // 'all'
+              }).toList();
+
               if (bookings.isEmpty) {
                 return Center(
                   child: Padding(
@@ -355,15 +419,29 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                 );
               }
 
-              return ListView.separated(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
-                ),
-                itemCount: bookings.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 16),
-                itemBuilder: (context, index) {
-                  final booking = bookings[index];
+              return Column(
+                children: [
+                  _buildFilterBar(bookings),
+                  Expanded(
+                    child: filteredBookings.isEmpty
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Text(
+                                'No ${_selectedFilter.toUpperCase()} bookings found.',
+                                style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          )
+                        : ListView.separated(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 10,
+                            ),
+                            itemCount: filteredBookings.length,
+                            separatorBuilder: (_, _) => const SizedBox(height: 16),
+                            itemBuilder: (context, index) {
+                              final booking = filteredBookings[index];
                   final car = booking['vehicle'] as Map<String, dynamic>? ?? {};
                   final images = (car['images'] as List<dynamic>?) ?? [];
                   final imageUrl = images.isNotEmpty
@@ -672,11 +750,14 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                     ),
                   );
                 },
-              );
-            },
-          ),
-        ),
-      ],
-    );
+              ),
+            ),
+          ],
+        );
+      },
+    ),
+  ),
+],
+);
   }
 }

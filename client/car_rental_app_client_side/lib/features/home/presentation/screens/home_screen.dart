@@ -37,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final CarApiService _carApiService = CarApiService();
 
   int _navIndex = 0;
+  late final PageController _pageController;
   DateTime? _lastPressedAt;
 
   late Future<List<CarModel>> _vehiclesFuture;
@@ -61,6 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: _navIndex);
     _loadUserInfo();
     AuthService.authStateNotifier.addListener(_onAuthChanged);
     _vehiclesFuture = _fetchVehicles();
@@ -68,8 +70,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    _pageController.dispose();
     AuthService.authStateNotifier.removeListener(_onAuthChanged);
     super.dispose();
+  }
+
+  void _navigateToTab(int index) {
+    if (_navIndex != index) {
+      setState(() {
+        _navIndex = index;
+      });
+    }
+    if (_pageController.hasClients && (_pageController.page?.round() != index)) {
+      _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   void _onAuthChanged() {
@@ -342,29 +360,29 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBody() {
-    switch (_navIndex) {
-      case 1:
-        return MyBookingsScreen(
-          onExplorePressed: () {
-            setState(() {
-              _navIndex = 0;
-            });
-          },
-        );
-      case 2:
-        return MyCarsScreen(
+    return PageView(
+      controller: _pageController,
+      onPageChanged: (index) {
+        if (_navIndex != index) {
+          setState(() {
+            _navIndex = index;
+          });
+        }
+      },
+      physics: const BouncingScrollPhysics(),
+      children: [
+        _buildHomeTab(),
+        MyBookingsScreen(
+          onExplorePressed: () => _navigateToTab(0),
+        ),
+        MyCarsScreen(
           onListCarPressed: () async {
             await _goHost();
           },
-          onExplorePressed: () {
-            setState(() {
-              _navIndex = 0;
-            });
-          },
-        );
-      default:
-        return _buildHomeTab();
-    }
+          onExplorePressed: () => _navigateToTab(1),
+        ),
+      ],
+    );
   }
 
   Widget _buildHomeTab() {
@@ -642,9 +660,7 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         onTripsTap: () {
           Navigator.pop(context);
-          setState(() {
-            _navIndex = 1;
-          });
+          _navigateToTab(1);
         },
         onFavoritesTap: () {
           Navigator.pop(context);
@@ -660,22 +676,16 @@ class _HomeScreenState extends State<HomeScreen> {
               initialSection: SupportSection.support,
               onGoToHome: () {
                 Navigator.pop(context);
-                setState(() {
-                  _navIndex = 0;
-                  _vehiclesFuture = _fetchVehicles();
-                });
+                _navigateToTab(0);
+                _vehiclesFuture = _fetchVehicles();
               },
               onGoToBookings: () {
                 Navigator.pop(context);
-                setState(() {
-                  _navIndex = 1;
-                });
+                _navigateToTab(1);
               },
               onGoToMyCar: () {
                 Navigator.pop(context);
-                setState(() {
-                  _navIndex = 2;
-                });
+                _navigateToTab(2);
               },
               onGoToHost: () async {
                 Navigator.pop(context);
@@ -703,22 +713,16 @@ class _HomeScreenState extends State<HomeScreen> {
               initialSection: SupportSection.faq,
               onGoToHome: () {
                 Navigator.pop(context);
-                setState(() {
-                  _navIndex = 0;
-                  _vehiclesFuture = _fetchVehicles();
-                });
+                _navigateToTab(0);
+                _vehiclesFuture = _fetchVehicles();
               },
               onGoToBookings: () {
                 Navigator.pop(context);
-                setState(() {
-                  _navIndex = 1;
-                });
+                _navigateToTab(1);
               },
               onGoToMyCar: () {
                 Navigator.pop(context);
-                setState(() {
-                  _navIndex = 2;
-                });
+                _navigateToTab(2);
               },
               onGoToHost: () async {
                 Navigator.pop(context);
@@ -736,22 +740,16 @@ class _HomeScreenState extends State<HomeScreen> {
               initialSection: SupportSection.policies,
               onGoToHome: () {
                 Navigator.pop(context);
-                setState(() {
-                  _navIndex = 0;
-                  _vehiclesFuture = _fetchVehicles();
-                });
+                _navigateToTab(0);
+                _vehiclesFuture = _fetchVehicles();
               },
               onGoToBookings: () {
                 Navigator.pop(context);
-                setState(() {
-                  _navIndex = 1;
-                });
+                _navigateToTab(1);
               },
               onGoToMyCar: () {
                 Navigator.pop(context);
-                setState(() {
-                  _navIndex = 2;
-                });
+                _navigateToTab(2);
               },
               onGoToHost: () async {
                 Navigator.pop(context);
@@ -773,9 +771,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // If on another tab (Bookings or My Cars), navigate back to Home tab
           if (_navIndex != 0) {
-            setState(() {
-              _navIndex = 0;
-            });
+            _navigateToTab(0);
             return;
           }
 
@@ -806,23 +802,9 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       bottomNavigationBar: BottomNavigation(
         currentIndex: _navIndex,
-        onHomeTap: () {
-          if (_navIndex != 0) {
-            setState(() {
-              _navIndex = 0;
-            });
-          }
-        },
-        onBookingsTap: () {
-          setState(() {
-            _navIndex = 1;
-          });
-        },
-        onMyCarTap: () {
-          setState(() {
-            _navIndex = 2;
-          });
-        },
+        onHomeTap: () => _navigateToTab(0),
+        onBookingsTap: () => _navigateToTab(1),
+        onMyCarTap: () => _navigateToTab(2),
         onHostTap: _goHost,
       ),
     );

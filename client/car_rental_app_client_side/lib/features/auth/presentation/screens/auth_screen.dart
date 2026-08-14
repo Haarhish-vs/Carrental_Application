@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:car_rental_app_client_side/core/theme/app_colors.dart';
+import 'package:car_rental_app_client_side/core/error_handling/app_error_handler.dart';
 import 'package:car_rental_app_client_side/features/auth/services/auth_service.dart';
 import 'package:car_rental_app_client_side/features/home/presentation/screens/home_screen.dart';
 
@@ -78,36 +80,35 @@ class _AuthScreenState extends State<AuthScreen> {
 
   void _showToast(String message, {bool isSuccess = false}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
-        ),
-        backgroundColor: isSuccess ? const Color(0xFF10B981) : const Color(0xFFEF4444),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    if (isSuccess) {
+      AppErrorHandler.showSuccess(context, message);
+    } else {
+      AppErrorHandler.show(context, message);
+    }
   }
 
   Future<void> _handleSendOtp() async {
     final phone = _phoneController.text.trim();
-    if (phone.length < 8) {
-      _showToast('Please check the entered details.');
+    if (phone.length != 10) {
+      _showToast('Mobile number must be exactly 10 digits.');
       setState(
-        () => _errorMessage = 'Please enter a valid phone number (e.g. 9876543210)',
+        () => _errorMessage = 'Mobile number must be exactly 10 digits (e.g. 9876543210)',
       );
       return;
     }
 
-    if (_currentMode == AuthMode.register && _nameController.text.trim().isEmpty) {
-      _showToast('Please check the entered details.');
-      setState(() => _errorMessage = 'Please enter your full name to register');
-      return;
+    if (_currentMode == AuthMode.register) {
+      final name = _nameController.text.trim();
+      if (name.isEmpty) {
+        _showToast('Please enter your full name.');
+        setState(() => _errorMessage = 'Please enter your full name to register');
+        return;
+      }
+      if (name.length > 20) {
+        _showToast('Full Name cannot exceed 20 characters.');
+        setState(() => _errorMessage = 'Full Name cannot exceed 20 characters');
+        return;
+      }
     }
 
     setState(() {
@@ -117,29 +118,33 @@ class _AuthScreenState extends State<AuthScreen> {
 
     final fullPhone = phone.startsWith('+') ? phone : '+91$phone';
 
-    await _authService.sendFirebaseOtp(
-      phoneNumber: fullPhone,
-      isRegister: _currentMode == AuthMode.register,
-      onCodeSent: (verificationId, resendToken) {
-        if (!mounted) return;
-        _showToast('OTP sent successfully', isSuccess: true);
-        _startResendTimer();
-        setState(() {
-          _verificationId = verificationId;
-          _currentStep = 1;
-          _isLoading = false;
-        });
-      },
-      onError: (error) {
-        if (!mounted) return;
-        final msg = error.toString().replaceAll('Exception:', '').trim();
-        setState(() {
-          _errorMessage = msg;
-          _isLoading = false;
-        });
-        _showToast(msg, isSuccess: false);
-      },
-    );
+    try {
+      final returnedOtp = await _authService.sendOtp(
+        fullPhone,
+        isRegister: _currentMode == AuthMode.register,
+      );
+
+      if (!mounted) return;
+
+      final toastMsg = (returnedOtp != null && returnedOtp.isNotEmpty)
+          ? 'OTP sent successfully (Code: $returnedOtp)'
+          : 'OTP sent successfully';
+      _showToast(toastMsg, isSuccess: true);
+      _startResendTimer();
+      setState(() {
+        _verificationId = 'session_$fullPhone';
+        _currentStep = 1;
+        _isLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      final cleanMsg = AppErrorHandler.getErrorMessage(error);
+      setState(() {
+        _errorMessage = cleanMsg;
+        _isLoading = false;
+      });
+      AppErrorHandler.show(context, error);
+    }
   }
 
   Future<void> _handleVerifyOtp() async {
@@ -147,11 +152,6 @@ class _AuthScreenState extends State<AuthScreen> {
     if (otp.length < 6) {
       _showToast('Please check the entered details.');
       setState(() => _errorMessage = 'Please enter the 6-digit OTP code');
-      return;
-    }
-
-    if (_verificationId == null || _verificationId!.isEmpty) {
-      _showToast('Verification session expired. Please request a new OTP.');
       return;
     }
 
@@ -165,10 +165,9 @@ class _AuthScreenState extends State<AuthScreen> {
     });
 
     try {
-      final result = await _authService.verifyFirebaseOtpAndLogin(
-        verificationId: _verificationId!,
-        smsCode: otp,
+      final result = await _authService.verifyOtpAndLogin(
         phoneNumber: fullPhone,
+        otp: otp,
         fullName: name,
         isRegister: _currentMode == AuthMode.register,
       );
@@ -190,11 +189,12 @@ class _AuthScreenState extends State<AuthScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      final msg = e.toString().replaceAll('Exception:', '').trim();
+      final cleanMsg = AppErrorHandler.getErrorMessage(e);
       setState(() {
-        _errorMessage = msg;
+        _errorMessage = cleanMsg;
+        _isLoading = false;
       });
-      _showToast(msg, isSuccess: false);
+      AppErrorHandler.show(context, e);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -465,6 +465,9 @@ class _AuthScreenState extends State<AuthScreen> {
                           TextField(
                             controller: _nameController,
                             textCapitalization: TextCapitalization.words,
+                            inputFormatters: [
+                              LengthLimitingTextInputFormatter(20),
+                            ],
                             decoration: InputDecoration(
                               labelText: 'Full Name',
                               hintText: 'e.g. John Doe',
@@ -502,6 +505,11 @@ class _AuthScreenState extends State<AuthScreen> {
                         TextField(
                           controller: _phoneController,
                           keyboardType: TextInputType.phone,
+                          maxLength: 10,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(10),
+                          ],
                           decoration: InputDecoration(
                             labelText: 'Mobile Number',
                             hintText: '9876543210',

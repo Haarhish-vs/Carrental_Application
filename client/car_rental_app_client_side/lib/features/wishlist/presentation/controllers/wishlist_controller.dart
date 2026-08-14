@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/error_handling/app_error_handler.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../../home/models/car_model.dart';
@@ -131,25 +132,7 @@ class WishlistController extends ChangeNotifier {
         carModel.ownerId == currentUserId &&
         !_wishlistIds.contains(vehicleId)) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.info_outline_rounded, color: Colors.amber, size: 18),
-                SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'You cannot add your own vehicle to wishlist',
-                    style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: AppColors.textPrimary,
-            duration: Duration(seconds: 2),
-          ),
-        );
+        AppErrorHandler.showInfo(context, 'You cannot add your own vehicle to wishlist');
       }
       return false;
     }
@@ -291,12 +274,7 @@ class WishlistController extends ChangeNotifier {
       _safeNotifyListeners();
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update wishlist: $e'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        AppErrorHandler.show(context, e);
       }
       return wasWishlisted;
     }

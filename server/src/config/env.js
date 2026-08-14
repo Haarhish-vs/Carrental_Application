@@ -36,8 +36,10 @@ module.exports = {
   SMS_PROVIDER_API_KEY: process.env.SMS_PROVIDER_API_KEY || 'mock-sms-key',
   CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME || 'doymxkmea',
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY || '223194751911512',
-  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET || 'O-eufCz3z1iEWdakuVrrdEViY94',
   GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY,
+  TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,
+  TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
+  TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER,
 
   NODE_ENV: process.env.NODE_ENV || 'development'
 };

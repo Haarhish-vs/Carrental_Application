@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/error_handling/app_error_handler.dart';
 import '../../../home/presentation/widgets/bottom_navigation.dart';
+import '../../data/services/support_api_service.dart';
 
 enum SupportSection {
   support,
@@ -31,9 +33,8 @@ class SupportScreen extends StatefulWidget {
 }
 
 class _SupportScreenState extends State<SupportScreen> {
-  static const String _adminPhoneNumber = '+91 98765 43210';
-  static const String _adminEmailAddress = 'admin@drivexcarrental.com';
-  static const String _sosEmergencyNumber = '911';
+  SupportData _supportData = SupportData.empty();
+  bool _isLoadingSupportData = true;
 
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _faqKey = GlobalKey();
@@ -42,9 +43,20 @@ class _SupportScreenState extends State<SupportScreen> {
   @override
   void initState() {
     super.initState();
+    _fetchSupportData();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToSection();
     });
+  }
+
+  Future<void> _fetchSupportData() async {
+    final data = await SupportApiService.fetchSupportDetails();
+    if (mounted) {
+      setState(() {
+        _supportData = data;
+        _isLoadingSupportData = false;
+      });
+    }
   }
 
   @override
@@ -75,41 +87,46 @@ class _SupportScreenState extends State<SupportScreen> {
   }
 
   Future<void> _callAdminPhone() async {
-    final cleanNumber = _adminPhoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+    final rawPhone = _supportData.phone.isNotEmpty ? _supportData.phone : '8825430047';
+    final cleanNumber = rawPhone.replaceAll(RegExp(r'[^\d+]'), '');
     final url = Uri.parse('tel:$cleanNumber');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
+    try {
+      final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        await launchUrl(url, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open phone dialer.')),
-        );
+        AppErrorHandler.show(context, 'Could not open phone dialer.');
       }
     }
   }
 
   Future<void> _sendAdminEmail() async {
-    final url = Uri.parse('mailto:$_adminEmailAddress?subject=DriveX%20Support%20Request');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
+    final rawEmail = _supportData.email.isNotEmpty ? _supportData.email : 'adminsupport@gmail.com';
+    final url = Uri.parse('mailto:$rawEmail?subject=DriveX%20Support%20Request');
+    try {
+      final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        await launchUrl(url, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open email client.')),
-        );
+        AppErrorHandler.show(context, 'Could not open email client.');
       }
     }
   }
 
   Future<void> _callEmergency() async {
-    final url = Uri.parse('tel:$_sosEmergencyNumber');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
+    final url = Uri.parse('tel:911');
+    try {
+      final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        await launchUrl(url, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open dialer.')),
-        );
+        AppErrorHandler.show(context, 'Could not open dialer.');
       }
     }
   }
@@ -242,15 +259,19 @@ class _SupportScreenState extends State<SupportScreen> {
                                     color: Colors.white,
                                   ),
                                   child: Row(
-                                    children: const [
-                                      Icon(Icons.phone_in_talk_rounded, color: Colors.blue, size: 16),
-                                      SizedBox(width: 6),
+                                    children: [
+                                      const Icon(Icons.phone_in_talk_rounded, color: Colors.blue, size: 16),
+                                      const SizedBox(width: 6),
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text('Call Admin', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 11)),
-                                            Text(_adminPhoneNumber, style: TextStyle(color: Colors.black54, fontSize: 9), overflow: TextOverflow.ellipsis),
+                                            const Text('Call Admin', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 11)),
+                                            Text(
+                                              _supportData.phone.isNotEmpty ? _supportData.phone : '8825430047',
+                                              style: const TextStyle(color: Colors.black54, fontSize: 9),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ],
                                         ),
                                       ),
@@ -272,15 +293,19 @@ class _SupportScreenState extends State<SupportScreen> {
                                     color: Colors.white,
                                   ),
                                   child: Row(
-                                    children: const [
-                                      Icon(Icons.email_outlined, color: Colors.purple, size: 16),
-                                      SizedBox(width: 6),
+                                    children: [
+                                      const Icon(Icons.email_outlined, color: Colors.purple, size: 16),
+                                      const SizedBox(width: 6),
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text('Email Admin', style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold, fontSize: 11)),
-                                            Text(_adminEmailAddress, style: TextStyle(color: Colors.black54, fontSize: 9), overflow: TextOverflow.ellipsis),
+                                            const Text('Email Admin', style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold, fontSize: 11)),
+                                            Text(
+                                              _supportData.email.isNotEmpty ? _supportData.email : 'adminsupport@gmail.com',
+                                              style: const TextStyle(color: Colors.black54, fontSize: 9),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ],
                                         ),
                                       ),
@@ -585,31 +610,71 @@ class _SupportScreenState extends State<SupportScreen> {
               child: Theme(
                 data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                 child: Column(
-                  children: [
-                    _buildPolicyTile(
-                      Icons.privacy_tip_outlined,
-                      'Privacy Policy',
-                      'We value your privacy. We do not sell your personal data. We use it only to provide and improve our services, process payments, and ensure safety.',
-                    ),
-                    Divider(height: 1, indent: 48, endIndent: 16, color: Colors.grey.shade200),
-                    _buildPolicyTile(
-                      Icons.description_outlined,
-                      'Terms & Conditions',
-                      'By using our app, you agree to comply with our community guidelines, maintain the vehicles in good condition, and return them on time. Full terms are available on our website.',
-                    ),
-                    Divider(height: 1, indent: 48, endIndent: 16, color: Colors.grey.shade200),
-                    _buildPolicyTile(
-                      Icons.event_busy_outlined,
-                      'Cancellation Policy',
-                      'Free cancellation up to 24 hours before your trip starts. Cancellations made within 24 hours of the start time may be subject to a fee.',
-                    ),
-                    Divider(height: 1, indent: 48, endIndent: 16, color: Colors.grey.shade200),
-                    _buildPolicyTile(
-                      Icons.receipt_long_outlined,
-                      'Refund Policy',
-                      'Refunds for eligible cancellations are issued to the original payment method and take 5-7 business days to reflect in your account.',
-                    ),
-                  ],
+                  children: _supportData.policiesList.isNotEmpty
+                      ? _supportData.policiesList.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final policy = entry.value;
+                          IconData icon = Icons.description_outlined;
+                          final type = policy.policyType.toLowerCase();
+                          if (type.contains('privacy')) {
+                            icon = Icons.privacy_tip_outlined;
+                          } else if (type.contains('security')) {
+                            icon = Icons.security_outlined;
+                          } else if (type.contains('cancel')) {
+                            icon = Icons.event_busy_outlined;
+                          } else if (type.contains('refund')) {
+                            icon = Icons.receipt_long_outlined;
+                          }
+                          return Column(
+                            key: ValueKey(policy.id ?? index),
+                            children: [
+                              if (index > 0)
+                                Divider(height: 1, indent: 48, endIndent: 16, color: Colors.grey.shade200),
+                              _buildPolicyTile(
+                                icon,
+                                policy.title,
+                                policy.content,
+                              ),
+                            ],
+                          );
+                        }).toList()
+                      : (_supportData.policiesMap.isNotEmpty
+                          ? _supportData.policiesMap.values.toList().asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final policy = entry.value;
+                              IconData icon = Icons.description_outlined;
+                              final type = policy.policyType.toLowerCase();
+                              if (type.contains('privacy')) {
+                                icon = Icons.privacy_tip_outlined;
+                              } else if (type.contains('security')) {
+                                icon = Icons.security_outlined;
+                              } else if (type.contains('cancel')) {
+                                icon = Icons.event_busy_outlined;
+                              } else if (type.contains('refund')) {
+                                icon = Icons.receipt_long_outlined;
+                              }
+                              return Column(
+                                key: ValueKey(policy.id ?? index),
+                                children: [
+                                  if (index > 0)
+                                    Divider(height: 1, indent: 48, endIndent: 16, color: Colors.grey.shade200),
+                                  _buildPolicyTile(
+                                    icon,
+                                    policy.title,
+                                    policy.content,
+                                  ),
+                                ],
+                              );
+                            }).toList()
+                          : [
+                              const Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Text(
+                                  'Loading policies...',
+                                  style: TextStyle(color: Colors.black54, fontSize: 13),
+                                ),
+                              ),
+                            ]),
                 ),
               ),
             ),

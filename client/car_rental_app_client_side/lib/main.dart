@@ -5,6 +5,8 @@ import 'package:car_rental_app_client_side/core/notifications/notification_servi
 import 'package:car_rental_app_client_side/features/auth/services/auth_service.dart';
 import 'package:car_rental_app_client_side/features/home/presentation/screens/home_screen.dart';
 
+import 'package:car_rental_app_client_side/core/network/network_status.dart';
+
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
@@ -57,7 +59,11 @@ class MyApp extends StatelessWidget {
           centerTitle: false,
         ),
       ),
+      builder: (context, child) => NetworkStatusBanner(
+        child: child ?? const SizedBox(),
+      ),
       home: const HomeScreen(),
     );
   }
 }
+

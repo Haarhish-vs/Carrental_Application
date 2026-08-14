@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../../core/services/location_tracking_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/error_handling/app_error_handler.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../../owner/data/services/car_api_service.dart';
 import '../../models/car_model.dart';
@@ -204,9 +205,7 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
       
       if (images.length != 4) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select exactly 4 images of the car.'), backgroundColor: Colors.orange),
-        );
+        AppErrorHandler.showInfo(context, 'Please select exactly 4 images of the car.');
         return;
       }
 
@@ -225,20 +224,14 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
           _imagesUploaded = true;
           _isLoadingImages = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Images uploaded successfully!'), backgroundColor: AppColors.success),
-        );
-        
-        // Removed automated demo flow. Now relies on exact time and backend states.
+        AppErrorHandler.showSuccess(context, 'Images uploaded successfully!');
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isLoadingImages = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error uploading images: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red),
-        );
+        AppErrorHandler.show(context, e);
       }
     }
   }
@@ -697,14 +690,10 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
       await _apiService.declineBooking(bookingId);
       _refresh();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Booking request declined.'), backgroundColor: Colors.orange),
-      );
+      AppErrorHandler.showInfo(context, 'Booking request declined.');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red),
-      );
+      AppErrorHandler.show(context, e);
     }
   }
 
@@ -714,14 +703,10 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
       await _apiService.confirmBooking(bookingId);
       _refresh();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Booking request approved! awaiting renter payment.'), backgroundColor: AppColors.success),
-      );
+      AppErrorHandler.showSuccess(context, 'Booking request approved! awaiting renter payment.');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red),
-      );
+      AppErrorHandler.show(context, e);
     }
   }
 
@@ -732,14 +717,10 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
       LocationTrackingService().startTracking(bookingId);
       _refresh();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Trip has started! Drive safely.'), backgroundColor: AppColors.primary),
-      );
+      AppErrorHandler.showInfo(context, 'Trip has started! Drive safely.');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red),
-      );
+      AppErrorHandler.show(context, e);
     }
   }
 
@@ -750,14 +731,10 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
       LocationTrackingService().stopTracking();
       _refresh();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Trip completed successfully!'), backgroundColor: AppColors.success),
-      );
+      AppErrorHandler.showSuccess(context, 'Trip completed successfully!');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red),
-      );
+      AppErrorHandler.show(context, e);
     }
   }
 
