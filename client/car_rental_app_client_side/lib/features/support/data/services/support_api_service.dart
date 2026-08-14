@@ -35,51 +35,20 @@ class SupportData {
         .toList();
 
     return SupportData(
-      label: cust['label']?.toString() ?? 'Customer Support',
-      email: cust['email']?.toString() ?? 'adminsupport@gmail.com',
-      phone: cust['phone']?.toString() ?? '8825430047',
+      label: cust['label']?.toString() ?? '',
+      email: cust['email']?.toString() ?? '',
+      phone: cust['phone']?.toString() ?? '',
       policiesMap: parsedMap,
       policiesList: parsedList,
     );
   }
 
-  factory SupportData.defaultFallback() {
+  factory SupportData.empty() {
     return SupportData(
-      label: 'Customer Support',
-      email: 'adminsupport@gmail.com',
-      phone: '8825430047',
-      policiesMap: {
-        'privacy': DynamicPolicy(
-          id: 1,
-          title: 'Privacy Policy',
-          policyType: 'privacy',
-          content: 'We protect your personal and account information. We do not sell your personal data.',
-        ),
-        'security': DynamicPolicy(
-          id: 2,
-          title: 'Security Policy',
-          policyType: 'security',
-          content: 'User accounts and data are protected through secure encryption protocols.',
-        ),
-        'terms': DynamicPolicy(
-          id: 3,
-          title: 'Terms & Conditions',
-          policyType: 'terms',
-          content: 'By using our app, you agree to comply with our community guidelines.',
-        ),
-        'cancellation': DynamicPolicy(
-          id: 4,
-          title: 'Cancellation Policy',
-          policyType: 'cancellation',
-          content: 'Free cancellation up to 24 hours before your trip starts.',
-        ),
-        'refund': DynamicPolicy(
-          id: 5,
-          title: 'Refund Policy',
-          policyType: 'refund',
-          content: 'Refund eligibility depends on booking terms. Eligible refunds take 5-7 business days.',
-        ),
-      },
+      label: '',
+      email: '',
+      phone: '',
+      policiesMap: {},
       policiesList: [],
     );
   }
@@ -101,7 +70,7 @@ class DynamicPolicy {
   factory DynamicPolicy.fromJson(Map<String, dynamic> json) {
     return DynamicPolicy(
       id: json['id'],
-      title: json['title']?.toString() ?? json['policy_type']?.toString() ?? 'Policy',
+      title: json['title']?.toString() ?? json['policy_type']?.toString() ?? '',
       policyType: json['policy_type']?.toString() ?? '',
       content: json['content']?.toString() ?? '',
     );
@@ -120,8 +89,8 @@ class SupportApiService {
         }
       }
     } catch (e) {
-      // Return clean fallback defaults on network/timeout error
+      // Ignore network errors and return empty object (data will come from backend)
     }
-    return SupportData.defaultFallback();
+    return SupportData.empty();
   }
 }

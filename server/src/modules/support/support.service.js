@@ -3,19 +3,16 @@ const { supabase } = require('../../config/supabase');
 
 class SupportService {
   /**
-   * Fetches customer support details and published policies from Supabase database.
-   * Table schemas handled:
-   * 1. customer_support / customer (label, email, phone)
-   * 2. policies / policy (policy_type, title, content, is_published)
+   * Fetches customer support details and published policies dynamically from Supabase database.
    */
   async getSupportDetails() {
     let customerSupport = {
-      label: 'Customer Support',
-      email: 'adminsupport@gmail.com',
-      phone: '8825430047'
+      label: '',
+      email: '',
+      phone: ''
     };
 
-    // 1. Fetch customer support contact from DB
+    // 1. Fetch customer support contact from DB (tables: customer_support or customer)
     try {
       let { data: custData, error: custErr } = await supabase
         .from('customer_support')
@@ -24,7 +21,6 @@ class SupportService {
         .maybeSingle();
 
       if (!custData || custErr) {
-        // Fallback check table named 'customer' or 'customers'
         const { data: altCustData } = await supabase
           .from('customer')
           .select('*')
@@ -35,16 +31,16 @@ class SupportService {
 
       if (custData) {
         customerSupport = {
-          label: custData.label || custData.name || 'Customer Support',
-          email: custData.email || 'adminsupport@gmail.com',
-          phone: custData.phone || custData.phone_number || '8825430047'
+          label: custData.label || custData.name || '',
+          email: custData.email || '',
+          phone: custData.phone || custData.phone_number || ''
         };
       }
     } catch (err) {
-      console.warn('Warning: Error fetching customer support details from DB, using fallback defaults:', err.message);
+      console.error('Error fetching customer support details from DB:', err.message);
     }
 
-    // 2. Fetch policies from DB
+    // 2. Fetch policies from DB (tables: policies or policy)
     let policiesMap = {};
     let policiesList = [];
 
@@ -54,7 +50,6 @@ class SupportService {
         .select('*');
 
       if ((!policyRows || policyRows.length === 0) || polErr) {
-        // Fallback table name 'policy'
         const { data: altRows } = await supabase
           .from('policy')
           .select('*');
@@ -62,23 +57,28 @@ class SupportService {
       }
 
       if (policyRows && policyRows.length > 0) {
-        // Filter published policies if is_published column exists
         const activePolicies = policyRows.filter(p => p.is_published === undefined || p.is_published === true);
-        policiesList = activePolicies;
+        policiesList = activePolicies.map(p => ({
+          id: p.id,
+          title: p.title || '',
+          policy_type: p.policy_type || p.type || '',
+          content: p.content || '',
+          is_published: p.is_published
+        }));
 
         activePolicies.forEach(p => {
           const key = (p.policy_type || p.type || '').toLowerCase();
           if (key) {
             policiesMap[key] = {
               id: p.id,
-              title: p.title || p.policy_type,
+              title: p.title || p.policy_type || '',
               content: p.content || ''
             };
           }
         });
       }
     } catch (err) {
-      console.warn('Warning: Error fetching policies from DB, using fallback defaults:', err.message);
+      console.error('Error fetching policies from DB:', err.message);
     }
 
     return {

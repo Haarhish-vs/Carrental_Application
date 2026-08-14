@@ -32,7 +32,7 @@ class SupportScreen extends StatefulWidget {
 }
 
 class _SupportScreenState extends State<SupportScreen> {
-  SupportData _supportData = SupportData.defaultFallback();
+  SupportData _supportData = SupportData.empty();
   bool _isLoadingSupportData = true;
 
   final ScrollController _scrollController = ScrollController();
@@ -596,37 +596,71 @@ class _SupportScreenState extends State<SupportScreen> {
               child: Theme(
                 data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                 child: Column(
-                  children: [
-                    _buildPolicyTile(
-                      Icons.privacy_tip_outlined,
-                      _supportData.policiesMap['privacy']?.title ?? 'Privacy Policy',
-                      _supportData.policiesMap['privacy']?.content ?? 'We protect your personal and account information.',
-                    ),
-                    Divider(height: 1, indent: 48, endIndent: 16, color: Colors.grey.shade200),
-                    _buildPolicyTile(
-                      Icons.security_outlined,
-                      _supportData.policiesMap['security']?.title ?? 'Security Policy',
-                      _supportData.policiesMap['security']?.content ?? 'User accounts and data are protected through secure systems.',
-                    ),
-                    Divider(height: 1, indent: 48, endIndent: 16, color: Colors.grey.shade200),
-                    _buildPolicyTile(
-                      Icons.description_outlined,
-                      _supportData.policiesMap['terms']?.title ?? 'Terms & Conditions',
-                      _supportData.policiesMap['terms']?.content ?? 'By using our app, you agree to comply with our community guidelines.',
-                    ),
-                    Divider(height: 1, indent: 48, endIndent: 16, color: Colors.grey.shade200),
-                    _buildPolicyTile(
-                      Icons.event_busy_outlined,
-                      _supportData.policiesMap['cancellation']?.title ?? 'Cancellation Policy',
-                      _supportData.policiesMap['cancellation']?.content ?? 'Free cancellation up to 24 hours before your trip starts.',
-                    ),
-                    Divider(height: 1, indent: 48, endIndent: 16, color: Colors.grey.shade200),
-                    _buildPolicyTile(
-                      Icons.receipt_long_outlined,
-                      _supportData.policiesMap['refund']?.title ?? 'Refund Policy',
-                      _supportData.policiesMap['refund']?.content ?? 'Refund eligibility depends on booking terms.',
-                    ),
-                  ],
+                  children: _supportData.policiesList.isNotEmpty
+                      ? _supportData.policiesList.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final policy = entry.value;
+                          IconData icon = Icons.description_outlined;
+                          final type = policy.policyType.toLowerCase();
+                          if (type.contains('privacy')) {
+                            icon = Icons.privacy_tip_outlined;
+                          } else if (type.contains('security')) {
+                            icon = Icons.security_outlined;
+                          } else if (type.contains('cancel')) {
+                            icon = Icons.event_busy_outlined;
+                          } else if (type.contains('refund')) {
+                            icon = Icons.receipt_long_outlined;
+                          }
+                          return Column(
+                            key: ValueKey(policy.id ?? index),
+                            children: [
+                              if (index > 0)
+                                Divider(height: 1, indent: 48, endIndent: 16, color: Colors.grey.shade200),
+                              _buildPolicyTile(
+                                icon,
+                                policy.title,
+                                policy.content,
+                              ),
+                            ],
+                          );
+                        }).toList()
+                      : (_supportData.policiesMap.isNotEmpty
+                          ? _supportData.policiesMap.values.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final policy = entry.value;
+                              IconData icon = Icons.description_outlined;
+                              final type = policy.policyType.toLowerCase();
+                              if (type.contains('privacy')) {
+                                icon = Icons.privacy_tip_outlined;
+                              } else if (type.contains('security')) {
+                                icon = Icons.security_outlined;
+                              } else if (type.contains('cancel')) {
+                                icon = Icons.event_busy_outlined;
+                              } else if (type.contains('refund')) {
+                                icon = Icons.receipt_long_outlined;
+                              }
+                              return Column(
+                                key: ValueKey(policy.id ?? index),
+                                children: [
+                                  if (index > 0)
+                                    Divider(height: 1, indent: 48, endIndent: 16, color: Colors.grey.shade200),
+                                  _buildPolicyTile(
+                                    icon,
+                                    policy.title,
+                                    policy.content,
+                                  ),
+                                ],
+                              );
+                            }).toList()
+                          : [
+                              const Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Text(
+                                  'Loading policies...',
+                                  style: TextStyle(color: Colors.black54, fontSize: 13),
+                                ),
+                              ),
+                            ]),
                 ),
               ),
             ),
