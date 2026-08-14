@@ -78,6 +78,17 @@ class _CarPricingAndAvailabilityScreenState
     return null;
   }
 
+  String? _optionalNumericValidator(String? value) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) {
+      return null;
+    }
+    if (double.tryParse(text) == null) {
+      return 'Enter a valid number';
+    }
+    return null;
+  }
+
   String _formatDate(DateTime date) {
     final year = date.year.toString().padLeft(4, '0');
     final month = date.month.toString().padLeft(2, '0');
@@ -116,6 +127,22 @@ class _CarPricingAndAvailabilityScreenState
   void _goNext() {
     if (!_formKey.currentState!.validate()) {
       return;
+    }
+
+    final fromDateStr = _availabilityFromController.text.trim();
+    final toDateStr = _availabilityToController.text.trim();
+    if (fromDateStr.isNotEmpty && toDateStr.isNotEmpty) {
+      final fromDate = DateTime.tryParse(fromDateStr);
+      final toDate = DateTime.tryParse(toDateStr);
+      if (fromDate != null && toDate != null && toDate.isBefore(fromDate)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Available To date cannot be before Available From date'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
     }
 
     final updatedDraft = widget.draft.copyWith(
@@ -172,27 +199,25 @@ class _CarPricingAndAvailabilityScreenState
                   const SizedBox(height: 14),
                   RentCarTextField(
                     controller: _securityDepositController,
-                    label: 'Security Deposit (INR)',
-                    hint: 'e.g. ₹ 25,000',
+                    label: 'Security Deposit (INR) (Optional)',
+                    hint: 'e.g. ₹ 25,000 (Optional)',
                     icon: Icons.currency_rupee_rounded,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    validator: (value) =>
-                        _numericValidator(value, 'security deposit'),
+                    validator: _optionalNumericValidator,
                     textInputAction: TextInputAction.next,
                   ),
                   const SizedBox(height: 14),
                   RentCarTextField(
                     controller: _deliveryFeeController,
-                    label: 'Delivery Fee (INR)',
-                    hint: 'e.g. ₹ 500',
+                    label: 'Delivery / Pickup Fee (INR) (Optional)',
+                    hint: 'e.g. ₹ 500 (Optional)',
                     icon: Icons.currency_rupee_rounded,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    validator: (value) =>
-                        _numericValidator(value, 'delivery fee'),
+                    validator: _optionalNumericValidator,
                     textInputAction: TextInputAction.next,
                   ),
                 ],

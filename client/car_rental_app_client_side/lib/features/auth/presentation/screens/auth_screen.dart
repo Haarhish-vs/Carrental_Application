@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:car_rental_app_client_side/core/theme/app_colors.dart';
 import 'package:car_rental_app_client_side/features/auth/services/auth_service.dart';
 import 'package:car_rental_app_client_side/features/home/presentation/screens/home_screen.dart';
@@ -96,18 +97,26 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<void> _handleSendOtp() async {
     final phone = _phoneController.text.trim();
-    if (phone.length < 8) {
-      _showToast('Please check the entered details.');
+    if (phone.length != 10) {
+      _showToast('Mobile number must be exactly 10 digits.');
       setState(
-        () => _errorMessage = 'Please enter a valid phone number (e.g. 9876543210)',
+        () => _errorMessage = 'Mobile number must be exactly 10 digits (e.g. 9876543210)',
       );
       return;
     }
 
-    if (_currentMode == AuthMode.register && _nameController.text.trim().isEmpty) {
-      _showToast('Please check the entered details.');
-      setState(() => _errorMessage = 'Please enter your full name to register');
-      return;
+    if (_currentMode == AuthMode.register) {
+      final name = _nameController.text.trim();
+      if (name.isEmpty) {
+        _showToast('Please enter your full name.');
+        setState(() => _errorMessage = 'Please enter your full name to register');
+        return;
+      }
+      if (name.length > 20) {
+        _showToast('Full Name cannot exceed 20 characters.');
+        setState(() => _errorMessage = 'Full Name cannot exceed 20 characters');
+        return;
+      }
     }
 
     setState(() {
@@ -465,6 +474,9 @@ class _AuthScreenState extends State<AuthScreen> {
                           TextField(
                             controller: _nameController,
                             textCapitalization: TextCapitalization.words,
+                            inputFormatters: [
+                              LengthLimitingTextInputFormatter(20),
+                            ],
                             decoration: InputDecoration(
                               labelText: 'Full Name',
                               hintText: 'e.g. John Doe',
@@ -502,6 +514,11 @@ class _AuthScreenState extends State<AuthScreen> {
                         TextField(
                           controller: _phoneController,
                           keyboardType: TextInputType.phone,
+                          maxLength: 10,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(10),
+                          ],
                           decoration: InputDecoration(
                             labelText: 'Mobile Number',
                             hintText: '9876543210',

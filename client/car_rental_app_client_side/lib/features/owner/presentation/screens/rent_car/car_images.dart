@@ -31,7 +31,7 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
 
   List<RentCarImageSlot> get _missingRequiredSlots => _requiredSlots
       .where(
-        (slot) => !_items.any((item) => item.slot == slot && item.isUploaded),
+        (slot) => !_items.any((item) => item.slot == slot),
       )
       .toList();
 
@@ -227,19 +227,16 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
   }
 
   Future<void> _goNext() async {
+    if (_items.isEmpty) {
+      _showMessage('Please upload at least 1 valid car image before continuing.');
+      return;
+    }
     if (_items.length < _minImages) {
       _showMessage('Add at least $_minImages images before continuing.');
       return;
     }
 
-    final missingSlots = _requiredSlots
-        .where(
-          (slot) => !_items.any(
-            (item) =>
-                item.slot == slot && (item.file != null || item.hasRemoteUrl),
-          ),
-        )
-        .toList();
+    final missingSlots = _missingRequiredSlots;
 
     if (missingSlots.isNotEmpty) {
       _showMessage('Please add all required images before continuing.');
@@ -284,15 +281,7 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
             selectedCount: _items.length,
             minCount: _minImages,
             maxCount: _maxImages,
-            missingSlots: _requiredSlots
-                .where(
-                  (slot) => !_items.any(
-                    (item) =>
-                        item.slot == slot &&
-                        (item.file != null || item.hasRemoteUrl),
-                  ),
-                )
-                .toList(),
+            missingSlots: _missingRequiredSlots,
             onAddSlot: _handleAddSlot,
           ),
           const SizedBox(height: 16),
