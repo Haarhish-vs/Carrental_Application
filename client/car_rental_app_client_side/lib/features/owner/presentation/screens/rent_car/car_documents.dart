@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
 import 'package:car_rental_app_client_side/core/config/api_config.dart';
 import 'package:car_rental_app_client_side/core/theme/app_colors.dart';
+import 'package:car_rental_app_client_side/core/error_handling/app_error_handler.dart';
 import 'package:car_rental_app_client_side/features/owner/data/models/vehicle_model.dart';
 import 'package:car_rental_app_client_side/features/owner/data/services/car_api_service.dart';
 import 'package:car_rental_app_client_side/features/owner/data/models/document_verification_models.dart';
@@ -343,9 +344,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
 
   void _showValidationError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
-    );
+    AppErrorHandler.show(context, message);
   }
 
   void _showDocumentPreviewDialog(XFile file, {bool isPdf = true}) {

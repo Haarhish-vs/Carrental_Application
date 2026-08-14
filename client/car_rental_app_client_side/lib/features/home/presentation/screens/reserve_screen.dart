@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/error_handling/app_error_handler.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../models/car_model.dart';
@@ -875,12 +876,7 @@ class _ReserveScreenState extends State<ReserveScreen> {
                           if (context.mounted) Navigator.pop(context);
 
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
+                            AppErrorHandler.show(context, e);
                           }
                         }
                       }

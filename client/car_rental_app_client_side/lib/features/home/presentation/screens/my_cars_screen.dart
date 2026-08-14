@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/error_handling/app_error_handler.dart';
 import '../../../auth/presentation/widgets/auth_required_view.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../../owner/data/services/car_api_service.dart';
@@ -124,18 +125,15 @@ class _MyCarsScreenState extends State<MyCarsScreen> with SingleTickerProviderSt
     try {
       await _apiService.toggleVehicleAvailability(vehicleId, isAvailable: targetAvailable);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(targetAvailable ? 'Car is now available for booking.' : 'Car is now marked as unavailable.'),
-          backgroundColor: targetAvailable ? AppColors.success : Colors.orange,
-        ),
-      );
+      if (targetAvailable) {
+        AppErrorHandler.showSuccess(context, 'Car is now available for booking.');
+      } else {
+        AppErrorHandler.showInfo(context, 'Car is now marked as unavailable.');
+      }
       _refresh();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-      );
+      AppErrorHandler.show(context, e);
     }
   }
 
@@ -502,14 +500,10 @@ class _MyCarsScreenState extends State<MyCarsScreen> with SingleTickerProviderSt
       await _apiService.confirmBooking(bookingId);
       _refresh();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Booking accepted successfully!'), backgroundColor: AppColors.success),
-      );
+      AppErrorHandler.showSuccess(context, 'Booking accepted successfully!');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red),
-      );
+      AppErrorHandler.show(context, e);
     }
   }
 
@@ -518,14 +512,10 @@ class _MyCarsScreenState extends State<MyCarsScreen> with SingleTickerProviderSt
       await _apiService.declineBooking(bookingId);
       _refresh();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Booking request declined.'), backgroundColor: Colors.orange),
-      );
+      AppErrorHandler.showInfo(context, 'Booking request declined.');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red),
-      );
+      AppErrorHandler.show(context, e);
     }
   }
 
@@ -534,14 +524,10 @@ class _MyCarsScreenState extends State<MyCarsScreen> with SingleTickerProviderSt
       await _apiService.startBooking(bookingId);
       _refresh();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Trip started successfully!'), backgroundColor: AppColors.primary),
-      );
+      AppErrorHandler.showInfo(context, 'Trip started successfully!');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red),
-      );
+      AppErrorHandler.show(context, e);
     }
   }
 
@@ -550,14 +536,10 @@ class _MyCarsScreenState extends State<MyCarsScreen> with SingleTickerProviderSt
       await _apiService.completeBooking(bookingId);
       _refresh();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Trip completed successfully!'), backgroundColor: AppColors.success),
-      );
+      AppErrorHandler.showSuccess(context, 'Trip completed successfully!');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red),
-      );
+      AppErrorHandler.show(context, e);
     }
   }
 

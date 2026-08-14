@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/error_handling/app_error_handler.dart';
 import '../../../../core/utils/razorpay_checkout.dart';
 import '../../../owner/data/services/car_api_service.dart';
 import '../../models/car_model.dart';
@@ -221,17 +222,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      final msg = e.toString().replaceFirst('Exception: ', '');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(msg),
-          backgroundColor: Colors.red.shade700,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
+      AppErrorHandler.show(context, e);
     } finally {
       if (mounted) setState(() => _processing = false);
     }

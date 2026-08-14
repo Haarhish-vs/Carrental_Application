@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:car_rental_app_client_side/core/error_handling/app_error_handler.dart';
 
 import 'car_documents.dart';
 import 'car_image_upload_components.dart';
@@ -94,9 +95,8 @@ class _CarImagesScreenState extends State<CarImagesScreen> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    if (!mounted) return;
+    AppErrorHandler.show(context, message);
   }
 
   Future<void> _handleSourceSelection({RentCarImageSlot? targetSlot}) async {

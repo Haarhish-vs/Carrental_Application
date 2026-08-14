@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/error_handling/app_error_handler.dart';
 import '../../../home/presentation/widgets/bottom_navigation.dart';
 import '../../data/services/support_api_service.dart';
 
@@ -96,9 +97,7 @@ class _SupportScreenState extends State<SupportScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not open phone dialer: $rawPhone')),
-        );
+        AppErrorHandler.show(context, 'Could not open phone dialer.');
       }
     }
   }
@@ -113,9 +112,7 @@ class _SupportScreenState extends State<SupportScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not open email client: $rawEmail')),
-        );
+        AppErrorHandler.show(context, 'Could not open email client.');
       }
     }
   }
@@ -129,9 +126,7 @@ class _SupportScreenState extends State<SupportScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open dialer.')),
-        );
+        AppErrorHandler.show(context, 'Could not open dialer.');
       }
     }
   }

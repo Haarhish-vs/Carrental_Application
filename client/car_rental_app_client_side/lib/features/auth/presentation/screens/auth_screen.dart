@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:car_rental_app_client_side/core/theme/app_colors.dart';
+import 'package:car_rental_app_client_side/core/error_handling/app_error_handler.dart';
 import 'package:car_rental_app_client_side/features/auth/services/auth_service.dart';
 import 'package:car_rental_app_client_side/features/home/presentation/screens/home_screen.dart';
 
@@ -79,20 +80,11 @@ class _AuthScreenState extends State<AuthScreen> {
 
   void _showToast(String message, {bool isSuccess = false}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
-        ),
-        backgroundColor: isSuccess ? const Color(0xFF10B981) : const Color(0xFFEF4444),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    if (isSuccess) {
+      AppErrorHandler.showSuccess(context, message);
+    } else {
+      AppErrorHandler.show(context, message);
+    }
   }
 
   Future<void> _handleSendOtp() async {
@@ -141,12 +133,12 @@ class _AuthScreenState extends State<AuthScreen> {
       },
       onError: (error) {
         if (!mounted) return;
-        final msg = error.toString().replaceAll('Exception:', '').trim();
+        final cleanMsg = AppErrorHandler.getErrorMessage(error);
         setState(() {
-          _errorMessage = msg;
+          _errorMessage = cleanMsg;
           _isLoading = false;
         });
-        _showToast(msg, isSuccess: false);
+        AppErrorHandler.show(context, error);
       },
     );
   }
@@ -199,11 +191,11 @@ class _AuthScreenState extends State<AuthScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      final msg = e.toString().replaceAll('Exception:', '').trim();
+      final cleanMsg = AppErrorHandler.getErrorMessage(e);
       setState(() {
-        _errorMessage = msg;
+        _errorMessage = cleanMsg;
       });
-      _showToast(msg, isSuccess: false);
+      AppErrorHandler.show(context, e);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

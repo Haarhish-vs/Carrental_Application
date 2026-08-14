@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
+import 'package:car_rental_app_client_side/core/error_handling/app_error_handler.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../../home/models/car_model.dart';
 import '../../../owner/data/services/car_api_service.dart';
@@ -95,28 +96,6 @@ class WishlistApiService {
   }
 
   Exception _handleDioError(DioException error) {
-    String message = 'An unexpected error occurred';
-    if (error.response != null) {
-      final responseData = error.response?.data;
-      if (responseData is Map && responseData['message'] != null) {
-        message = responseData['message'].toString();
-      } else {
-        message = 'Server returned error status ${error.response?.statusCode}';
-      }
-    } else {
-      switch (error.type) {
-        case DioExceptionType.connectionTimeout:
-        case DioExceptionType.sendTimeout:
-        case DioExceptionType.receiveTimeout:
-          message = 'Network connection timed out';
-          break;
-        case DioExceptionType.connectionError:
-          message = 'Cannot connect to the server. Please check your network.';
-          break;
-        default:
-          message = error.message ?? message;
-      }
-    }
-    return Exception(message);
+    return AppErrorHandler.handle(error);
   }
 }

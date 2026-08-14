@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/error_handling/app_error_handler.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../data/models/user_profile_model.dart';
@@ -142,26 +143,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _isUploadingImage = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile picture updated successfully!'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppErrorHandler.showSuccess(context, 'Profile picture updated successfully!');
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isUploadingImage = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Upload failed: ${e.toString().replaceAll('Exception: ', '')}'),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppErrorHandler.show(context, e);
       }
     }
   }
@@ -247,24 +236,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _profile = updatedProfile;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('$title updated successfully!'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppErrorHandler.showSuccess(context, '$title updated successfully!');
       }
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Pop loading
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Update failed: ${e.toString().replaceAll('Exception: ', '')}'),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppErrorHandler.show(context, e);
       }
     }
   }

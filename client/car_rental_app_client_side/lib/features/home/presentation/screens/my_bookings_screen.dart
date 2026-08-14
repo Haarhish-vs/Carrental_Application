@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/error_handling/app_error_handler.dart';
 import '../../../auth/presentation/widgets/auth_required_view.dart';
 import '../../../auth/services/auth_service.dart';
 import '../../../owner/data/services/car_api_service.dart';
@@ -151,18 +152,11 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     try {
       await _apiService.cancelBooking(bookingId, reason: 'Cancelled by renter');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Booking cancelled successfully'),
-          backgroundColor: AppColors.success,
-        ),
-      );
+      AppErrorHandler.showSuccess(context, 'Booking cancelled successfully');
       _refreshBookings();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-      );
+      AppErrorHandler.show(context, e);
     }
   }
 

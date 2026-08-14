@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/error_handling/app_error_handler.dart';
 import '../../../../core/config/api_config.dart';
 
 class AiAssistantScreen extends StatefulWidget {
@@ -97,7 +98,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
 
   void _showError(String msg) {
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      AppErrorHandler.show(context, msg);
     }
   }
 
