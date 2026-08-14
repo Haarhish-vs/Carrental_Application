@@ -389,7 +389,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 images[i],
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, _, _) => Container(
-                                  color: const Color(0xFFEAF2FF),
+                                  color: AppColors.primary.withOpacity(0.1),
                                   child: const Icon(
                                     Icons.directions_car_rounded,
                                     size: 48,

@@ -23,7 +23,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: const [
             Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
             SizedBox(width: 10),
-            Text('Delete Account', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF103B66))),
+            Text('Delete Account', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
           ],
         ),
         content: const Text(
@@ -82,11 +82,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings', style: TextStyle(color: Color(0xFF103B66), fontWeight: FontWeight.bold)),
+        title: const Text('Settings', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 1,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF103B66)),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),

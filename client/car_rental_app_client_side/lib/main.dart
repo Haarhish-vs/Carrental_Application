@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:car_rental_app_client_side/core/theme/app_colors.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:car_rental_app_client_side/core/notifications/notification_service.dart';
 import 'package:car_rental_app_client_side/features/auth/services/auth_service.dart';
@@ -47,11 +48,11 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1E5AA8)),
-        scaffoldBackgroundColor: const Color(0xFFF4F7FB),
+        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
+        scaffoldBackgroundColor: AppColors.background,
         appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
-          foregroundColor: Color(0xFF103B66),
+          backgroundColor: AppColors.cardBackground,
+          foregroundColor: AppColors.textPrimary,
           elevation: 0,
           centerTitle: false,
         ),

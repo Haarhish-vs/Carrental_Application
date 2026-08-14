@@ -97,17 +97,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 16),
               ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Color(0xFFEAF2FF),
-                  child: Icon(Icons.camera_alt_rounded, color: AppColors.primary),
+                leading: CircleAvatar(
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  child: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
                 ),
                 title: const Text('Take a Photo'),
                 onTap: () => Navigator.pop(ctx, ImageSource.camera),
               ),
               ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Color(0xFFEAF2FF),
-                  child: Icon(Icons.photo_library_rounded, color: AppColors.primary),
+                leading: CircleAvatar(
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  child: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
                 ),
                 title: const Text('Choose from Gallery'),
                 onTap: () => Navigator.pop(ctx, ImageSource.gallery),
@@ -480,7 +480,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               height: 100,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFEAF2FF),
+                color: AppColors.primary.withOpacity(0.1),
                 border: Border.all(color: Colors.white, width: 3),
                 boxShadow: const [
                   BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.06), blurRadius: 12, offset: Offset(0, 4)),
@@ -558,8 +558,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Container(
                   width: 44,
                   height: 44,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFEAF2FF),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.person_rounded, color: AppColors.primary, size: 22),
@@ -610,8 +610,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Container(
                   width: 44,
                   height: 44,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFEAF2FF),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.phone_rounded, color: AppColors.primary, size: 20),
@@ -690,7 +690,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           width: 44,
                           height: 44,
                           decoration: const BoxDecoration(
-                            color: Color(0xFF1A73E8),
+                            color: AppColors.primary,
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.directions_car_rounded, color: Colors.white, size: 22),
@@ -698,7 +698,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Container(
                           padding: const EdgeInsets.all(3),
                           decoration: const BoxDecoration(
-                            color: Color(0xFF1A73E8),
+                            color: AppColors.primary,
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.check, size: 12, color: Colors.white),
@@ -708,7 +708,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 12),
                     const Text(
                       'Renter',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1A73E8)),
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.primary),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -742,7 +742,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           width: 44,
                           height: 44,
                           decoration: const BoxDecoration(
-                            color: Color(0xFF1A73E8),
+                            color: AppColors.primary,
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.key_rounded, color: Colors.white, size: 22),
@@ -751,7 +751,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Container(
                             padding: const EdgeInsets.all(3),
                             decoration: const BoxDecoration(
-                              color: Color(0xFF1A73E8),
+                              color: AppColors.primary,
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(Icons.check, size: 12, color: Colors.white),
@@ -761,7 +761,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 12),
                     const Text(
                       'Owner',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1A73E8)),
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.primary),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -841,8 +841,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Container(
             width: 40,
             height: 40,
-            decoration: const BoxDecoration(
-              color: Color(0xFFEAF2FF),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: AppColors.primary, size: 20),

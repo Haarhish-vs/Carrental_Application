@@ -3,6 +3,7 @@ import 'package:car_rental_app_client_side/features/owner/data/services/car_api_
 
 import 'car_images.dart';
 import 'rent_car_shared.dart';
+import 'package:car_rental_app_client_side/core/theme/app_colors.dart';
 
 class CarPricingAndAvailabilityScreen extends StatefulWidget {
   const CarPricingAndAvailabilityScreen({super.key, required this.draft});
@@ -94,7 +95,7 @@ class _CarPricingAndAvailabilityScreenState
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: const Color(0xFF1E5AA8),
+              primary: AppColors.primary,
               surface: Colors.white,
             ),
           ),

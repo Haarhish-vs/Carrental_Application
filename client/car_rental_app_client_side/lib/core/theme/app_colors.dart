@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  static const Color primary = Color(0xFF1A73E8);
-  static const Color secondary = Color(0xFFFF6B35);
-  static const Color background = Color(0xFFF7F8FA);
+  static const Color primary = Color(0xFFF5A623); // THADAM Orange
+  static const Color secondary = Color(0xFFFFC107); // THADAM Warm Yellow
+  static const Color background = Color(0xFFFDFDFD);
   static const Color cardBackground = Colors.white;
   static const Color textPrimary = Color(0xFF1C1E21);
   static const Color textSecondary = Color(0xFF6B7280);

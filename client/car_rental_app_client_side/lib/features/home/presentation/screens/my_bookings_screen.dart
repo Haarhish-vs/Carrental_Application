@@ -138,7 +138,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           label = 'CONFIRMED';
           break;
         case 'active':
-          bg = const Color(0xFFEAF2FF);
+          bg = AppColors.primary.withOpacity(0.1);
           text = AppColors.primary;
           label = 'ACTIVE';
           break;
@@ -220,7 +220,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                     icon: const Icon(
                       Icons.arrow_back_ios_new_rounded,
                       size: 20,
-                      color: Color(0xFF103B66),
+                      color: AppColors.textPrimary,
                     ),
                     onPressed: () {
                       if (Navigator.of(context).canPop()) {
@@ -236,7 +236,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF103B66),
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ],
@@ -435,7 +435,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                     fit: BoxFit.cover,
                                     memCacheHeight: 400, // Optimize memory for lists
                                     placeholder: (context, url) => Container(
-                                      color: const Color(0xFFEAF2FF),
+                                      color: AppColors.primary.withOpacity(0.1),
                                       child: const Center(
                                         child: SizedBox(
                                           width: 24,
@@ -445,7 +445,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                       ),
                                     ),
                                     errorWidget: (context, url, error) => Container(
-                                      color: const Color(0xFFEAF2FF),
+                                      color: AppColors.primary.withOpacity(0.1),
                                       child: const Icon(
                                         Icons.directions_car_rounded,
                                         size: 48,
@@ -454,7 +454,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                     ),
                                   )
                                 : Container(
-                                    color: const Color(0xFFEAF2FF),
+                                    color: AppColors.primary.withOpacity(0.1),
                                     child: const Icon(
                                       Icons.directions_car_rounded,
                                       size: 48,
@@ -474,7 +474,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                       child: Text(
                                         '$brand $model',
                                         style: const TextStyle(
-                                          color: Color(0xFF103B66),
+                                          color: AppColors.textPrimary,
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
                                         ),

@@ -303,7 +303,7 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
                           style: TextStyle(
                             fontSize: 14.5,
                             fontWeight: FontWeight.bold,
-                            color: isDone ? AppColors.success : (isActive ? const Color(0xFF103B66) : Colors.grey.shade500),
+                            color: isDone ? AppColors.success : (isActive ? AppColors.textPrimary : Colors.grey.shade500),
                           ),
                         ),
                         const SizedBox(height: 3),
@@ -415,7 +415,7 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
               children: [
                 Text(
                   'Renter: $renterName',
-                  style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF103B66)),
+                  style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 ),
                 if (renterPhone.isNotEmpty) ...[
                   const SizedBox(height: 3),
@@ -769,12 +769,12 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
         backgroundColor: Colors.white,
         elevation: 0.5,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF103B66)),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Track Booking',
-          style: TextStyle(color: Color(0xFF103B66), fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 18),
         ),
         actions: [
           IconButton(
@@ -883,7 +883,7 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
                                 placeholder: (context, url) => Container(
                                   width: 85,
                                   height: 60,
-                                  color: const Color(0xFFEAF2FF),
+                                  color: AppColors.primary.withOpacity(0.1),
                                   child: const Center(
                                     child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
                                   ),
@@ -891,14 +891,14 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
                                 errorWidget: (context, url, error) => Container(
                                   width: 85,
                                   height: 60,
-                                  color: const Color(0xFFEAF2FF),
+                                  color: AppColors.primary.withOpacity(0.1),
                                   child: const Icon(Icons.directions_car, color: AppColors.primary),
                                 ),
                               )
                             : Container(
                                 width: 85,
                                 height: 60,
-                                color: const Color(0xFFEAF2FF),
+                                color: AppColors.primary.withOpacity(0.1),
                                 child: const Icon(Icons.directions_car, color: AppColors.primary),
                               ),
                       ),
@@ -909,7 +909,7 @@ class _BookingTrackingScreenState extends State<BookingTrackingScreen> {
                           children: [
                             Text(
                               '$brand $model',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF103B66)),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -1221,7 +1221,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
         backgroundColor: Colors.white,
         elevation: 1,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF103B66)),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Column(
@@ -1229,7 +1229,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
           children: [
             Text(
               '${widget.brand} ${widget.model}',
-              style: const TextStyle(color: Color(0xFF103B66), fontWeight: FontWeight.bold, fontSize: 16),
+              style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 16),
             ),
             Text(
               'Lat: ${_currentCenter.latitude.toStringAsFixed(4)}, Lng: ${_currentCenter.longitude.toStringAsFixed(4)}',
