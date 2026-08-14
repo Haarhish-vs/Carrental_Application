@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../home/presentation/widgets/bottom_navigation.dart';
+import '../../data/services/support_api_service.dart';
 
 enum SupportSection {
   support,
@@ -31,9 +32,8 @@ class SupportScreen extends StatefulWidget {
 }
 
 class _SupportScreenState extends State<SupportScreen> {
-  static const String _adminPhoneNumber = '+91 98765 43210';
-  static const String _adminEmailAddress = 'admin@drivexcarrental.com';
-  static const String _sosEmergencyNumber = '911';
+  SupportData _supportData = SupportData.defaultFallback();
+  bool _isLoadingSupportData = true;
 
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _faqKey = GlobalKey();
@@ -42,9 +42,20 @@ class _SupportScreenState extends State<SupportScreen> {
   @override
   void initState() {
     super.initState();
+    _fetchSupportData();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToSection();
     });
+  }
+
+  Future<void> _fetchSupportData() async {
+    final data = await SupportApiService.fetchSupportDetails();
+    if (mounted) {
+      setState(() {
+        _supportData = data;
+        _isLoadingSupportData = false;
+      });
+    }
   }
 
   @override
@@ -75,7 +86,7 @@ class _SupportScreenState extends State<SupportScreen> {
   }
 
   Future<void> _callAdminPhone() async {
-    final cleanNumber = _adminPhoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+    final cleanNumber = _supportData.phone.replaceAll(RegExp(r'[^\d+]'), '');
     final url = Uri.parse('tel:$cleanNumber');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -89,7 +100,7 @@ class _SupportScreenState extends State<SupportScreen> {
   }
 
   Future<void> _sendAdminEmail() async {
-    final url = Uri.parse('mailto:$_adminEmailAddress?subject=DriveX%20Support%20Request');
+    final url = Uri.parse('mailto:${_supportData.email}?subject=DriveX%20Support%20Request');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
@@ -102,7 +113,7 @@ class _SupportScreenState extends State<SupportScreen> {
   }
 
   Future<void> _callEmergency() async {
-    final url = Uri.parse('tel:$_sosEmergencyNumber');
+    final url = Uri.parse('tel:911');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
@@ -242,15 +253,15 @@ class _SupportScreenState extends State<SupportScreen> {
                                     color: Colors.white,
                                   ),
                                   child: Row(
-                                    children: const [
-                                      Icon(Icons.phone_in_talk_rounded, color: Colors.blue, size: 16),
-                                      SizedBox(width: 6),
+                                    children: [
+                                      const Icon(Icons.phone_in_talk_rounded, color: Colors.blue, size: 16),
+                                      const SizedBox(width: 6),
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text('Call Admin', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 11)),
-                                            Text(_adminPhoneNumber, style: TextStyle(color: Colors.black54, fontSize: 9), overflow: TextOverflow.ellipsis),
+                                            const Text('Call Admin', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 11)),
+                                            Text(_supportData.phone, style: const TextStyle(color: Colors.black54, fontSize: 9), overflow: TextOverflow.ellipsis),
                                           ],
                                         ),
                                       ),
@@ -272,15 +283,15 @@ class _SupportScreenState extends State<SupportScreen> {
                                     color: Colors.white,
                                   ),
                                   child: Row(
-                                    children: const [
-                                      Icon(Icons.email_outlined, color: Colors.purple, size: 16),
-                                      SizedBox(width: 6),
+                                    children: [
+                                      const Icon(Icons.email_outlined, color: Colors.purple, size: 16),
+                                      const SizedBox(width: 6),
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text('Email Admin', style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold, fontSize: 11)),
-                                            Text(_adminEmailAddress, style: TextStyle(color: Colors.black54, fontSize: 9), overflow: TextOverflow.ellipsis),
+                                            const Text('Email Admin', style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold, fontSize: 11)),
+                                            Text(_supportData.email, style: const TextStyle(color: Colors.black54, fontSize: 9), overflow: TextOverflow.ellipsis),
                                           ],
                                         ),
                                       ),
@@ -588,26 +599,32 @@ class _SupportScreenState extends State<SupportScreen> {
                   children: [
                     _buildPolicyTile(
                       Icons.privacy_tip_outlined,
-                      'Privacy Policy',
-                      'We value your privacy. We do not sell your personal data. We use it only to provide and improve our services, process payments, and ensure safety.',
+                      _supportData.policiesMap['privacy']?.title ?? 'Privacy Policy',
+                      _supportData.policiesMap['privacy']?.content ?? 'We protect your personal and account information.',
+                    ),
+                    Divider(height: 1, indent: 48, endIndent: 16, color: Colors.grey.shade200),
+                    _buildPolicyTile(
+                      Icons.security_outlined,
+                      _supportData.policiesMap['security']?.title ?? 'Security Policy',
+                      _supportData.policiesMap['security']?.content ?? 'User accounts and data are protected through secure systems.',
                     ),
                     Divider(height: 1, indent: 48, endIndent: 16, color: Colors.grey.shade200),
                     _buildPolicyTile(
                       Icons.description_outlined,
-                      'Terms & Conditions',
-                      'By using our app, you agree to comply with our community guidelines, maintain the vehicles in good condition, and return them on time. Full terms are available on our website.',
+                      _supportData.policiesMap['terms']?.title ?? 'Terms & Conditions',
+                      _supportData.policiesMap['terms']?.content ?? 'By using our app, you agree to comply with our community guidelines.',
                     ),
                     Divider(height: 1, indent: 48, endIndent: 16, color: Colors.grey.shade200),
                     _buildPolicyTile(
                       Icons.event_busy_outlined,
-                      'Cancellation Policy',
-                      'Free cancellation up to 24 hours before your trip starts. Cancellations made within 24 hours of the start time may be subject to a fee.',
+                      _supportData.policiesMap['cancellation']?.title ?? 'Cancellation Policy',
+                      _supportData.policiesMap['cancellation']?.content ?? 'Free cancellation up to 24 hours before your trip starts.',
                     ),
                     Divider(height: 1, indent: 48, endIndent: 16, color: Colors.grey.shade200),
                     _buildPolicyTile(
                       Icons.receipt_long_outlined,
-                      'Refund Policy',
-                      'Refunds for eligible cancellations are issued to the original payment method and take 5-7 business days to reflect in your account.',
+                      _supportData.policiesMap['refund']?.title ?? 'Refund Policy',
+                      _supportData.policiesMap['refund']?.content ?? 'Refund eligibility depends on booking terms.',
                     ),
                   ],
                 ),
