@@ -118,29 +118,33 @@ class _AuthScreenState extends State<AuthScreen> {
 
     final fullPhone = phone.startsWith('+') ? phone : '+91$phone';
 
-    await _authService.sendFirebaseOtp(
-      phoneNumber: fullPhone,
-      isRegister: _currentMode == AuthMode.register,
-      onCodeSent: (verificationId, resendToken) {
-        if (!mounted) return;
-        _showToast('OTP sent successfully', isSuccess: true);
-        _startResendTimer();
-        setState(() {
-          _verificationId = verificationId;
-          _currentStep = 1;
-          _isLoading = false;
-        });
-      },
-      onError: (error) {
-        if (!mounted) return;
-        final cleanMsg = AppErrorHandler.getErrorMessage(error);
-        setState(() {
-          _errorMessage = cleanMsg;
-          _isLoading = false;
-        });
-        AppErrorHandler.show(context, error);
-      },
-    );
+    try {
+      final returnedOtp = await _authService.sendOtp(
+        fullPhone,
+        isRegister: _currentMode == AuthMode.register,
+      );
+
+      if (!mounted) return;
+
+      final toastMsg = (returnedOtp != null && returnedOtp.isNotEmpty)
+          ? 'OTP sent successfully (Code: $returnedOtp)'
+          : 'OTP sent successfully';
+      _showToast(toastMsg, isSuccess: true);
+      _startResendTimer();
+      setState(() {
+        _verificationId = 'session_$fullPhone';
+        _currentStep = 1;
+        _isLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      final cleanMsg = AppErrorHandler.getErrorMessage(error);
+      setState(() {
+        _errorMessage = cleanMsg;
+        _isLoading = false;
+      });
+      AppErrorHandler.show(context, error);
+    }
   }
 
   Future<void> _handleVerifyOtp() async {
@@ -148,11 +152,6 @@ class _AuthScreenState extends State<AuthScreen> {
     if (otp.length < 6) {
       _showToast('Please check the entered details.');
       setState(() => _errorMessage = 'Please enter the 6-digit OTP code');
-      return;
-    }
-
-    if (_verificationId == null || _verificationId!.isEmpty) {
-      _showToast('Verification session expired. Please request a new OTP.');
       return;
     }
 
@@ -166,10 +165,9 @@ class _AuthScreenState extends State<AuthScreen> {
     });
 
     try {
-      final result = await _authService.verifyFirebaseOtpAndLogin(
-        verificationId: _verificationId!,
-        smsCode: otp,
+      final result = await _authService.verifyOtpAndLogin(
         phoneNumber: fullPhone,
+        otp: otp,
         fullName: name,
         isRegister: _currentMode == AuthMode.register,
       );
@@ -194,6 +192,7 @@ class _AuthScreenState extends State<AuthScreen> {
       final cleanMsg = AppErrorHandler.getErrorMessage(e);
       setState(() {
         _errorMessage = cleanMsg;
+        _isLoading = false;
       });
       AppErrorHandler.show(context, e);
     } finally {
