@@ -346,7 +346,7 @@ class _ReserveScreenState extends State<ReserveScreen> {
                                                 error,
                                                 stackTrace,
                                               ) => Container(
-                                                color: const Color(0xFFEAF2FF),
+                                                color: AppColors.primary.withOpacity(0.1),
                                                 child: const Icon(
                                                   Icons.directions_car_rounded,
                                                   size: 24,
@@ -391,7 +391,7 @@ class _ReserveScreenState extends State<ReserveScreen> {
                             width: 110,
                             height: 90,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEAF2FF),
+                              color: AppColors.primary.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(

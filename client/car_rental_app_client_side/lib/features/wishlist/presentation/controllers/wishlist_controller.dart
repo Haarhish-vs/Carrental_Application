@@ -146,7 +146,7 @@ class WishlistController extends ChangeNotifier {
                 ),
               ],
             ),
-            backgroundColor: Color(0xFF103B66),
+            backgroundColor: AppColors.textPrimary,
             duration: Duration(seconds: 2),
           ),
         );

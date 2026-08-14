@@ -30,9 +30,7 @@ class CustomHomeAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayName = (userName == null || userName!.trim().isEmpty)
-        ? 'Guest'
-        : userName!;
+
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -51,13 +49,23 @@ class CustomHomeAppBar extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Hi, $displayName 👋',
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                RichText(
+                  text: const TextSpan(
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2.0,
+                      fontStyle: FontStyle.italic,
+                      color: AppColors.textPrimary,
+                    ),
+                    children: [
+                      TextSpan(text: 'TH'),
+                      TextSpan(
+                        text: 'A',
+                        style: TextStyle(color: AppColors.primary),
+                      ),
+                      TextSpan(text: 'DAM'),
+                    ],
                   ),
                 ),
                 if (location != null && location!.trim().isNotEmpty) ...[

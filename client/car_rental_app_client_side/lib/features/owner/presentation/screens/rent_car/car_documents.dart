@@ -254,14 +254,14 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                   'Upload $title',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF103B66),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Choose camera, gallery, or file to upload your document scan or PDF.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF57718A),
+                    color: AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -362,7 +362,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
             isPdf ? 'PDF Scan Document' : 'Document Image',
             style: const TextStyle(
               fontWeight: FontWeight.bold,
-              color: Color(0xFF103B66),
+              color: AppColors.textPrimary,
             ),
           ),
           content: isPdf
@@ -380,7 +380,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: Color(0xFF103B66),
+                        color: AppColors.textPrimary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -389,7 +389,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                       Text(
                         sizeText,
                         style: const TextStyle(
-                          color: Color(0xFF57718A),
+                          color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -550,7 +550,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                   child: RichText(
                     text: TextSpan(
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFF103B66),
+                        color: AppColors.textPrimary,
                       ),
                       children: [
                         TextSpan(
@@ -616,13 +616,13 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
         children: [
           Text(
             label,
-            style: const TextStyle(color: Color(0xFF57718A), fontSize: 13),
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
           ),
           Text(
             displayVal,
             style: const TextStyle(
               fontWeight: FontWeight.w600,
-              color: Color(0xFF103B66),
+              color: AppColors.textPrimary,
               fontSize: 13,
             ),
           ),
@@ -652,7 +652,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
               docType.toUpperCase(),
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF103B66),
+                color: AppColors.textPrimary,
               ),
             ),
             children: [
@@ -786,7 +786,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
             label,
             style: const TextStyle(
               fontWeight: FontWeight.w600,
-              color: Color(0xFF103B66),
+              color: AppColors.textPrimary,
             ),
           ),
           const Spacer(),
@@ -876,14 +876,14 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                 result.summary.isNotEmpty
                     ? result.summary
                     : 'All uploaded documents have been processed.',
-                style: const TextStyle(color: Color(0xFF103B66), fontSize: 14),
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
               ),
               if (result.recommendation.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(
                   'Recommendation: ${result.recommendation}',
                   style: const TextStyle(
-                    color: Color(0xFF57718A),
+                    color: AppColors.textSecondary,
                     fontSize: 13,
                     fontStyle: FontStyle.italic,
                   ),
@@ -959,7 +959,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF103B66),
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ),
@@ -1072,7 +1072,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: hasFile ? const Color(0xFFEAF2FF) : const Color(0xFFF7FAFD),
+        color: hasFile ? AppColors.primary.withOpacity(0.1) : const Color(0xFFF7FAFD),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: hasFile ? AppColors.primary : const Color(0xFFD7E2EF),
@@ -1104,7 +1104,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: const Color(0xFF103B66),
+                    color: AppColors.textPrimary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -1113,7 +1113,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                   Text(
                     file.name,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF103B66),
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -1132,7 +1132,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                   Text(
                     subtitle,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF57718A),
+                      color: AppColors.textSecondary,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1154,7 +1154,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
             IconButton(
               icon: const Icon(
                 Icons.visibility_outlined,
-                color: Color(0xFF57718A),
+                color: AppColors.textSecondary,
               ),
               onPressed: onPreview,
             ),
@@ -1457,7 +1457,7 @@ class _CarDocumentsScreenState extends State<CarDocumentsScreen> {
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
-                              color: Color(0xFF103B66),
+                              color: AppColors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 12),

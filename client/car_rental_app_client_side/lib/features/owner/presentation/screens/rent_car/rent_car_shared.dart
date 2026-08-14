@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:car_rental_app_client_side/core/theme/app_colors.dart';
 
 
 const List<String> rentCarStepTitles = <String>[
@@ -167,7 +168,7 @@ class RentCarScreenScaffold extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Rent Out Your Car'),
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF103B66),
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
         centerTitle: false,
       ),
@@ -182,7 +183,7 @@ class RentCarScreenScaffold extends StatelessWidget {
               Text(
                 title,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: const Color(0xFF103B66),
+                  color: AppColors.textPrimary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -190,7 +191,7 @@ class RentCarScreenScaffold extends StatelessWidget {
               Text(
                 subtitle,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF57718A),
+                  color: AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 20),
@@ -271,7 +272,7 @@ class _StepHeader extends StatelessWidget {
                 Text(
                   '$currentStep/${rentCarStepTitles.length}',
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: const Color(0xFF103B66),
+                    color: AppColors.textPrimary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -309,7 +310,7 @@ class _StepHeader extends StatelessWidget {
                   child: Text(
                     rentCarStepTitles[index],
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: isActive ? Colors.white : const Color(0xFF103B66),
+                      color: isActive ? Colors.white : AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -347,13 +348,13 @@ class RentCarSectionCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (icon != null) ...[
-              Icon(icon, color: const Color(0xFF1E5AA8)),
+              Icon(icon, color: AppColors.primary),
               const SizedBox(height: 12),
             ],
             Text(
               title,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: const Color(0xFF103B66),
+                color: AppColors.textPrimary,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -394,7 +395,7 @@ class RentCarToggleTile extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          color: selected ? const Color(0xFFEAF2FF) : const Color(0xFFF7FAFD),
+          color: selected ? AppColors.primary.withOpacity(0.1) : const Color(0xFFF7FAFD),
           border: Border.all(
             color: selected ? colorScheme.primary : const Color(0xFFDDE6F2),
           ),
@@ -410,7 +411,7 @@ class RentCarToggleTile extends StatelessWidget {
               ),
               child: Icon(
                 icon,
-                color: selected ? Colors.white : const Color(0xFF1E5AA8),
+                color: selected ? Colors.white : AppColors.primary,
               ),
             ),
             const SizedBox(width: 12),
@@ -421,7 +422,7 @@ class RentCarToggleTile extends StatelessWidget {
                   Text(
                     title,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: const Color(0xFF103B66),
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),

@@ -208,7 +208,7 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
                                 ),
                               ),
                               errorWidget: (context, url, error) => Container(
-                                color: const Color(0xFFEAF2FF),
+                                color: AppColors.primary.withOpacity(0.1),
                                 child: const Icon(
                                   Icons.directions_car,
                                   size: 70,
@@ -840,7 +840,7 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
     if (hasValidUrl) {
       return CircleAvatar(
         radius: 24,
-        backgroundColor: const Color(0xFFEAF2FF),
+        backgroundColor: AppColors.primary.withOpacity(0.1),
         child: ClipOval(
           child: CachedNetworkImage(
             imageUrl: imageUrl,
@@ -874,8 +874,8 @@ class _CarDetailScreenState extends State<CarDetailScreen> {
     return Container(
       width: 48,
       height: 48,
-      decoration: const BoxDecoration(
-        color: Color(0xFFEAF2FF),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.1),
         shape: BoxShape.circle,
       ),
       child: Center(

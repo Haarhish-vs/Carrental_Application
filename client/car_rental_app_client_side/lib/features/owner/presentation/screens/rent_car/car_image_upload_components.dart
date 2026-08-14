@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:car_rental_app_client_side/core/theme/app_colors.dart';
 
 enum RentCarImageSlot { front, rear, interior, dashboard, additional }
 
@@ -134,7 +135,7 @@ Future<RentCarImageSourceChoice?> showRentCarImageSourceSheet(
               title,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF103B66),
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
@@ -142,7 +143,7 @@ Future<RentCarImageSourceChoice?> showRentCarImageSourceSheet(
               'Choose a source for the next image.',
               style: Theme.of(
                 context,
-              ).textTheme.bodyMedium?.copyWith(color: const Color(0xFF57718A)),
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 20),
             FilledButton.icon(
@@ -194,7 +195,7 @@ Future<void> showRentCarImagePreviewDialog(
                 item.slot.label,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF103B66),
+                  color: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 16),
@@ -260,13 +261,13 @@ class RentCarImageRequirementCard extends StatelessWidget {
               children: [
                 const Icon(
                   Icons.rule_folder_outlined,
-                  color: Color(0xFF1E5AA8),
+                  color: AppColors.primary,
                 ),
                 const SizedBox(width: 10),
                 Text(
                   'Image Requirements',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: const Color(0xFF103B66),
+                    color: AppColors.textPrimary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -279,8 +280,8 @@ class RentCarImageRequirementCard extends StatelessWidget {
               children: [
                 _RequirementPill(
                   label: '$selectedCount selected',
-                  color: const Color(0xFFEAF2FF),
-                  textColor: const Color(0xFF103B66),
+                  color: AppColors.primary.withOpacity(0.1),
+                  textColor: AppColors.textPrimary,
                 ),
                 _RequirementPill(
                   label: 'Min $minCount',
@@ -353,12 +354,12 @@ class RentCarImageDropArea extends StatelessWidget {
               width: 54,
               height: 54,
               decoration: BoxDecoration(
-                color: const Color(0xFFEAF2FF),
+                color: AppColors.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(18),
               ),
               child: const Icon(
                 Icons.cloud_upload_outlined,
-                color: Color(0xFF1E5AA8),
+                color: AppColors.primary,
               ),
             ),
             const SizedBox(width: 16),
@@ -369,7 +370,7 @@ class RentCarImageDropArea extends StatelessWidget {
                   Text(
                     'Upload car images',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: const Color(0xFF103B66),
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -377,7 +378,7 @@ class RentCarImageDropArea extends StatelessWidget {
                   Text(
                     'Tap to take a photo or choose multiple images from the gallery.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF57718A),
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -620,7 +621,7 @@ class _ImageTileCard extends StatelessWidget {
                       Icon(
                         item.slot.icon,
                         size: 18,
-                        color: const Color(0xFF1E5AA8),
+                        color: AppColors.primary,
                       ),
                       const SizedBox(width: 6),
                       Flexible(
@@ -628,7 +629,7 @@ class _ImageTileCard extends StatelessWidget {
                           item.slot.label,
                           style: Theme.of(context).textTheme.titleSmall
                               ?.copyWith(
-                                color: const Color(0xFF103B66),
+                                color: AppColors.textPrimary,
                                 fontWeight: FontWeight.w700,
                               ),
                           overflow: TextOverflow.ellipsis,
@@ -658,7 +659,7 @@ class _ImageTileCard extends StatelessWidget {
                     Text(
                       item.uploadedUrl ?? 'Uploaded image URL ready',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF57718A),
+                        color: AppColors.textSecondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -667,7 +668,7 @@ class _ImageTileCard extends StatelessWidget {
                     Text(
                       item.file?.name ?? 'Local file selected',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF57718A),
+                        color: AppColors.textSecondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -691,7 +692,7 @@ class _ImageTileCard extends StatelessWidget {
           Text(
             item.slot.label,
             style: const TextStyle(
-              color: Color(0xFF57718A),
+              color: AppColors.textSecondary,
               fontWeight: FontWeight.w600,
             ),
           ),

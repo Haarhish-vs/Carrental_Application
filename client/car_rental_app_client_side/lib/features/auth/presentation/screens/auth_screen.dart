@@ -243,7 +243,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     fontWeight: FontWeight.bold,
                     fontSize: 14.5,
                     color: _currentMode == AuthMode.login
-                        ? const Color(0xFF1E5AA8)
+                        ? AppColors.primary
                         : const Color(0xFF64748B),
                   ),
                 ),
@@ -285,7 +285,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     fontWeight: FontWeight.bold,
                     fontSize: 14.5,
                     color: _currentMode == AuthMode.register
-                        ? const Color(0xFF1E5AA8)
+                        ? AppColors.primary
                         : const Color(0xFF64748B),
                   ),
                 ),
@@ -320,7 +320,7 @@ class _AuthScreenState extends State<AuthScreen> {
           child: IconButton(
             icon: const Icon(
               Icons.arrow_back_ios_new_rounded,
-              color: Color(0xFF103B66),
+              color: AppColors.textPrimary,
               size: 18,
             ),
             onPressed: () {
@@ -375,11 +375,11 @@ class _AuthScreenState extends State<AuthScreen> {
                               'lib/Car_rental_logo.jpeg',
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) => Container(
-                                color: const Color(0xFFEAF2FF),
+                                color: AppColors.primary.withOpacity(0.1),
                                 child: const Icon(
                                   Icons.directions_car_rounded,
                                   size: 38,
-                                  color: Color(0xFF1E5AA8),
+                                  color: AppColors.primary,
                                 ),
                               ),
                             ),
@@ -397,7 +397,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             : 'Verify Phone Number',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: const Color(0xFF103B66),
+                          color: AppColors.textPrimary,
                           fontWeight: FontWeight.bold,
                           fontSize: 22,
                         ),
@@ -469,7 +469,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               hintText: 'e.g. John Doe',
                               prefixIcon: const Icon(
                                 Icons.person_outline,
-                                color: Color(0xFF1E5AA8),
+                                color: AppColors.primary,
                               ),
                               filled: true,
                               fillColor: const Color(0xFFF8FAFC),
@@ -488,7 +488,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: const BorderSide(
-                                  color: Color(0xFF1E5AA8),
+                                  color: AppColors.primary,
                                   width: 2,
                                 ),
                               ),
@@ -508,13 +508,13 @@ class _AuthScreenState extends State<AuthScreen> {
                             fillColor: const Color(0xFFF8FAFC),
                             prefixIcon: const Icon(
                               Icons.phone_outlined,
-                              color: Color(0xFF1E5AA8),
+                              color: AppColors.primary,
                               size: 20,
                             ),
                             prefixText: '+91 ',
                             prefixStyle: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF103B66),
+                              color: AppColors.textPrimary,
                               fontSize: 15,
                             ),
                             border: OutlineInputBorder(
@@ -532,7 +532,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
                               borderSide: const BorderSide(
-                                color: Color(0xFF1E5AA8),
+                                color: AppColors.primary,
                                 width: 2,
                               ),
                             ),
@@ -544,7 +544,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         FilledButton(
                           onPressed: _isLoading ? null : _handleSendOtp,
                           style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF1E5AA8),
+                            backgroundColor: AppColors.primary,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -581,7 +581,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             fontSize: 24,
                             letterSpacing: 10,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF103B66),
+                            color: AppColors.textPrimary,
                           ),
                           decoration: InputDecoration(
                             labelText: '6-Digit Verification Code',
@@ -603,7 +603,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
                               borderSide: const BorderSide(
-                                color: Color(0xFF1E5AA8),
+                                color: AppColors.primary,
                                 width: 2,
                               ),
                             ),
@@ -637,7 +637,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         FilledButton(
                           onPressed: _isLoading ? null : _handleVerifyOtp,
                           style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF1E5AA8),
+                            backgroundColor: AppColors.primary,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),

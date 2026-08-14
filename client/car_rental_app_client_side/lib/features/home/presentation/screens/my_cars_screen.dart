@@ -367,7 +367,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                       child: Text(
                         name.isNotEmpty ? name : 'My Car',
                         style: const TextStyle(
-                          color: Color(0xFF103B66),
+                          color: AppColors.textPrimary,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -468,7 +468,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
 
   Widget _placeholderImage() {
     return Container(
-      color: const Color(0xFFEAF2FF),
+      color: AppColors.primary.withOpacity(0.1),
       child: const Icon(
         Icons.directions_car_rounded,
         size: 48,
@@ -635,7 +635,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
               children: [
                 Text(
                   'Renter: $renterName',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF103B66)),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 ),
                 if (renterPhone.isNotEmpty) ...[
                   const SizedBox(height: 2),
@@ -712,7 +712,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                 Expanded(
                   child: Text(
                     vehicleName,
-                    style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.bold, color: Color(0xFF103B66)),
+                    style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                   ),
                 ),
                 Container(
@@ -988,7 +988,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                       icon: const Icon(
                         Icons.arrow_back_ios_new_rounded,
                         size: 20,
-                        color: Color(0xFF103B66),
+                        color: AppColors.textPrimary,
                       ),
                       onPressed: () {
                         if (widget.onExplorePressed != null) {
@@ -1006,7 +1006,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF103B66),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ],
